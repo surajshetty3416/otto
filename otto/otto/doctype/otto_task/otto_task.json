@@ -5,19 +5,85 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "instruction"
+  "title",
+  "column_break_dagd",
+  "is_enabled",
+  "instruction_section",
+  "instruction",
+  "trigger_section",
+  "target",
+  "get_context",
+  "column_break_ttkz",
+  "event"
  ],
  "fields": [
   {
-   "description": "System prompt given to Otto to handle some task.",
+   "description": "Prompt given to Otto to handle some task.",
    "fieldname": "instruction",
    "fieldtype": "Code",
    "label": "Instruction"
+  },
+  {
+   "fieldname": "trigger_section",
+   "fieldtype": "Section Break",
+   "label": "Trigger"
+  },
+  {
+   "description": "On which DocType should this task be invoked.",
+   "fieldname": "target",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Target",
+   "options": "DocType",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_ttkz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "After which event of the selected DocType should the task be invoked.",
+   "fieldname": "event",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Event",
+   "options": "On Create\nOn Update\nOn Delete\nOn Submit\nOn Cancel",
+   "reqd": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Enabled"
+  },
+  {
+   "fieldname": "instruction_section",
+   "fieldtype": "Section Break",
+   "label": "Instruction"
+  },
+  {
+   "fieldname": "column_break_dagd",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "def get_context(doc: \"Document\", event: str) -> str:\n\treturn doc.as_json()",
+   "description": "Used to generate context for Otto to perform the task. It should have a single function:\n<br>\n&emsp;<code>get_context(doc, event) -&gt; str | None;</code>\n<br>\n\n<br>\nThis will receive the <code>doc</code> and its <code>event</code> that triggered the task. It should return a well formatted <code>str</code> to be used as context.\n<br>\n<br>\nIf <code>None</code> is returned then no context will be passed.\n<br>\n<br>\nDefaults to returning <code>doc.as_json()</code>.",
+   "fieldname": "get_context",
+   "fieldtype": "Code",
+   "label": "Get Context",
+   "options": "Python"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-04-25 11:51:49.701509",
+ "modified": "2025-04-25 17:19:38.925093",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Task",
@@ -38,5 +104,6 @@
  ],
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "title_field": "title"
 }
