@@ -8,7 +8,7 @@ from typing import Any, cast
 import frappe
 from frappe.model.document import Document
 
-from otto.otto.doctype.otto_task.utils import logger
+import otto
 
 EVENT_MAP = {
 	"after_insert": "On Create",
@@ -43,15 +43,25 @@ class OttoTask(Document):
 		doc.save()
 		return doc
 
-	def handler(self, target_doctype: Document, target_event: str | None = None):
-		target_event = target_event or "Manual"
-		logger("otto.task").info(
+	@frappe.whitelist()
+	def handle(self, target_doctype: Document):
+		# Used to test from the Task doc's desk formview.
+		assert self.name is not None, "type check"
+		otto.logger(self).info(
 			{
-				"message": "handler called",
+				"message": "handle called",
 				"doctype": target_doctype.doctype,
 				"name": target_doctype.name,
-				"event": target_event,
+				"event": "Manual",
 			}
+		)
+
+		frappe.enqueue(
+			handler,
+			queue="default",
+			name=self.name,
+			target_doctype=target_doctype,
+			target_event="Manual",
 		)
 
 
@@ -59,8 +69,9 @@ def handler(name: str, target_doctype: Document, target_event: str | None = None
 	"""
 	Handler function is used to handle the Otto Task.
 	"""
-	doc = cast(OttoTask, frappe.get_doc("Otto Task", name))
-	doc.handler(target_doctype, target_event)
+	from otto.otto.doctype.otto_execution.otto_execution import OttoExecution
+
+	return OttoExecution.new(name).execute(target_doctype, target_event)
 
 
 def common_handler(doctype: Document, event: str | None = None):
@@ -80,7 +91,7 @@ def common_handler(doctype: Document, event: str | None = None):
 		filters={"target": doctype.doctype, "event": event_label},
 		pluck="name",
 	):
-		logger("otto.task").info(
+		otto.logger("otto.task").info(
 			{
 				"message": "handler enqueued",
 				"otto_task": name,
@@ -96,3 +107,7 @@ def common_handler(doctype: Document, event: str | None = None):
 			target_doctype=doctype,
 			target_event=event_label,
 		)
+
+
+def get_tools(task: str):
+	return []

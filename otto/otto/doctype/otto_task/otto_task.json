@@ -74,7 +74,7 @@
   },
   {
    "default": "def get_context(doc: \"Document\", event: str) -> str:\n\treturn doc.as_json()",
-   "description": "Used to generate context for Otto to perform the task. It should have a single function:\n<br>\n&emsp;<code>get_context(doc, event) -&gt; str | None;</code>\n<br>\n\n<br>\nThis will receive the <code>doc</code> and its <code>event</code> that triggered the task. It should return a well formatted <code>str</code> to be used as context.\n<br>\n<br>\nIf <code>None</code> is returned then no context will be passed.\n<br>\n<br>\nDefaults to returning <code>doc.as_json()</code>.",
+   "description": "Used to generate context for Otto to perform the task. It should have a single function:\n<br>\n&emsp;<code>get_context(doc, event) -&gt; str | list[str];</code>\n<br>\n\n<br>\nThis will receive the <code>doc</code> and its <code>event</code> that triggered the task. It should return a well formatted <code>str</code> to be used as context or input needed to perform the task.\n\n<br><br>\nDefaults to returning <code>doc.as_json()</code>.\n\n<br><br>\nA <code>list[str]</code> can also be returned.\n<br>\nIndividual strings can be plain strings or URLs to images or documents (pdf) which will be passed to Otto to be used as input needed to perform the task.\n",
    "fieldname": "get_context",
    "fieldtype": "Code",
    "label": "Get Context",
@@ -83,7 +83,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-04-25 17:19:38.925093",
+ "modified": "2025-04-29 22:29:55.580486",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Task",
