@@ -1,0 +1,66 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-04-30 13:05:37.453703",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "arg_name",
+  "type",
+  "column_break_mkgp",
+  "is_required",
+  "description"
+ ],
+ "fields": [
+  {
+   "allow_in_quick_entry": 1,
+   "description": "Type of the argument in JSON schema format.\n\nExample: <code>string</code>, <code>number</code>, <code>boolean</code>, <code>object</code>, etc.\n<br><br>\nRef: <a href=\"https://json-schema.org/understanding-json-schema/reference/type\">json-schema.org/understanding-json-schema/reference/type</a>\n",
+   "fieldname": "type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Type",
+   "reqd": 1
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "description": "Description of the argument, i.e. what the value is used for etc.",
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Description"
+  },
+  {
+   "fieldname": "column_break_mkgp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "arg_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Arg Name",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_required",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Is Required"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-04-30 13:53:30.717167",
+ "modified_by": "Administrator",
+ "module": "Otto",
+ "name": "Otto Tool Arg CT",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

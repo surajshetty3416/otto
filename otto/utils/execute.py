@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ast
+import importlib
 import io
 import json
 import sys
@@ -33,9 +34,11 @@ OUT_VAR_NAME = "out"
 if TYPE_CHECKING:
 	import io
 
+Args = dict[str, Any]
 
-def execute(script: str, *, args_def: list[ArgDefinition], args: Args) -> ExecutionResult:
-	script, globals = get_script_and_globals(script, args_def, args)
+
+def execute(script: str, *, arg_names: list[str], args: Args) -> ExecutionResult:
+	script, globals = get_script_and_globals(script, args, arg_names)
 
 	stdout = io.StringIO()
 	stderr = io.StringIO()
@@ -54,25 +57,10 @@ def run_get_context(get_context: str, doc: Document, event: str | None = None) -
 	if not get_context:
 		return doc.as_json()
 
-	args_def: list[ArgDefinition] = [
-		{
-			"name": "doc",
-			"type": "Document",
-			"default": None,
-			"has_default": False,
-		},
-		{
-			"name": "event",
-			"type": "str",
-			"default": None,
-			"has_default": False,
-		},
-	]
-
 	script, globals = get_script_and_globals(
 		get_context,
-		args_def,
 		{"doc": doc, "event": event},
+		["doc", "event"],
 		function_name="get_context",
 	)
 
@@ -93,32 +81,30 @@ def run_get_context(get_context: str, doc: Document, event: str | None = None) -
 
 def get_script_and_globals(
 	script: str,
-	args_def: list[ArgDefinition],
 	args: Args,
+	arg_names: list[str],
 	function_name: str = "main",
 ):
-	from flow.flow.doctype.fl_settings.fl_settings import get_variables
-
-	globals = {"_print_": RegularPrint, "env": get_variables()}
-	if not args_def:
+	script, imports = extract_imports(script)
+	globals = {"_print_": RegularPrint, **imports}
+	if not arg_names:
 		script = "\n".join([script, f"{OUT_VAR_NAME} = {function_name}()"])
 		return script, globals
 
 	arg_list = []
-	for ad in args_def:
+	for name in arg_names:
 		"""
 		Validation for when default value is not provided should be handled
 		before execute is called in FL Script Task itself.
 		"""
 
-		arg_name = ad["name"]
-		if arg_name not in args:
+		if name not in args:
 			continue
 
-		arg_variable_name = f"fl___script_arg_{arg_name}"
+		arg_variable_name = f"fl___script_arg_{name}"
 
-		globals[arg_variable_name] = args[arg_name]
-		arg_list.append(f"{arg_name}={arg_variable_name}")
+		globals[arg_variable_name] = args[name]
+		arg_list.append(f"{name}={arg_variable_name}")
 
 	script = "\n".join([script, f"{OUT_VAR_NAME} = {function_name}({', '.join(arg_list)})"])
 	return script, globals
@@ -148,9 +134,9 @@ def validate(script: str, script_name: str) -> tuple[list[str], list[ArgDefiniti
 		elif isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "main":
 			invalidation_reasons.append(f"Direct calls to main() are not allowed (line: {node.lineno})")
 
-		# Check if imports are used
-		elif isinstance(node, ast.Import | ast.ImportFrom):
-			invalidation_reasons.append(f"Imports are not allowed (line: {node.lineno})")
+		# # Check if imports are used
+		# elif isinstance(node, ast.Import | ast.ImportFrom):
+		# 	invalidation_reasons.append(f"Imports are not allowed (line: {node.lineno})")
 
 	if main_function_node is None:
 		invalidation_reasons.append("Script must contain a 'main' function definition")
@@ -194,8 +180,6 @@ class RegularPrint(PrintCollector):
 
 
 NO_RESULT = object()
-
-Args = dict[str, Any]
 
 
 class ExecutionResult(TypedDict):
@@ -292,3 +276,118 @@ def capture_output(stdout: io.StringIO, stderr: io.StringIO):
 	finally:
 		sys.stdout = old_stdout
 		sys.stderr = old_stderr
+
+
+def extract_imports(script: str) -> tuple[str, dict[str, Any]]:
+	"""
+	Extract import statements from a Python script, remove them from the script,
+	and import the modules if they pass security checks.
+
+	Args:
+		script: The Python script as a string
+
+	Returns:
+		A tuple containing:
+		- The script with import statements removed
+		- A dictionary of imported modules/objects
+	"""
+	try:
+		tree = ast.parse(script)
+	except SyntaxError:
+		# If script has syntax errors, return it unchanged with empty imports
+		return script, {}
+
+	imports = {}
+	import_nodes = []
+
+	# Find all import nodes
+	for node in ast.iter_child_nodes(tree):
+		if isinstance(node, ast.Import | ast.ImportFrom):
+			import_nodes.append(node)
+
+	# Remove import nodes from the AST
+	tree.body = [node for node in tree.body if node not in import_nodes]
+
+	# Convert modified AST back to source code
+	modified_script = ast.unparse(tree)
+
+	# Process the imports
+	for node in import_nodes:
+		if isinstance(node, ast.Import):
+			for name in node.names:
+				module_name = name.name
+				as_name = name.asname or module_name
+
+				# Security check - only allow specific modules
+				if _is_safe_import(module_name):
+					try:
+						imports[as_name] = importlib.import_module(module_name)
+					except ImportError:
+						pass
+
+		elif isinstance(node, ast.ImportFrom):
+			module_name = node.module
+			if module_name and _is_safe_import(module_name):
+				try:
+					module = importlib.import_module(module_name)
+					for name in node.names:
+						attr_name = name.name
+						as_name = name.asname or attr_name
+
+						if hasattr(module, attr_name):
+							imports[as_name] = getattr(module, attr_name)
+				except ImportError:
+					pass
+
+	return modified_script, imports
+
+
+def _is_safe_import(module_name: str) -> bool:
+	"""
+	Check if a module is safe to import.
+
+	Args:
+		module_name: The name of the module to check
+
+	Returns:
+		True if the module is safe to import, False otherwise
+	"""
+	if "otto" in module_name:
+		return True
+
+	# List of allowed modules
+	allowed_modules = {
+		"datetime",
+		"json",
+		"math",
+		"re",
+		"time",
+		"uuid",
+		"collections",
+		"itertools",
+		"functools",
+		"typing",
+		"decimal",
+		"fractions",
+		"statistics",
+		"random",
+		"csv",
+		"pathlib",
+		"urllib.parse",
+		"base64",
+		"hashlib",
+		"hmac",
+		"zlib",
+		"gzip",
+		"zipfile",
+		"requests",
+	}
+
+	# Check if the module or its parent is in the allowed list
+	parts = module_name.split(".")
+	for i in range(len(parts)):
+		prefix = ".".join(parts[: i + 1])
+		if prefix in allowed_modules:
+			return True
+
+	return False

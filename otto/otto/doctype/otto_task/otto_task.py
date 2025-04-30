@@ -29,12 +29,15 @@ class OttoTask(Document):
 	if TYPE_CHECKING:
 		from frappe.types import DF
 
+		from otto.otto.doctype.otto_task_tool_ct.otto_task_tool_ct import OttoTaskToolCT
+
 		event: DF.Literal["On Create", "On Update", "On Delete", "On Submit", "On Cancel"]
 		get_context: DF.Code | None
 		instruction: DF.Code | None
 		is_enabled: DF.Check
 		target: DF.Link
 		title: DF.Data | None
+		tools: DF.Table[OttoTaskToolCT]
 	# end: auto-generated types
 
 	@staticmethod
@@ -110,4 +113,20 @@ def common_handler(doctype: Document, event: str | None = None):
 
 
 def get_tools(task: str):
-	return []
+	from otto.otto.doctype.otto_tool.otto_tool import OttoTool
+
+	tools = frappe.get_all(
+		"Otto Task Tool",
+		filters={"parent": task},
+		pluck="tool",
+	)
+
+	tools = []
+	for tool in tools:
+		tool_doc = otto.get(OttoTool, tool)
+		if not tool_doc.is_valid:
+			continue
+
+		tools.append(tool_doc.get_function_schema())
+
+	return tools

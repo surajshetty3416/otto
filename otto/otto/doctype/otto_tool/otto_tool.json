@@ -1,0 +1,110 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-04-30 12:59:09.968373",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "definition_section",
+  "slug",
+  "code",
+  "section_break_lafy",
+  "description",
+  "args",
+  "validation_section",
+  "is_valid",
+  "column_break_kizv",
+  "reason"
+ ],
+ "fields": [
+  {
+   "description": "Code to be used as a tool, should have a function <code>main</code>.\n<br><br>\nNote: Certain import statements are allowed but attribute access is not allowed. So to use an imported value import the item instead of the module.\n<br>\nEg: <code>from requests import get</code> instead of <code>import requests</code>",
+   "fieldname": "code",
+   "fieldtype": "Code",
+   "in_list_view": 1,
+   "label": "Code",
+   "options": "Python",
+   "reqd": 1
+  },
+  {
+   "description": "Tool definition can either be a custom function defined in Code or an existing function pointed to by Path.",
+   "fieldname": "definition_section",
+   "fieldtype": "Section Break",
+   "label": "Definition"
+  },
+  {
+   "fieldname": "section_break_lafy",
+   "fieldtype": "Section Break",
+   "label": "Description"
+  },
+  {
+   "description": "Tool description of how the tool is to be called, and what return value should be expected.",
+   "fieldname": "description",
+   "fieldtype": "Long Text",
+   "label": "Description"
+  },
+  {
+   "description": "If the <code>main</code> function in <b>Code</b> is has type annotations, this list can be auto generated. Arg descriptions still need to be added.",
+   "fieldname": "args",
+   "fieldtype": "Table",
+   "label": "Args",
+   "options": "Otto Tool Arg CT"
+  },
+  {
+   "description": "Snake cased name of the tool",
+   "fieldname": "slug",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Slug",
+   "reqd": 1
+  },
+  {
+   "fieldname": "validation_section",
+   "fieldtype": "Section Break",
+   "label": "Validation"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_valid",
+   "fieldtype": "Check",
+   "label": "Is Valid"
+  },
+  {
+   "fieldname": "column_break_kizv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.reason",
+   "description": "Reason for why tool is invalid.",
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-04-30 14:48:49.465986",
+ "modified_by": "Administrator",
+ "module": "Otto",
+ "name": "Otto Tool",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "slug"
+}

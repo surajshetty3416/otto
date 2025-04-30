@@ -11,10 +11,12 @@ from frappe.model.document import Document
 
 import otto
 from otto import llm
-from otto.otto.doctype.otto_execution.execute import run_get_context
 from otto.otto.doctype.otto_task.otto_task import get_tools
+from otto.utils.execute import run_get_context
 
 if TYPE_CHECKING:
+	from flow.llm.types import Exchange
+
 	from otto.llm.types import ExchangeItem
 
 
@@ -85,21 +87,50 @@ class OttoExecution(Document):
 			self.set_status("Failure", reason)
 			return
 
-		execution = interaction["update"]
-		self.execution = json.dumps(execution, indent=2)
-		self.save()
+		self.set_execution(interaction["update"])
 
 		item = interaction["item"]
 		if item["meta"]["end_reason"] == "turn_end":
 			self.set_status("Success")
 			return
 
-		self.run_tool(item)
+		self.run_tools(item, interaction["update"])
 		self.loop(None)
 
-	def run_tool(self, item: ExchangeItem):
-		# TODO: run tool, and update exchange
-		pass
+	def run_tools(self, item: ExchangeItem, exchange: Exchange):
+		from otto.otto.doctype.otto_task.otto_task import OttoTask
+		from otto.otto.doctype.otto_tool.otto_tool import OttoTool
+
+		task = otto.get(OttoTask, self.task)
+		tools = {tool.slug: tool for tool in task.tools}
+
+		for content in item["content"]:
+			if content["type"] != "tool_result":
+				continue
+
+			slug = content["name"]
+			tool_name = tools[slug].tool
+			tool_doc = otto.get(OttoTool, tool_name)
+			result = None
+
+			try:
+				result = tool_doc.execute(content["args"])["result"]
+				is_error = False
+			except Exception as e:
+				otto.logger(self).error(
+					{
+						"message": "tool use error",
+						"tool": tool_name,
+						"slug": content["name"],
+						"name": self.name,
+						"error": e,
+					}
+				)
+				is_error = True
+				result = str(e)
+
+			llm.update_with_tool_result(exchange=exchange, result=result, id=content["id"], is_error=is_error)
+			self.set_execution(exchange)
 
 	def get_instruction(self):
 		instruction = frappe.get_cached_value("Otto Task", self.task, "instruction")
@@ -125,6 +156,10 @@ class OttoExecution(Document):
 			return None
 
 		return context
+
+	def set_execution(self, execution: Exchange):
+		self.execution = json.dumps(execution, indent=2)
+		self.save()
 
 	def set_status(
 		self,
