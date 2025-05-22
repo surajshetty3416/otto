@@ -25,8 +25,9 @@ import time
 from typing import TYPE_CHECKING
 
 import frappe.realtime
-from flow.llm.format import get_messages
-from flow.llm.types import (
+
+from otto.llm.format import get_messages
+from otto.llm.types import (
 	Content,
 	ContentChunk,
 	Exchange,
@@ -38,7 +39,7 @@ from flow.llm.types import (
 	ToolUseContent,
 	UserContent,
 )
-from flow.llm.utils import (
+from otto.llm.utils import (
 	get_agent_item,
 	get_exchange,
 	get_exchange_list,

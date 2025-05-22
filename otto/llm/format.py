@@ -4,7 +4,7 @@ import json
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-	from flow.llm.types import ExchangeItem
+	from otto.llm.types import ExchangeItem
 
 
 class C:
@@ -66,7 +66,7 @@ def get_messages(
 	preserve_thinking: bool = False,
 ):
 	"""
-	Converts from Flow internal format, i.e. ExchangeItem, to OpenAI Chat
+	Converts from Otto internal format, i.e. ExchangeItem, to OpenAI Chat
 	Completion format. LiteLLM makes use of OpenAI Chat Completion format.
 
 	Reference: https://platform.openai.com/docs/api-reference/chat/create

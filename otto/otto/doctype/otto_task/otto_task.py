@@ -9,6 +9,7 @@ import frappe
 from frappe.model.document import Document
 
 import otto
+from otto.otto.doctype.otto_task.tools import meta_tools
 
 EVENT_MAP = {
 	"after_insert": "On Create",
@@ -31,7 +32,7 @@ class OttoTask(Document):
 
 		from otto.otto.doctype.otto_task_tool_ct.otto_task_tool_ct import OttoTaskToolCT
 
-		event: DF.Literal["On Create", "On Update", "On Delete", "On Submit", "On Cancel"]
+		event: DF.Literal["On Create", "On Update", "On Delete", "On Submit", "On Cancel", "Manual"]
 		get_context: DF.Code | None
 		instruction: DF.Code | None
 		is_enabled: DF.Check
@@ -66,6 +67,13 @@ class OttoTask(Document):
 			target_doctype=target_doctype,
 			target_event="Manual",
 		)
+
+	@frappe.whitelist()
+	def run(self, target_doctype: Document):
+		from otto.otto.doctype.otto_execution.otto_execution import OttoExecution
+
+		assert self.name is not None, "type check"
+		return OttoExecution.new(self.name).execute(target_doctype, "Manual")
 
 
 def handler(name: str, target_doctype: Document, target_event: str | None = None):
@@ -129,4 +137,5 @@ def get_tools(task: str):
 
 		tools.append(tool_doc.get_function_schema())
 
+	tools.extend(meta_tools)
 	return tools

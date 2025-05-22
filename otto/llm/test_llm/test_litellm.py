@@ -2,7 +2,8 @@ import os
 import unittest
 
 import frappe
-from flow.llm.utils import get_stats, to_content, update_with_tool_result
+
+from otto.llm.utils import get_stats, to_content, update_with_tool_result
 
 # Ensure litellm can be imported if needed (though interact handles its import)
 try:
@@ -11,8 +12,8 @@ except ImportError:
 	litellm = None  # Allow tests to be defined but skipped if litellm not installed
 
 # Now import the function to test and types
-from flow.llm.litellm import interact  # Keep DEFAULT_LLM for info if needed
-from flow.llm.litellm import map as llm_map
+from otto.llm.litellm import interact  # Keep DEFAULT_LLM for info if needed
+from otto.llm.litellm import map as llm_map
 
 # Model to use for testing
 TEST_MODEL_NAME = "OpenAI GPT-4.1 nano"  # current cheapest model
@@ -246,7 +247,7 @@ class TestLiteLLMIntegration(unittest.TestCase):
 
 def get_testfile_path(file_name: str):
 	return os.path.join(
-		frappe.get_app_path("flow"),
+		frappe.get_app_path("otto"),
 		"llm",
 		"test_llm",
 		file_name,

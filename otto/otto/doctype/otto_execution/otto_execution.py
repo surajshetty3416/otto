@@ -12,12 +12,11 @@ from frappe.model.document import Document
 import otto
 from otto import llm
 from otto.otto.doctype.otto_task.otto_task import get_tools
+from otto.otto.doctype.otto_task.tools import has_task_ended, is_meta_tool
 from otto.utils.execute import run_get_context
 
 if TYPE_CHECKING:
-	from flow.llm.types import Exchange
-
-	from otto.llm.types import ExchangeItem
+	from otto.llm.types import Exchange, ExchangeItem
 
 
 class OttoExecution(Document):
@@ -91,21 +90,31 @@ class OttoExecution(Document):
 
 		item = interaction["item"]
 		if item["meta"]["end_reason"] == "turn_end":
-			self.set_status("Success")
-			return
+			return self.set_status("Success")
 
-		self.run_tools(item, interaction["update"])
+		if self.run_tools(item, interaction["update"]):
+			return self.set_status("Success")
+
 		self.loop(None)
 
 	def run_tools(self, item: ExchangeItem, exchange: Exchange):
+		"""Runs tools and checks if meta tool end_task is used"""
 		from otto.otto.doctype.otto_task.otto_task import OttoTask
 		from otto.otto.doctype.otto_tool.otto_tool import OttoTool
 
 		task = otto.get(OttoTask, self.task)
 		tools = {tool.slug: tool for tool in task.tools}
+		task_ended = False
+
+		# Move meta tools to the end of the list
+		content = sorted(item["content"], key=lambda x: is_meta_tool(x))
 
 		for content in item["content"]:
 			if content["type"] != "tool_result":
+				continue
+
+			if is_meta_tool(content):
+				task_ended = task_ended or has_task_ended(content)
 				continue
 
 			slug = content["name"]
@@ -131,6 +140,7 @@ class OttoExecution(Document):
 
 			llm.update_with_tool_result(exchange=exchange, result=result, id=content["id"], is_error=is_error)
 			self.set_execution(exchange)
+		return task_ended
 
 	def get_instruction(self):
 		instruction = frappe.get_cached_value("Otto Task", self.task, "instruction")
@@ -159,7 +169,8 @@ class OttoExecution(Document):
 
 	def set_execution(self, execution: Exchange):
 		self.execution = json.dumps(execution, indent=2)
-		self.save()
+		self.save(ignore_permissions=True, ignore_version=True)
+		frappe.db.commit()
 
 	def set_status(
 		self,
@@ -168,4 +179,5 @@ class OttoExecution(Document):
 	):
 		self.status = status
 		self.reason = reason
-		self.save()
+		self.save(ignore_permissions=True, ignore_version=True)
+		frappe.db.commit()

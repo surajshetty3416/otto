@@ -10,10 +10,10 @@ from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
-from flow.llm.types import Exchange
+from otto.llm.types import Exchange
 
 if TYPE_CHECKING:
-	from flow.llm.types import Exchange, ExchangeItem, ExchangeMeta, UserContent
+	from otto.llm.types import Exchange, ExchangeItem, ExchangeMeta, UserContent
 
 
 def get_exchange_list(exchange: Exchange) -> list[ExchangeItem]:
@@ -229,7 +229,7 @@ def to_content(query: str | list[str | UserContent] | list[UserContent]) -> list
 	Convenience function to convert list of strings into UserContent, i.e.
 	dicts that pertain to image, text or file types.
 	"""
-	from flow.llm.types import FileContent, ImageContent, TextContent
+	from otto.llm.types import FileContent, ImageContent, TextContent
 
 	if isinstance(query, str):
 		return [TextContent(type="text", text=query)]

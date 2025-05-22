@@ -48,7 +48,8 @@ class OttoTool(Document):
 			return
 
 		self.is_valid = True
-		# self.args.clear()
+		self.reason = None
+
 		self.args = []
 		for arg in args_def:
 			self.append(
@@ -63,6 +64,11 @@ class OttoTool(Document):
 
 	@frappe.whitelist()
 	def get_function_schema(self):
+		"""Returns function schema for the tool, add meta properties that might aid in usage reasoning."""
+		properties = {
+			arg.arg_name: {"type": arg.type, "description": arg.description or ""} for arg in self.args
+		}
+
 		"""Returns tool as a JSON Schema function"""
 		schema = {
 			"name": self.slug,
@@ -70,10 +76,13 @@ class OttoTool(Document):
 			"parameters": {
 				"type": "object",
 				"properties": {
-					arg.arg_name: {"type": arg.type, "description": arg.description or ""}
-					for arg in self.args
+					"explanation": {
+						"type": "string",
+						"description": "A short explanation of why the this tool is being called, and how it contributes to the task.",
+					},
+					**properties,
 				},
-				"required": [arg.arg_name for arg in self.args if arg.is_required],
+				"required": [arg.arg_name for arg in self.args if arg.is_required] + ["explanation"],
 			},
 		}
 

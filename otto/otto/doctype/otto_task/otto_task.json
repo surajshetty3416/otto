@@ -13,9 +13,8 @@
   "tools",
   "trigger_section",
   "target",
-  "get_context",
-  "column_break_ttkz",
-  "event"
+  "event",
+  "get_context"
  ],
  "fields": [
   {
@@ -39,16 +38,12 @@
    "reqd": 1
   },
   {
-   "fieldname": "column_break_ttkz",
-   "fieldtype": "Column Break"
-  },
-  {
    "description": "After which event of the selected DocType should the task be invoked.",
    "fieldname": "event",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Event",
-   "options": "On Create\nOn Update\nOn Delete\nOn Submit\nOn Cancel",
+   "options": "On Create\nOn Update\nOn Delete\nOn Submit\nOn Cancel\nManual",
    "reqd": 1
   },
   {
@@ -90,7 +85,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-04-30 13:20:08.959091",
+ "modified": "2025-05-21 16:41:28.558572",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Task",
