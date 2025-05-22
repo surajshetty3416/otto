@@ -16,6 +16,7 @@ class OttoSettings(Document):
 
 		anthropic_api_key: DF.Password | None
 		openai_api_key: DF.Password | None
+		task_execution_timeout: DF.Int
 	# end: auto-generated types
 
 	pass

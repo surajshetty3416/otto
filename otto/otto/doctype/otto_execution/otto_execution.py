@@ -69,6 +69,10 @@ class OttoExecution(Document):
 		)
 		self.loop(context)
 
+	def validate(self):
+		# TODO: check that all tools are valid
+		...
+
 	def loop(self, context: str | list[str] | None = None):
 		exchange = json.loads(self.execution) if self.execution else None
 		try:

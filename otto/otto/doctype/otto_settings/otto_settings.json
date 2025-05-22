@@ -5,6 +5,8 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "column_break_isov",
+  "task_execution_timeout",
   "api_keys_section",
   "anthropic_api_key",
   "openai_api_key"
@@ -24,12 +26,24 @@
    "fieldname": "openai_api_key",
    "fieldtype": "Password",
    "label": "OpenAI API Key"
+  },
+  {
+   "default": "30",
+   "description": "Timeout duration in <b>minutes</b>. Beyond this task execution will be force stopped.",
+   "fieldname": "task_execution_timeout",
+   "fieldtype": "Int",
+   "label": "Task Execution Timeout"
+  },
+  {
+   "default": "30",
+   "fieldname": "column_break_isov",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-04-29 22:04:11.679664",
+ "modified": "2025-05-22 14:32:53.364236",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Settings",

@@ -77,7 +77,7 @@ class OttoTask(Document):
 			doctype="Otto Execution",
 			name=execution.name,
 			method="execute",
-			timeout=1800,
+			timeout=get_timeout(),
 		)
 		return execution.name
 
@@ -143,7 +143,7 @@ def common_handler(doctype: Document, event: str | None = None):
 		)
 		frappe.enqueue(
 			handler,
-			timeout=1800,
+			timeout=get_timeout(),
 			# Args
 			name=name,
 			doc=doctype,
@@ -169,3 +169,7 @@ def get_tools(task: str):
 
 	tools.extend(meta_tools)
 	return tools
+
+
+def get_timeout():
+	return frappe.get_cached_value("Otto Settings", "Otto Settings", "task_execution_timeout") * 60
