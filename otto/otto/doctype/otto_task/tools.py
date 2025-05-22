@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from flow.llm.types import Content, ToolUseContent
+from otto.llm.types import Content
 
 """
 Definitions for meta tools to be used by Otto to perform some task.

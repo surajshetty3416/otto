@@ -29,7 +29,6 @@ class OttoTask(Document):
 
 	if TYPE_CHECKING:
 		from frappe.types import DF
-
 		from otto.otto.doctype.otto_task_tool_ct.otto_task_tool_ct import OttoTaskToolCT
 
 		event: DF.Literal["On Create", "On Update", "On Delete", "On Submit", "On Cancel", "Manual"]
@@ -74,6 +73,18 @@ class OttoTask(Document):
 
 		assert self.name is not None, "type check"
 		return OttoExecution.new(self.name).execute(target_doctype, "Manual")
+
+	@frappe.whitelist()
+	def test_get_context(self, name: str):
+		from otto.utils.execute import run_get_context
+
+		assert self.get_context is not None, "type check"
+
+		return run_get_context(
+			self.get_context,
+			doc=frappe.get_doc(self.target, name),
+			event="Manual",
+		)
 
 
 def handler(name: str, target_doctype: Document, target_event: str | None = None):

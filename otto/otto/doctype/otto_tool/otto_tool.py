@@ -41,6 +41,7 @@ class OttoTool(Document):
 	# end: auto-generated types
 
 	def before_save(self):
+		descriptions = {a.arg_name: a.description for a in (self.args or [])}
 		reasons, args_def = execute.validate(self.code, self.slug)
 		if reasons:
 			self.is_valid = False
@@ -50,6 +51,7 @@ class OttoTool(Document):
 		self.is_valid = True
 		self.reason = None
 
+		# Reset to prevent dupes
 		self.args = []
 		for arg in args_def:
 			self.append(
@@ -57,7 +59,7 @@ class OttoTool(Document):
 				{
 					"arg_name": arg["name"],
 					"type": arg_type_to_json_type[arg["type"]],
-					"description": "",
+					"description": descriptions.get(arg["name"], ""),
 					"is_required": not arg["has_default"],
 				},
 			)

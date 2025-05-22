@@ -14,6 +14,8 @@ from frappe.model.document import Document
 from frappe.utils.safe_exec import safe_exec
 from RestrictedPython import PrintCollector
 
+from otto.utils import json_dumps
+
 """
 Server Script execution task implies that Python code is executed in a Frappe
 server script environment:
@@ -72,11 +74,10 @@ def run_get_context(get_context: str, doc: Document, event: str | None = None) -
 	if isinstance(result, str):
 		return result
 
-	assert isinstance(result, list), "typecheck"
-	if not all(isinstance(r, str) for r in result):
-		raise ValueError(f"get_context must return a string or a list of strings got {result}")
+	if not isinstance(result, list):
+		return json_dumps(result)[0]
 
-	return result
+	return [r if isinstance(r, str) else json_dumps(r)[0] for r in result]
 
 
 def get_script_and_globals(

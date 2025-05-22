@@ -70,7 +70,7 @@
   },
   {
    "default": "def get_context(doc: \"Document\", event: str) -> str:\n\treturn doc.as_json()",
-   "description": "Used to generate context for Otto to perform the task. It should have a single function:\n<br>\n&emsp;<code>get_context(doc, event) -&gt; str | list[str];</code>\n<br>\n\n<br>\nThis will receive the <code>doc</code> and its <code>event</code> that triggered the task. It should return a well formatted <code>str</code> to be used as context or input needed to perform the task.\n\n<br><br>\nDefaults to returning <code>doc.as_json()</code>.\n\n<br><br>\nA <code>list[str]</code> can also be returned.\n<br>\nIndividual strings can be plain strings or URLs to images or documents (pdf) which will be passed to Otto to be used as input needed to perform the task.\n",
+   "description": "Used to generate context for Otto to perform the task. It should have a single function:\n<br>\n&emsp;<code>get_context(doc, event) -&gt; str | list[str];</code>\n<br>\n\n<br>\nThis will receive the <code>doc</code> and its <code>event</code> that triggered the task. It should return a well formatted <code>str</code> to be used as context or input needed to perform the task.\n\n<br><br>\nDefaults to returning <code>doc.as_json()</code>.\n\n<br><br>\nA <code>list[str]</code> can also be returned.\n<br>\n\nIndividual strings can be plain strings or URLs to images or documents (pdf) which will be passed to Otto to be used as input needed to perform the task.\n\n<br><br>\nNote: if returned value is not a <code>str</code> or <code>list[str]</code>, it will be converted using <code>json.dumps</code>.",
    "fieldname": "get_context",
    "fieldtype": "Code",
    "label": "Get Context",
@@ -85,7 +85,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-05-21 16:41:28.558572",
+ "modified": "2025-05-22 10:44:14.567485",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Task",
