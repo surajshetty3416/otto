@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING
 
 import frappe.realtime
 
+import otto
 from otto.llm.format import get_messages
 from otto.llm.types import (
 	Content,
@@ -56,6 +57,7 @@ if TYPE_CHECKING:
 
 DEFAULT_LLM = "OpenAI GPT-4.1 nano"
 
+logger = otto.logger("otto_litellm")
 thinking_budget_map: dict[ThinkingEffort, int] = {
 	"low": 8000,
 	"medium": 16000,
@@ -73,7 +75,7 @@ map = {
 	"OpenAI GPT-4o": "openai/gpt-4o",
 	"OpenAI GPT-4o mini": "openai/gpt-4o-mini",
 	# GPT 4.1
-	"OpenAI GPT-4.1": "openai/gpt-4.1-mini",
+	"OpenAI GPT-4.1": "openai/gpt-4.1",
 	"OpenAI GPT-4.1 mini": "openai/gpt-4.1-mini",
 	"OpenAI GPT-4.1 nano": "openai/gpt-4.1-nano",
 }
@@ -206,7 +208,7 @@ def interact(
 	chunks, signature = _stream(completion, item, exchange_id)
 
 	# Wait until the success callback is called
-	done.wait(timeout=5)
+	done.wait()
 
 	# Rest of the item updation is handled in litellm.success_callback
 	# Thinking signature is required by anthropic
@@ -280,6 +282,7 @@ def _stream(completion: CustomStreamWrapper, item: ExchangeItem, exchange_id: st
 
 	for chunk in completion:
 		if cc := _stream_chunk(chunk, item["id"], exchange_id):
+			logger.info({"id": item["id"], "content": cc["content"]})
 			chunks.append(cc)
 
 		signature = _get_signature(chunk)

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import contextlib
+import json
+from typing import TYPE_CHECKING, Any
 
 __version__ = "0.0.1"
-__all__ = ["get", "logger"]
+__all__ = ["get", "logger", "log_error"]
 
 from typing import TypeVar, cast
 
@@ -25,6 +27,42 @@ def logger(name: str | Document):
 			name += ":" + doc.name
 
 	return frappe.logger(name)
+
+
+def log_error(
+	title: str,
+	*,
+	doc: Document | None = None,
+	**context,
+):
+	if not title:
+		title = "Unknown Error"
+
+	title_prefix = "[Flow]"
+	if not title.startswith(title_prefix):
+		title = f"{title_prefix} {title}"
+
+	message: dict[str, Any] = dict(
+		context=context,
+	)
+
+	with contextlib.suppress(Exception):
+		context["user"] = frappe.session.user
+
+		if traceback := frappe.get_traceback(with_context=True):
+			message["traceback"] = traceback
+
+		frappe.log_error(
+			title=title,
+			message=json.dumps(
+				message,
+				indent=4,
+				default=str,
+				skipkeys=True,
+			),
+			reference_doctype=doc.doctype if doc else None,
+			reference_name=doc.name if doc else None,
+		)
 
 
 classname_doctype_map: dict[str, str] = {}

@@ -6,13 +6,14 @@
  "engine": "InnoDB",
  "field_order": [
   "title",
+  "llm",
   "column_break_dagd",
   "is_enabled",
   "instruction_section",
   "instruction",
   "tools",
   "trigger_section",
-  "target",
+  "target_doctype",
   "event",
   "get_context"
  ],
@@ -27,15 +28,6 @@
    "fieldname": "trigger_section",
    "fieldtype": "Section Break",
    "label": "Trigger"
-  },
-  {
-   "description": "On which DocType should this task be invoked.",
-   "fieldname": "target",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Target",
-   "options": "DocType",
-   "reqd": 1
   },
   {
    "description": "After which event of the selected DocType should the task be invoked.",
@@ -81,11 +73,33 @@
    "fieldtype": "Table",
    "label": "Tools",
    "options": "Otto Task Tool CT"
+  },
+  {
+   "description": "On which DocType should this task be invoked.",
+   "fieldname": "target_doctype",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Target DocType",
+   "options": "DocType",
+   "reqd": 1
+  },
+  {
+   "default": "OpenAI GPT-4.1",
+   "description": "Which LLM to use to handle the task.\n<br><br>\nNote: ensure the appropriate API key has been set in <b>Otto Settings</b>, else execution will fail.",
+   "fieldname": "llm",
+   "fieldtype": "Select",
+   "label": "LLM",
+   "options": "Anthropic Claude Haiku 3.5\nAnthropic Claude Sonnet 3.7\nOpenAI o3\nOpenAI o4 mini\nOpenAI GPT-4o\nOpenAI GPT-4o mini\nOpenAI GPT-4.1\nOpenAI GPT-4.1 mini\nOpenAI GPT-4.1 nano"
   }
  ],
  "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2025-05-22 10:44:14.567485",
+ "links": [
+  {
+   "link_doctype": "Otto Execution",
+   "link_fieldname": "task"
+  }
+ ],
+ "modified": "2025-05-22 12:59:52.131107",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Task",

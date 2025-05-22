@@ -32,13 +32,13 @@ end_task_tool = {
 	"type": "function",
 	"function": {
 		"name": "end_task",
-		"description": "Use this tool to indicate the completion of a task.",
+		"description": "Use this tool to indicate the completion of this task. It should be called only once after the task has completed.",
 		"parameters": {
 			"type": "object",
 			"properties": {
 				"explanation": {
 					"type": "string",
-					"description": "A short explanation of why the this tool is being called.",
+					"description": "Short explanation of why the task is being marked as completed.",
 				}
 			},
 			"required": ["explanation"],

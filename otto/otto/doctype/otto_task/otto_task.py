@@ -11,6 +11,8 @@ from frappe.model.document import Document
 import otto
 from otto.otto.doctype.otto_task.tools import meta_tools
 
+logger = otto.logger("otto_task")
+
 EVENT_MAP = {
 	"after_insert": "On Create",
 	"on_update": "On Update",
@@ -36,7 +38,18 @@ class OttoTask(Document):
 		get_context: DF.Code | None
 		instruction: DF.Code | None
 		is_enabled: DF.Check
-		target: DF.Link
+		llm: DF.Literal[
+			"Anthropic Claude Haiku 3.5",
+			"Anthropic Claude Sonnet 3.7",
+			"OpenAI o3",
+			"OpenAI o4 mini",
+			"OpenAI GPT-4o",
+			"OpenAI GPT-4o mini",
+			"OpenAI GPT-4.1",
+			"OpenAI GPT-4.1 mini",
+			"OpenAI GPT-4.1 nano",
+		]
+		target_doctype: DF.Link
 		title: DF.Data | None
 		tools: DF.Table[OttoTaskToolCT]
 	# end: auto-generated types
@@ -48,63 +61,58 @@ class OttoTask(Document):
 		return doc
 
 	@frappe.whitelist()
-	def handle(self, target_doctype: Document):
-		# Used to test from the Task doc's desk formview.
-		assert self.name is not None, "type check"
-		otto.logger(self).info(
-			{
-				"message": "handle called",
-				"doctype": target_doctype.doctype,
-				"name": target_doctype.name,
-				"event": "Manual",
-			}
-		)
-
-		frappe.enqueue(
-			handler,
-			queue="default",
-			name=self.name,
-			target_doctype=target_doctype,
-			target_event="Manual",
-		)
-
-	@frappe.whitelist()
-	def run_task_execution(self, target_doctype: Document):
+	def run_task_execution(self, target: str):
 		from otto.otto.doctype.otto_execution.otto_execution import OttoExecution
 
 		assert self.name is not None, "type check"
-		execution = OttoExecution.new(self.name)
+		execution = OttoExecution.new(
+			self.name,
+			target=target,
+			target_doctype=self.target_doctype,
+			event="Manual",
+		)
 		frappe.db.commit()
 
-		frappe.enqueue(
-			execution.execute,
-			queue="default",
+		frappe.enqueue_doc(
+			doctype="Otto Execution",
 			name=execution.name,
-			target_doctype=target_doctype,
-			target_event="Manual",
+			method="execute",
+			timeout=1800,
 		)
 		return execution.name
 
 	@frappe.whitelist()
-	def test_get_context(self, name: str):
+	def test_get_context(self, target: str):
 		from otto.utils.execute import run_get_context
 
 		assert self.get_context is not None, "type check"
-
 		return run_get_context(
 			self.get_context,
-			doc=frappe.get_doc(self.target, name),
+			doc=frappe.get_doc(self.target_doctype, target),
 			event="Manual",
 		)
 
+	@frappe.whitelist()
+	def list_tools(self):
+		assert self.name is not None, "type check"
+		return get_tools(self.name)
 
-def handler(name: str, target_doctype: Document, target_event: str | None = None):
+
+def handler(name: str, doc: Document, event: str | None = None):
 	"""
 	Handler function is used to handle the Otto Task.
 	"""
 	from otto.otto.doctype.otto_execution.otto_execution import OttoExecution
 
-	return OttoExecution.new(name).execute(target_doctype, target_event)
+	assert doc.name is not None, "typecheck"
+	execution = OttoExecution.new(
+		name,
+		target=doc.doctype,
+		target_doctype=doc.name,
+		event=event,
+	)
+	frappe.db.commit()
+	return execution.execute()
 
 
 def common_handler(doctype: Document, event: str | None = None):
@@ -124,7 +132,7 @@ def common_handler(doctype: Document, event: str | None = None):
 		filters={"target": doctype.doctype, "event": event_label},
 		pluck="name",
 	):
-		otto.logger("otto.task").info(
+		logger.info(
 			{
 				"message": "handler enqueued",
 				"otto_task": name,
@@ -135,25 +143,25 @@ def common_handler(doctype: Document, event: str | None = None):
 		)
 		frappe.enqueue(
 			handler,
-			queue="default",
+			timeout=1800,
+			# Args
 			name=name,
-			target_doctype=doctype,
-			target_event=event_label,
+			doc=doctype,
+			event=event_label,
 		)
 
 
 def get_tools(task: str):
 	from otto.otto.doctype.otto_tool.otto_tool import OttoTool
 
-	tools = frappe.get_all(
-		"Otto Task Tool",
+	tools = []
+	for tool in frappe.get_all(
+		"Otto Task Tool CT",
 		filters={"parent": task},
 		pluck="tool",
-	)
-
-	tools = []
-	for tool in tools:
+	):
 		tool_doc = otto.get(OttoTool, tool)
+		print(tool_doc.is_valid, tool_doc.get_function_schema())
 		if not tool_doc.is_valid:
 			continue
 

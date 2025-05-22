@@ -4,16 +4,19 @@ from __future__ import annotations
 
 # import frappe
 import json
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import frappe
 from frappe.model.document import Document
 
 import otto
 from otto import llm
+from otto.llm.types import ToolUseContent
 from otto.otto.doctype.otto_task.otto_task import get_tools
 from otto.otto.doctype.otto_task.tools import has_task_ended, is_meta_tool
 from otto.utils.execute import run_get_context
+
+logger = otto.logger("otto_execution")
 
 if TYPE_CHECKING:
 	from otto.llm.types import Exchange, ExchangeItem
@@ -28,32 +31,37 @@ class OttoExecution(Document):
 	if TYPE_CHECKING:
 		from frappe.types import DF
 
+		event: DF.Data | None
 		execution: DF.JSON | None
+		llm: DF.Data | None
 		reason: DF.SmallText | None
 		status: DF.Literal["Pending", "Running", "Success", "Failure"]
+		target: DF.DynamicLink
+		target_doctype: DF.Link
 		task: DF.Link
 	# end: auto-generated types
 
 	@staticmethod
-	def new(task: str):
+	def new(task: str, *, target: str, target_doctype: str, event: str | None = None):
 		doc = cast(OttoExecution, frappe.get_doc({"doctype": "Otto Execution", "task": task}))
+
+		if target and event:
+			doc.target_doctype = target_doctype
+			doc.target = target
+			doc.event = event
+
 		doc.save()
 		return doc
 
-	def execute(self, doc: Document, event: str | None = None):
-		otto.logger(self).info(
-			{
-				"message": "execute called",
-				"name": self.name,
-				"task": self.task,
-			}
-		)
+	def execute(self):
+		doc = frappe.get_doc(self.target_doctype, self.target)
 		self.set_status("Running")
-		if not (context := self.get_context(doc, event)):
+		if not (context := self.get_context(doc, self.event)):
 			return
 
-		otto.logger(self).info(
+		logger.info(
 			{
+				"execution": self.name,
 				"message": "system rendered",
 				"name": self.name,
 				"context": context,
@@ -68,17 +76,19 @@ class OttoExecution(Document):
 				context,  # type: ignore needed cause not strong enough type system
 				exchange=exchange,
 				tools=get_tools(self.task),
-				model="claude-3-7-sonnet-latest",
+				model=self.llm,
 				system=self.get_instruction(),
 			)
-		except Exception as e:
-			otto.logger(self).error(
+			logger.info(
 				{
-					"message": "interact error",
-					"name": self.name,
-					"error": e,
+					"execution": self.name,
+					"message": "interact success",
+					"exchange_size": interaction and len(interaction["update"]),
+					"item": interaction and interaction["item"],
 				}
 			)
+		except Exception as e:
+			otto.log_error(title="interact error", doc=self)
 			self.set_status("Failure", f"Interaction errored out: {e}")
 			return
 
@@ -89,18 +99,17 @@ class OttoExecution(Document):
 		self.set_execution(interaction["update"])
 
 		item = interaction["item"]
-		if item["meta"]["end_reason"] == "turn_end":
-			return self.set_status("Success")
-
 		if self.run_tools(item, interaction["update"]):
 			return self.set_status("Success")
+
+		# if item["meta"]["end_reason"] == "turn_end":
+		# 	return self.set_status("Success")
 
 		self.loop(None)
 
 	def run_tools(self, item: ExchangeItem, exchange: Exchange):
 		"""Runs tools and checks if meta tool end_task is used"""
 		from otto.otto.doctype.otto_task.otto_task import OttoTask
-		from otto.otto.doctype.otto_tool.otto_tool import OttoTool
 
 		task = otto.get(OttoTask, self.task)
 		tools = {tool.slug: tool for tool in task.tools}
@@ -110,33 +119,16 @@ class OttoExecution(Document):
 		content = sorted(item["content"], key=lambda x: is_meta_tool(x))
 
 		for content in item["content"]:
-			if content["type"] != "tool_result":
+			if content["type"] != "tool_use":
 				continue
 
+			result = None
+			is_error = False
 			if is_meta_tool(content):
 				task_ended = task_ended or has_task_ended(content)
-				continue
-
-			slug = content["name"]
-			tool_name = tools[slug].tool
-			tool_doc = otto.get(OttoTool, tool_name)
-			result = None
-
-			try:
-				result = tool_doc.execute(content["args"])["result"]
-				is_error = False
-			except Exception as e:
-				otto.logger(self).error(
-					{
-						"message": "tool use error",
-						"tool": tool_name,
-						"slug": content["name"],
-						"name": self.name,
-						"error": e,
-					}
-				)
-				is_error = True
-				result = str(e)
+			else:
+				tool_name = tools[content["name"]].tool
+				result, is_error = self.execute_tool(tool_name, content["args"])
 
 			llm.update_with_tool_result(exchange=exchange, result=result, id=content["id"], is_error=is_error)
 			self.set_execution(exchange)
@@ -155,13 +147,7 @@ class OttoExecution(Document):
 		try:
 			context = run_get_context(get_context, doc, event)
 		except Exception as e:
-			otto.logger(self).error(
-				{
-					"message": "set_context error",
-					"name": self.name,
-					"error": e,
-				}
-			)
+			otto.log_error(title="get_context error", doc=self)
 			self.set_status("Failure", str(e))
 			return None
 
@@ -181,3 +167,22 @@ class OttoExecution(Document):
 		self.reason = reason
 		self.save(ignore_permissions=True, ignore_version=True)
 		frappe.db.commit()
+
+	def execute_tool(self, tool_name: str, args: dict) -> tuple[Any, bool]:
+		"""Executes tool and returns tuple of (result, is_error)"""
+		from otto.otto.doctype.otto_tool.otto_tool import OttoTool
+
+		tool_doc = otto.get(OttoTool, tool_name)
+
+		try:
+			return tool_doc.execute(args)["result"], False
+		except Exception as e:
+			logger.error(
+				{
+					"execution": self.name,
+					"message": "tool use error",
+					"tool": tool_name,
+					"error": e,
+				}
+			)
+			return str(e), True

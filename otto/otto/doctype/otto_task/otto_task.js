@@ -3,50 +3,7 @@
 
 frappe.ui.form.on("Otto Task", {
 	refresh(frm) {
-		if (!frm.doc.target || !frm.doc.get_context) return;
-
-		// Test Get Context
-		frm.add_custom_button(__("Test Get Context"), () => {
-			const dialog = new frappe.ui.Dialog({
-				title: __("Test Get Context"),
-				fields: [
-					{
-						fieldname: "message",
-						fieldtype: "HTML",
-						options: `<div>Execute <code>get_context</code> with selected doc (with event as Manual) and display output.</div>`,
-					},
-					{
-						fieldname: "spacer",
-						fieldtype: "HTML",
-						options: `<br>`,
-					},
-					{
-						fieldname: "doc_name",
-						label: __("Target Doc"),
-						fieldtype: "Link",
-						options: frm.doc.target,
-						reqd: 1,
-					},
-				],
-				primary_action_label: __("Test"),
-				primary_action(values) {
-					frappe.call({
-						method: "test_get_context",
-						doc: frm.doc,
-						args: {
-							name: values.doc_name,
-						},
-						callback: function (r) {
-							if (r.message)
-								frappe.msgprint(`<pre>${r.message}</pre>`, __("Context"));
-							else frappe.msgprint(`No context`, __("Context"));
-						},
-					});
-					dialog.hide();
-				},
-			});
-			dialog.show();
-		});
+		if (!frm.doc.target_doctype || !frm.doc.get_context) return;
 
 		// Run Task Execution
 		frm.add_custom_button(__("Run Task Execution"), () => {
@@ -64,10 +21,10 @@ frappe.ui.form.on("Otto Task", {
 						options: `<br>`,
 					},
 					{
-						fieldname: "doc_name",
+						fieldname: "target",
 						label: __("Target Doc"),
 						fieldtype: "Link",
-						options: frm.doc.target,
+						options: frm.doc.target_doctype,
 						reqd: 1,
 					},
 				],
@@ -77,7 +34,7 @@ frappe.ui.form.on("Otto Task", {
 						method: "run_task_execution",
 						doc: frm.doc,
 						args: {
-							target_doctype: values.doc_name,
+							target: values.target,
 						},
 						callback: function (r) {
 							if (r.message) {
@@ -100,5 +57,70 @@ frappe.ui.form.on("Otto Task", {
 			});
 			run_dialog.show();
 		});
+
+		// Test Get Context
+		frm.add_custom_button(
+			__("Test Get Context"),
+			() => {
+				const dialog = new frappe.ui.Dialog({
+					title: __("Test Get Context"),
+					fields: [
+						{
+							fieldname: "message",
+							fieldtype: "HTML",
+							options: `<div>Execute <code>get_context</code> with selected doc (with event as Manual) and display output.</div>`,
+						},
+						{
+							fieldname: "spacer",
+							fieldtype: "HTML",
+							options: `<br>`,
+						},
+						{
+							fieldname: "target",
+							label: __("Target Doc"),
+							fieldtype: "Link",
+							options: frm.doc.target_doctype,
+							reqd: 1,
+						},
+					],
+					primary_action_label: __("Test"),
+					primary_action(values) {
+						frappe.call({
+							method: "test_get_context",
+							doc: frm.doc,
+							args: {
+								target: values.target,
+							},
+							callback: function (r) {
+								if (r.message)
+									frappe.msgprint(`<pre>${r.message}</pre>`, __("Context"));
+								else frappe.msgprint(`No context`, __("Context"));
+							},
+						});
+						dialog.hide();
+					},
+				});
+				dialog.show();
+			},
+			"Utils"
+		);
+
+		// List Tools
+		frm.add_custom_button(
+			__("List Tool Schemas"),
+			() => {
+				frappe.call({
+					method: "list_tools",
+					doc: frm.doc,
+					callback: function (r) {
+						frappe.msgprint(
+							`<pre>${JSON.stringify(r.message, null, 2)}</pre>`,
+							__("Tools")
+						);
+					},
+				});
+			},
+			"Utils"
+		);
 	},
 });

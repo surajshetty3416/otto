@@ -7,8 +7,14 @@
  "field_order": [
   "task",
   "status",
+  "llm",
   "column_break_seuy",
   "reason",
+  "section_break_wljf",
+  "target",
+  "event",
+  "column_break_ivzi",
+  "target_doctype",
   "section_break_excj",
   "execution"
  ],
@@ -23,7 +29,8 @@
   },
   {
    "fieldname": "section_break_excj",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Execution"
   },
   {
    "default": "Pending",
@@ -48,11 +55,45 @@
   {
    "fieldname": "column_break_seuy",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_wljf",
+   "fieldtype": "Section Break",
+   "label": "Target"
+  },
+  {
+   "fieldname": "event",
+   "fieldtype": "Data",
+   "label": "Event"
+  },
+  {
+   "fieldname": "target",
+   "fieldtype": "Dynamic Link",
+   "label": "Target",
+   "options": "target_doctype",
+   "reqd": 1
+  },
+  {
+   "fieldname": "target_doctype",
+   "fieldtype": "Link",
+   "label": "Target DocType",
+   "options": "DocType",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_ivzi",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "task.llm",
+   "fieldname": "llm",
+   "fieldtype": "Data",
+   "label": "LLM"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-04-29 22:27:55.613910",
+ "modified": "2025-05-22 12:47:41.904112",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Execution",
