@@ -102,7 +102,7 @@ frappe.ui.form.on("Otto Task", {
 				});
 				dialog.show();
 			},
-			"Utils"
+			"Dev Utils"
 		);
 
 		// List Tools
@@ -120,7 +120,7 @@ frappe.ui.form.on("Otto Task", {
 					},
 				});
 			},
-			"Utils"
+			"Dev Utils"
 		);
 	},
 });

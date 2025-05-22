@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 def logger(name: str | Document):
-	frappe.utils.logger.set_log_level("INFO")
+	frappe.utils.logger.set_log_level("DEBUG")
 	if not isinstance(name, str):
 		doc = name
 		name = doc.doctype.lower().replace(" ", ".")

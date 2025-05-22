@@ -164,6 +164,14 @@ def interact(
 		_end_time: datetime,
 	):
 		usage = completion_response.get("usage", {})
+		logger.debug(
+			{
+				"message": "callback called",
+				"id": item["id"],
+				"usage": usage.get("completion_tokens"),
+				"end_reason": completion_response.get("choices", [{}])[0].get("finish_reason"),
+			}
+		)
 		if usage.get("completion_tokens") is None or usage.get("prompt_tokens") is None:
 			return  # Test based heuristic on when callback is final
 
@@ -175,6 +183,7 @@ def interact(
 		item["meta"]["cost"] = kwargs.get("standard_logging_object", {}).get("response_cost", None)
 		item["content"] = _get_content(completion_response)
 		item["meta"]["end_reason"] = end_reason
+		logger.debug({"message": "callback done set", "id": item["id"]})
 		done.set()
 
 	litellm.success_callback = [success_callback]
@@ -191,6 +200,7 @@ def interact(
 		think["reasoning_effort"] = thinking_effort
 		think["thinking"] = _get_thinking(thinking_effort)
 
+	logger.debug({"message": "calling litellm.completion", "id": item["id"]})
 	completion = litellm.completion(
 		model=model_id,
 		messages=messages,
@@ -207,6 +217,7 @@ def interact(
 	# Iterates over the completion stream and returns a list of ContentChunk
 	chunks, signature = _stream(completion, item, exchange_id)
 
+	logger.debug({"message": "waiting for callback", "id": item["id"]})
 	# Wait until the success callback is called
 	done.wait()
 
@@ -217,6 +228,7 @@ def interact(
 			if c["type"] == "thinking":
 				c["signature"] = signature
 
+	logger.debug({"message": "updating exchange", "id": item["id"]})
 	# Update the update exchange with the item
 	update_exchange(update, last_id, item)
 
@@ -331,8 +343,8 @@ def _stream_chunk(chunk: ModelResponseStream, item_id: str, exchange_id: str | N
 
 
 def _get_end_reason(completion_response: dict):
-	comp = completion_response.get("choices", [])[0]
-	if comp.get("finish_reason") == "tool_use":
+	comp = completion_response.get("choices", [{}])[0]
+	if comp.get("finish_reason") == "tool_use" or comp.get("finish_reason") == "tool_calls":
 		return "tool_use"
 
 	if comp.get("finish_reason") == "stop":
