@@ -55,8 +55,11 @@ class OttoTask(Document):
 	# end: auto-generated types
 
 	@staticmethod
-	def new(target: str, event: str):
-		doc = cast(OttoTask, frappe.get_doc({"doctype": "Otto Task", "target": target, "event": event}))
+	def new(target_doctype: str, event: str):
+		doc = cast(
+			OttoTask,
+			frappe.get_doc({"doctype": "Otto Task", "target_doctype": target_doctype, "event": event}),
+		)
 		doc.save()
 		return doc
 
@@ -121,7 +124,7 @@ def common_handler(doctype: Document, event: str | None = None):
 	event. When an Otto Task is created or updated, the otto.hooks.doc_events is
 	updated with for the given doctype and event is updated with this function.
 	"""
-	if not event or event not in EVENT_MAP:
+	if not otto.is_enabled() or not event or event not in EVENT_MAP:
 		return
 
 	event_label = EVENT_MAP[event]
@@ -129,7 +132,7 @@ def common_handler(doctype: Document, event: str | None = None):
 	# TODO: Cache this get_all call, update only every 5 minutes or something
 	for name in frappe.db.get_all(
 		"Otto Task",
-		filters={"target": doctype.doctype, "event": event_label},
+		filters={"target_doctype": doctype.doctype, "event": event_label},
 		pluck="name",
 	):
 		logger.info(

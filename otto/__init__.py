@@ -108,3 +108,7 @@ def get_doctype_name(doc: type[D]) -> str:
 		classname_doctype_map[doctype.replace(" ", "").replace("-", "")] = doctype
 
 	return classname_doctype_map[classname]
+
+
+def is_enabled() -> bool:
+	return bool(frappe.get_cached_value("Otto Settings", "Otto Settings", "is_enabled"))
