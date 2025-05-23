@@ -38,17 +38,7 @@ class OttoTask(Document):
 		get_context: DF.Code | None
 		instruction: DF.Code | None
 		is_enabled: DF.Check
-		llm: DF.Literal[
-			"Anthropic Claude Haiku 3.5",
-			"Anthropic Claude Sonnet 3.7",
-			"OpenAI o3",
-			"OpenAI o4 mini",
-			"OpenAI GPT-4o",
-			"OpenAI GPT-4o mini",
-			"OpenAI GPT-4.1",
-			"OpenAI GPT-4.1 mini",
-			"OpenAI GPT-4.1 nano",
-		]
+		llm: DF.Literal["Anthropic Claude Haiku 3.5", "Anthropic Claude Sonnet 3.7", "Anthropic Claude Sonnet 4", "Anthropic Claude Opus 4", "OpenAI o3", "OpenAI o4 mini", "OpenAI GPT-4o", "OpenAI GPT-4o mini", "OpenAI GPT-4.1", "OpenAI GPT-4.1 mini", "OpenAI GPT-4.1 nano"]
 		target_doctype: DF.Link
 		title: DF.Data | None
 		tools: DF.Table[OttoTaskToolCT]

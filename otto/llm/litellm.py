@@ -68,6 +68,8 @@ map = {
 	# Anthropic
 	"Anthropic Claude Haiku 3.5": "anthropic/claude-3-5-haiku-latest",
 	"Anthropic Claude Sonnet 3.7": "anthropic/claude-3-7-sonnet-latest",
+	"Anthropic Claude Sonnet 4": "anthropic/claude-sonnet-4-20250514",
+	"Anthropic Claude Opus 4": "anthropic/claude-opus-4-20250514",
 	# OpenAI
 	"OpenAI o3": "openai/o3",
 	"OpenAI o4 mini": "openai/o4-mini",

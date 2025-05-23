@@ -89,7 +89,7 @@
    "fieldname": "llm",
    "fieldtype": "Select",
    "label": "LLM",
-   "options": "Anthropic Claude Haiku 3.5\nAnthropic Claude Sonnet 3.7\nOpenAI o3\nOpenAI o4 mini\nOpenAI GPT-4o\nOpenAI GPT-4o mini\nOpenAI GPT-4.1\nOpenAI GPT-4.1 mini\nOpenAI GPT-4.1 nano"
+   "options": "Anthropic Claude Haiku 3.5\nAnthropic Claude Sonnet 3.7\nAnthropic Claude Sonnet 4\nAnthropic Claude Opus 4\nOpenAI o3\nOpenAI o4 mini\nOpenAI GPT-4o\nOpenAI GPT-4o mini\nOpenAI GPT-4.1\nOpenAI GPT-4.1 mini\nOpenAI GPT-4.1 nano"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -99,7 +99,7 @@
    "link_fieldname": "task"
   }
  ],
- "modified": "2025-05-22 12:59:52.131107",
+ "modified": "2025-05-23 07:46:15.442998",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Task",
