@@ -41,28 +41,66 @@ class OttoTool(Document):
 	# end: auto-generated types
 
 	def before_save(self):
-		descriptions = {a.arg_name: a.description for a in (self.args or [])}
 		reasons, args_def = execute.validate(self.code, self.slug)
 		if reasons:
-			self.is_valid = False
-			self.reason = "\n".join(reasons)
-			return
+			return self.set_reason("\n".join(reasons))
 
 		self.is_valid = True
 		self.reason = None
 
+		self.set_args(args_def)
+		self.validate_arg_types()
+		self.validate_descriptions()
+
+	def set_args(self, args_def: list[execute.ArgDefinition]):
+		prev_meta = {a.arg_name: (a.type, a.description) for a in (self.args or [])}
+
 		# Reset to prevent dupes
 		self.args = []
 		for arg in args_def:
+			arg_type = arg_type_to_json_type.get(arg["type"], "unknown")
+
+			if arg_type == "unknown":
+				arg_type = prev_meta.get(arg["name"], ("unknown", ""))[0]
+
+			if arg_type == "unknown":
+				self.set_reason(f"Could not infer JSON type for argument: {arg['name']}")
+
 			self.append(
 				"args",
 				{
 					"arg_name": arg["name"],
-					"type": arg_type_to_json_type[arg["type"]],
-					"description": descriptions.get(arg["name"], ""),
+					"type": arg_type,
+					"description": prev_meta.get(arg["name"], ("", ""))[1],
 					"is_required": not arg["has_default"],
 				},
 			)
+
+	def validate_arg_types(self):
+		valid_types = ["string", "integer", "number", "boolean", "array", "object"]
+		for arg in self.args:
+			if arg.type in valid_types:
+				continue
+
+			self.set_reason(
+				f"Invalid JSON type for {arg.arg_name}: {arg.type}, please specify valid type from {valid_types}"
+			)
+
+	def validate_descriptions(self):
+		if not self.description:
+			self.is_valid = False
+			self.set_reason("Tool description missing")
+
+		for arg in self.args:
+			if arg.description:
+				continue
+
+			self.set_reason(f"Description missing for argument: {arg.arg_name}")
+
+	def set_reason(self, reason: str):
+		self.reason = self.reason or ""
+		self.reason = "\n".join(self.reason.splitlines() + [reason])
+		self.is_valid = False
 
 	@frappe.whitelist()
 	def get_function_schema(self):
@@ -93,8 +131,8 @@ class OttoTool(Document):
 			"function": schema,
 		}
 
-	def execute(self, args: dict[str, Any]):
-		if not self.is_valid:
+	def execute(self, args: dict[str, Any], force: bool = False):
+		if not self.is_valid and not force:
 			raise ValidationError("tool is invalid: " + (self.reason or ""))
 
 		arg_names = []
@@ -107,7 +145,7 @@ class OttoTool(Document):
 	@frappe.whitelist()
 	def test_execute(self, args: dict[str, Any]):
 		try:
-			result = dict(self.execute(args))
+			result = dict(self.execute(args, force=True))
 			if not result["stdout"]:
 				del result["stdout"]
 

@@ -18,7 +18,8 @@
  ],
  "fields": [
   {
-   "description": "Code to be used as a tool, should have a function <code>main</code>.\n<br><br>\nNote: Certain import statements are allowed but attribute access is not allowed. So to use an imported value import the item instead of the module.\n<br>\nEg: <code>from requests import get</code> instead of <code>import requests</code>",
+   "default": "def main(name: str):\n    return f\"Hello {name}\"",
+   "description": "Tool definition consists of a function <code>main</code>. Return value of this\n<code>main</code> function is passed to the LLM.\n\n<br><br>\n<b>Tool definition guidelines</b>\n<ul>\n    <li>Tool definition should have a valid Python function named <code>main</code>.</li>\n    <li>Use <code>from module import item</code> instead of <code>import module</code>.</li>\n    <li>Not all imports are allowed, test the function to find out if the import works.</li>\n    <li>Use simple type annotations to infer JSON schema type for the arguments.</li>\n    <li>Complex types like <code>str | int</code> cannot be inferred from.</li>\n</ul>",
    "fieldname": "code",
    "fieldtype": "Code",
    "in_list_view": 1,
@@ -27,7 +28,6 @@
    "reqd": 1
   },
   {
-   "description": "Tool definition can either be a custom function defined in Code or an existing function pointed to by Path.",
    "fieldname": "definition_section",
    "fieldtype": "Section Break",
    "label": "Definition"
@@ -38,20 +38,20 @@
    "label": "Description"
   },
   {
-   "description": "Tool description of how the tool is to be called, and what return value should be expected.",
+   "description": "Tool description should consist the following information:\n\n<ul>\n    <li>What function does tool perform</li>\n    <li>How to interpret the return value if if required</li>\n</ul>",
    "fieldname": "description",
    "fieldtype": "Long Text",
    "label": "Description"
   },
   {
-   "description": "If the <code>main</code> function in <b>Code</b> is has type annotations, this list can be auto generated. Arg descriptions still need to be added.",
+   "description": "Arg descriptions should tell then LLM what the argument is for. If needed it should also describe its structure (if a nested data type is used).\n<br><br>\nIf the <code>main</code> function in <b>Code</b> is has type annotations, this list can be auto generated. If the type annotations are complex, the type will be set as <code>unknown</code> this should be overridden with a valid JSON type. Ref: <a href=\"https://json-schema.org/understanding-json-schema/reference/type\">JSON Schema Types</a>",
    "fieldname": "args",
    "fieldtype": "Table",
    "label": "Args",
    "options": "Otto Tool Arg CT"
   },
   {
-   "description": "Snake cased name of the tool",
+   "description": "Snake cased name of the tool. This is the name that the LLM sees.",
    "fieldname": "slug",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -66,6 +66,7 @@
   },
   {
    "default": "0",
+   "description": "If tool is invalid and is included in a task, task execution will fail.",
    "fieldname": "is_valid",
    "fieldtype": "Check",
    "label": "Is Valid"
@@ -84,7 +85,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-04-30 14:48:49.465986",
+ "modified": "2025-05-23 10:32:12.128715",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Tool",
@@ -103,6 +104,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],

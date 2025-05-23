@@ -70,8 +70,18 @@ class OttoExecution(Document):
 		self.loop(context)
 
 	def validate(self):
-		# TODO: check that all tools are valid
-		...
+		tool_names = frappe.get_all("Otto Task Tool CT", filters={"parent": self.task}, pluck="tool")
+		tools = frappe.get_all("Otto Tool", filters={"name": ("in", tool_names)}, fields=["slug", "is_valid"])
+
+		reasons = []
+
+		for tool in tools:
+			if tool.is_valid:
+				continue
+			reasons.append(f"Tool {tool.slug} is not valid")
+
+		if reasons:
+			self.set_status("Failure", "\n".join(reasons))
 
 	def loop(self, context: str | list[str] | None = None):
 		exchange = json.loads(self.execution) if self.execution else None
