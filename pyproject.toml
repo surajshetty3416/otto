@@ -1,14 +1,13 @@
 [project]
 name = "otto"
-authors = [
-    { name = "Alan Tom", email = "alan@frappe.io"}
-]
+authors = [{ name = "Alan Tom", email = "alan@frappe.io" }]
 description = "Test app to validate ideas in Flow"
 requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
     # "frappe~=15.0.0" # Installed and managed by bench.
+    "litellm>=1.71.1",
 ]
 
 [build-system]
@@ -24,14 +23,7 @@ line-length = 110
 target-version = "py310"
 
 [tool.ruff.lint]
-select = [
-    "F",
-    "E",
-    "W",
-    "I",
-    "UP",
-    "B",
-]
+select = ["F", "E", "W", "I", "UP", "B"]
 ignore = [
     "B017", # assertRaises(Exception) - should be more specific
     "B018", # useless expression, not assigned to anything

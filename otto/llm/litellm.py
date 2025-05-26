@@ -55,7 +55,7 @@ if TYPE_CHECKING:
 	from litellm.types.utils import ModelResponseStream
 
 
-DEFAULT_LLM = "OpenAI GPT-4.1 nano"
+DEFAULT_LLM = "openai/gpt-4.1-mini"
 
 logger = otto.logger("otto_litellm")
 thinking_budget_map: dict[ThinkingEffort, int] = {
@@ -64,31 +64,12 @@ thinking_budget_map: dict[ThinkingEffort, int] = {
 	"high": 32000,
 }
 
-map = {
-	# Anthropic
-	"Anthropic Claude Haiku 3.5": "anthropic/claude-3-5-haiku-latest",
-	"Anthropic Claude Sonnet 3.7": "anthropic/claude-3-7-sonnet-latest",
-	"Anthropic Claude Sonnet 4": "anthropic/claude-sonnet-4-20250514",
-	"Anthropic Claude Opus 4": "anthropic/claude-opus-4-20250514",
-	# OpenAI
-	"OpenAI o3": "openai/o3",
-	"OpenAI o4 mini": "openai/o4-mini",
-	# GPT 4o
-	"OpenAI GPT-4o": "openai/gpt-4o",
-	"OpenAI GPT-4o mini": "openai/gpt-4o-mini",
-	# GPT 4.1
-	"OpenAI GPT-4.1": "openai/gpt-4.1",
-	"OpenAI GPT-4.1 mini": "openai/gpt-4.1-mini",
-	"OpenAI GPT-4.1 nano": "openai/gpt-4.1-nano",
-}
-
 
 def interact(
 	# query should be None only if exchange is provided with a call call update
 	query: str | list[str | UserContent] | list[UserContent] | None = None,
 	*,
 	exchange: Exchange | None = None,
-	model: str | None = None,
 	model_id: str | None = None,
 	exchange_id: str | None = None,
 	system: str | None = None,
@@ -141,18 +122,15 @@ def interact(
 	)
 
 	content = None if query is None else to_content(query)
+	model_id = model_id or DEFAULT_LLM
 
 	# Creates a new exchange if exchange is None, else uses a copy
 	update = get_exchange(content, exchange)
 
-	if model_id is None:
-		model = model or DEFAULT_LLM
-		model_id = _get_model_id(model)
-
 	if reason := _set_key(model_id):
 		return None, reason
 
-	item = get_agent_item(model, model_id)
+	item = get_agent_item(model_id)
 	item["meta"]["start_time"] = time.time()
 
 	# Required cause of LiteLLM's spaghetti design
@@ -237,12 +215,6 @@ def interact(
 	item["meta"]["end_time"] = time.time()
 
 	return InteractResponse(item=item, update=update, chunks=chunks), None
-
-
-def _get_model_id(name: str):
-	if name not in map:
-		name = DEFAULT_LLM
-	return map[name]
 
 
 def _get_content(completion_response: dict):

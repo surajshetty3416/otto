@@ -47,7 +47,6 @@ type Content = TextContent | ThinkingContent | ToolUseContent | ImageContent | F
 class ExchangeMeta(TypedDict):
 	role: ExchangeRole
 	model_id: str | None  # If None then item is a human user
-	model: str | None
 
 	input_tokens: int
 	output_tokens: int

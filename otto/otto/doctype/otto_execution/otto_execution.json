@@ -87,8 +87,9 @@
   {
    "fetch_from": "task.llm",
    "fieldname": "llm",
-   "fieldtype": "Data",
-   "label": "LLM"
+   "fieldtype": "Link",
+   "label": "LLM",
+   "options": "Otto LLM"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -98,7 +99,7 @@
    "link_fieldname": "execution"
   }
  ],
- "modified": "2025-05-26 10:43:33.065864",
+ "modified": "2025-05-26 12:17:17.731711",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Execution",

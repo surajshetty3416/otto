@@ -92,7 +92,7 @@
    "link_fieldname": "tool"
   }
  ],
- "modified": "2025-05-26 10:47:19.679822",
+ "modified": "2025-05-26 12:30:28.492296",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Tool",
@@ -112,6 +112,7 @@
   }
  ],
  "row_format": "Dynamic",
+ "show_title_field_in_link": 1,
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],

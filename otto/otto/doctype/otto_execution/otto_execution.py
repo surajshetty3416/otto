@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 # import frappe
+import functools
 import json
 from typing import TYPE_CHECKING, Any, Literal, cast
 
@@ -33,7 +34,7 @@ class OttoExecution(Document):
 
 		event: DF.Data | None
 		execution: DF.JSON | None
-		llm: DF.Data | None
+		llm: DF.Link | None
 		reason: DF.SmallText | None
 		status: DF.Literal["Pending", "Running", "Success", "Failure"]
 		target: DF.DynamicLink
@@ -53,7 +54,7 @@ class OttoExecution(Document):
 		doc.save()
 		return doc
 
-	def execute(self):
+	def execute(self, llm: str | None = None):
 		doc = frappe.get_doc(self.target_doctype, self.target)
 		self.set_status("Running")
 		if not (context := self.get_context(doc, self.event)):
@@ -67,6 +68,8 @@ class OttoExecution(Document):
 				"context": context,
 			}
 		)
+
+		self.llm = llm or self.llm
 		self.loop(context)
 
 	def validate(self):
@@ -90,7 +93,7 @@ class OttoExecution(Document):
 				context,  # type: ignore needed cause not strong enough type system
 				exchange=exchange,
 				tools=get_tools(self.task),
-				model=self.llm,
+				model_id=self.llm,
 				system=self.get_instruction(),
 			)
 			logger.info(
@@ -126,7 +129,7 @@ class OttoExecution(Document):
 		from otto.otto.doctype.otto_task.otto_task import OttoTask
 
 		task = otto.get(OttoTask, self.task)
-		tools = {tool.slug: tool for tool in task.tools}
+		tool_map = get_tool_map(*[tool.tool for tool in task.tools if tool.tool])
 		task_ended = False
 
 		# Move meta tools to the end of the list
@@ -141,7 +144,7 @@ class OttoExecution(Document):
 			if is_meta_tool(content):
 				task_ended = task_ended or has_task_ended(content)
 			else:
-				tool_name = tools[content["name"]].tool
+				tool_name = tool_map[content["name"]]
 				result, is_error = self.execute_tool(tool_name, content["args"])
 
 			llm.update_with_tool_result(exchange=exchange, result=result, id=content["id"], is_error=is_error)
@@ -204,3 +207,10 @@ class OttoExecution(Document):
 				}
 			)
 			return str(e), True
+
+
+@functools.cache
+def get_tool_map(*names: str) -> dict[str, str]:
+	"""returns dict[slug, name]"""
+	tools = frappe.get_all("Otto Tool", filters={"name": ("in", names)}, fields=["slug", "name"])
+	return {tool.slug: tool.name for tool in tools}

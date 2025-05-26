@@ -25,6 +25,14 @@ frappe.ui.form.on("Otto Task", {
 						options: frm.doc.target_doctype,
 						reqd: 1,
 					},
+					{
+						fieldname: "llm",
+						label: __("LLM"),
+						fieldtype: "Link",
+						options: "Otto LLM",
+						default: frm.doc.llm,
+						reqd: 1,
+					},
 				],
 				primary_action_label: __("Run"),
 				primary_action(values) {
