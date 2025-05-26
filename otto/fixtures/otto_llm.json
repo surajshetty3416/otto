@@ -1,0 +1,90 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Otto LLM",
+  "modified": "2025-05-26 12:15:34.212492",
+  "name": "anthropic/claude-3-5-haiku-latest",
+  "provider": "Anthropic",
+  "title": "Anthropic Claude Haiku 3.5"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Otto LLM",
+  "modified": "2025-05-26 12:15:34.346730",
+  "name": "anthropic/claude-3-7-sonnet-latest",
+  "provider": "Anthropic",
+  "title": "Anthropic Claude Sonnet 3.7"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Otto LLM",
+  "modified": "2025-05-26 12:15:34.348250",
+  "name": "anthropic/claude-sonnet-4-20250514",
+  "provider": "Anthropic",
+  "title": "Anthropic Claude Sonnet 4"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Otto LLM",
+  "modified": "2025-05-26 12:15:34.349355",
+  "name": "anthropic/claude-opus-4-20250514",
+  "provider": "Anthropic",
+  "title": "Anthropic Claude Opus 4"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Otto LLM",
+  "modified": "2025-05-26 12:15:34.350579",
+  "name": "openai/o3",
+  "provider": "OpenAI",
+  "title": "OpenAI o3"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Otto LLM",
+  "modified": "2025-05-26 12:15:34.352013",
+  "name": "openai/o4-mini",
+  "provider": "OpenAI",
+  "title": "OpenAI o4 mini"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Otto LLM",
+  "modified": "2025-05-26 12:15:34.353442",
+  "name": "openai/gpt-4o",
+  "provider": "OpenAI",
+  "title": "OpenAI GPT-4o"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Otto LLM",
+  "modified": "2025-05-26 12:15:34.354892",
+  "name": "openai/gpt-4o-mini",
+  "provider": "OpenAI",
+  "title": "OpenAI GPT-4o mini"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Otto LLM",
+  "modified": "2025-05-26 12:15:34.356227",
+  "name": "openai/gpt-4.1",
+  "provider": "OpenAI",
+  "title": "OpenAI GPT-4.1"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Otto LLM",
+  "modified": "2025-05-26 12:15:34.358069",
+  "name": "openai/gpt-4.1-mini",
+  "provider": "OpenAI",
+  "title": "OpenAI GPT-4.1 mini"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Otto LLM",
+  "modified": "2025-05-26 12:15:34.359399",
+  "name": "openai/gpt-4.1-nano",
+  "provider": "OpenAI",
+  "title": "OpenAI GPT-4.1 nano"
+ }
+]
