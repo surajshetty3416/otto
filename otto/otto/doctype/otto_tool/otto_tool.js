@@ -4,7 +4,7 @@
 frappe.ui.form.on("Otto Tool", {
 	refresh(frm) {
 		// Add JSON Schema button to display the function schema
-		frm.add_custom_button("View Schema", () => {
+		function view_schema() {
 			frappe.call({
 				method: "get_function_schema",
 				doc: frm.doc,
@@ -20,9 +20,9 @@ frappe.ui.form.on("Otto Tool", {
 					}
 				},
 			});
-		});
+		}
 
-		frm.add_custom_button("Test Tool", () => {
+		function test_tool() {
 			// Create fields for the dialog based on the tool's arguments
 			let fields = [];
 			if (frm.doc.args && frm.doc.args.length) {
@@ -93,6 +93,12 @@ frappe.ui.form.on("Otto Tool", {
 				},
 			});
 			d.show();
-		});
+		}
+
+		frm.add_custom_button("View Schema", view_schema);
+		frm.add_custom_button("Test Tool", test_tool);
+
+		frappe.ui.keys.add_shortcut({ shortcut: "shift+v", action: view_schema });
+		frappe.ui.keys.add_shortcut({ shortcut: "shift+t", action: test_tool });
 	},
 });

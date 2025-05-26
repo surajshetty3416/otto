@@ -69,6 +69,8 @@
    "description": "If tool is invalid and is included in a task, task execution will fail.",
    "fieldname": "is_valid",
    "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Is Valid"
   },
   {
@@ -84,8 +86,13 @@
   }
  ],
  "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2025-05-23 10:32:12.128715",
+ "links": [
+  {
+   "link_doctype": "Otto Scrapbook",
+   "link_fieldname": "tool"
+  }
+ ],
+ "modified": "2025-05-26 10:47:19.679822",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Tool",

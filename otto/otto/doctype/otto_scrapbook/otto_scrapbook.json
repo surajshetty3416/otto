@@ -1,0 +1,92 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-05-26 10:34:06.415900",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "references_section",
+  "tool",
+  "execution",
+  "column_break_nqul",
+  "task",
+  "content_section",
+  "content"
+ ],
+ "fields": [
+  {
+   "fieldname": "execution",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Execution",
+   "options": "Otto Execution",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tool",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Tool",
+   "options": "Otto Tool",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_nqul",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "task",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Task",
+   "options": "Otto Task",
+   "read_only": 1
+  },
+  {
+   "fieldname": "references_section",
+   "fieldtype": "Section Break",
+   "label": "References"
+  },
+  {
+   "fieldname": "content_section",
+   "fieldtype": "Section Break",
+   "label": "Content"
+  },
+  {
+   "fieldname": "content",
+   "fieldtype": "Code",
+   "in_list_view": 1,
+   "label": "Content",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-05-26 10:48:35.789998",
+ "modified_by": "Administrator",
+ "module": "Otto",
+ "name": "Otto Scrapbook",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

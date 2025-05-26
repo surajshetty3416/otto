@@ -189,7 +189,11 @@ class OttoExecution(Document):
 		tool_doc = otto.get(OttoTool, tool_name)
 
 		try:
-			return tool_doc.execute(args)["result"], False
+			return tool_doc.execute(
+				args,
+				task=self.task,
+				execution=self.execution,
+			)["result"], False
 		except Exception as e:
 			logger.error(
 				{

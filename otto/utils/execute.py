@@ -39,13 +39,22 @@ if TYPE_CHECKING:
 Args = dict[str, Any]
 
 
-def execute(script: str, *, arg_names: list[str], args: Args) -> ExecutionResult:
-	script, globals = get_script_and_globals(script, args, arg_names)
+def execute(
+	script: str,
+	*,
+	arg_names: list[str],
+	args: Args,
+	globals: dict[str, Any] | None = None,
+) -> ExecutionResult:
+	script, _globals = get_script_and_globals(script, args, arg_names)
+
+	if globals is not None:
+		_globals.update(globals)
 
 	stdout = io.StringIO()
 	stderr = io.StringIO()
 	with capture_output(stdout, stderr):
-		result = safe_exec(script, globals)
+		result = safe_exec(script, _globals)
 	result = result[0][OUT_VAR_NAME]
 
 	return ExecutionResult(

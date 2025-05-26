@@ -9,6 +9,7 @@ import frappe
 from frappe.exceptions import ValidationError
 from frappe.model.document import Document
 
+from otto.otto.doctype.otto_tool import lib
 from otto.utils import execute
 
 arg_type_to_json_type = {
@@ -29,7 +30,6 @@ class OttoTool(Document):
 
 	if TYPE_CHECKING:
 		from frappe.types import DF
-
 		from otto.otto.doctype.otto_tool_arg_ct.otto_tool_arg_ct import OttoToolArgCT
 
 		args: DF.Table[OttoToolArgCT]
@@ -131,7 +131,19 @@ class OttoTool(Document):
 			"function": schema,
 		}
 
-	def execute(self, args: dict[str, Any], force: bool = False):
+	def execute(
+		self,
+		args: dict[str, Any],
+		*,
+		force: bool = False,
+		task: str | None = None,
+		execution: str | None = None,
+	):
+		"""Execute tool with given args.
+		- force: bypass validation
+		- task: task document name (for logging if needed)
+		- execution: execution document name (for logging if needed)
+		"""
 		if not self.is_valid and not force:
 			raise ValidationError("tool is invalid: " + (self.reason or ""))
 
@@ -140,7 +152,21 @@ class OttoTool(Document):
 			assert arg.arg_name is not None, "sanity check"
 			arg_names.append(arg.arg_name)
 
-		return execute.execute(self.code, args=args, arg_names=arg_names)
+		refs = frappe._dict(
+			{
+				"tool": self.name,
+				"task": task,
+				"execution": execution,
+			}
+		)
+		globals = dict(otto=lib.get_lib(), refs=refs)
+
+		return execute.execute(
+			self.code,
+			args=args,
+			arg_names=arg_names,
+			globals=globals,
+		)
 
 	@frappe.whitelist()
 	def test_execute(self, args: dict[str, Any]):
