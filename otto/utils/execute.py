@@ -362,7 +362,7 @@ def _is_safe_import(module_name: str) -> bool:
 	Returns:
 		True if the module is safe to import, False otherwise
 	"""
-	if "otto" in module_name:
+	if any(module_name.startswith(m + ".") for m in ["helpdesk"]):
 		return True
 
 	# List of allowed modules
