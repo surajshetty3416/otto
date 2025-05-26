@@ -12,10 +12,13 @@
   "instruction_section",
   "instruction",
   "tools",
+  "context_section",
+  "get_context",
   "trigger_section",
   "target_doctype",
   "event",
-  "get_context"
+  "column_break_adfe",
+  "condition"
  ],
  "fields": [
   {
@@ -90,6 +93,22 @@
    "fieldtype": "Select",
    "label": "LLM",
    "options": "Anthropic Claude Haiku 3.5\nAnthropic Claude Sonnet 3.7\nAnthropic Claude Sonnet 4\nAnthropic Claude Opus 4\nOpenAI o3\nOpenAI o4 mini\nOpenAI GPT-4o\nOpenAI GPT-4o mini\nOpenAI GPT-4.1\nOpenAI GPT-4.1 mini\nOpenAI GPT-4.1 nano"
+  },
+  {
+   "fieldname": "context_section",
+   "fieldtype": "Section Break",
+   "label": "Context"
+  },
+  {
+   "fieldname": "column_break_adfe",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "If set, task will be handled if the give Python expression evaluates to true.\n<br><br>\n<strong>Examples:</strong><br>\n<pre>doc.status == \"Open\"<br>doc.due_date == nowdate()<br>doc.total &gt; 40000</pre>",
+   "fieldname": "condition",
+   "fieldtype": "Code",
+   "label": "Condition",
+   "options": "Python"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -103,7 +122,7 @@
    "link_fieldname": "task"
   }
  ],
- "modified": "2025-05-26 10:43:13.007885",
+ "modified": "2025-05-26 11:36:49.392166",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Task",

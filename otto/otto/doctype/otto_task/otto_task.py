@@ -7,6 +7,7 @@ from typing import Any, cast
 
 import frappe
 from frappe.model.document import Document
+from frappe.utils.safe_exec import get_safe_globals
 
 import otto
 from otto.otto.doctype.otto_task.tools import meta_tools
@@ -31,8 +32,10 @@ class OttoTask(Document):
 
 	if TYPE_CHECKING:
 		from frappe.types import DF
+
 		from otto.otto.doctype.otto_task_tool_ct.otto_task_tool_ct import OttoTaskToolCT
 
+		condition: DF.Code | None
 		event: DF.Literal["On Create", "On Update", "On Delete", "On Submit", "On Cancel", "Manual"]
 		get_context: DF.Code | None
 		instruction: DF.Code | None
@@ -97,6 +100,7 @@ def handler(name: str, doc: Document, event: str | None = None):
 	from otto.otto.doctype.otto_execution.otto_execution import OttoExecution
 
 	assert doc.name is not None, "typecheck"
+
 	execution = OttoExecution.new(
 		name,
 		target=doc.doctype,
@@ -119,15 +123,22 @@ def common_handler(doctype: Document, event: str | None = None):
 	event_label = EVENT_MAP[event]
 
 	# TODO: Cache this get_all call, update only every 5 minutes or something
-	for name in frappe.db.get_all(
+	for task in frappe.db.get_all(
 		"Otto Task",
 		filters={"target_doctype": doctype.doctype, "event": event_label},
-		pluck="name",
+		fields=["name", "condition"],
 	):
+		if task.condition and not test_condition(
+			task.name,
+			task.condition,
+			doctype,
+		):
+			continue
+
 		logger.info(
 			{
 				"message": "handler enqueued",
-				"otto_task": name,
+				"otto_task": task.name,
 				"doctype": doctype.doctype,
 				"name": doctype.name,
 				"event": event,
@@ -137,7 +148,7 @@ def common_handler(doctype: Document, event: str | None = None):
 			handler,
 			timeout=get_timeout(),
 			# Args
-			name=name,
+			name=task.name,
 			doc=doctype,
 			event=event_label,
 		)
@@ -165,3 +176,26 @@ def get_tools(task: str):
 
 def get_timeout():
 	return frappe.get_cached_value("Otto Settings", "Otto Settings", "task_execution_timeout") * 60
+
+
+def test_condition(task: str, condition: str, doc: Document) -> bool:
+	from frappe.integrations.doctype.webhook.webhook import get_context
+
+	try:
+		results = frappe.safe_eval(
+			condition,
+			eval_locals=get_context(doc),
+		)
+
+		return bool(results)
+
+	except Exception:
+		otto.log_error(
+			"Error evaluating condition",
+			task=task,
+			condition=condition,
+			target_name=doc.name,
+			target_doctype=doc.doctype,
+		)
+
+	return False
