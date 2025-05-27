@@ -41,6 +41,23 @@ class OttoTool(Document):
 		slug: DF.Data
 	# end: auto-generated types
 
+	@staticmethod
+	def new(slug: str, description: str, code: str, *, args: list[dict] | None = None):
+		doc = frappe.get_doc(
+			{
+				"doctype": "Otto Tool",
+				"slug": slug,
+				"description": description,
+				"code": code,
+			}
+		)
+
+		for arg in args or []:
+			doc.append("args", arg)
+
+		doc.save()
+		return doc
+
 	def before_save(self):
 		reasons, args_def = execute.validate(self.code, self.slug)
 		if reasons:

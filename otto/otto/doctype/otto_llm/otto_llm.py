@@ -1,7 +1,7 @@
 # Copyright (c) 2025, Alan Tom and contributors
 # For license information, please see license.txt
 
-# import frappe
+import frappe
 from frappe.model.document import Document
 
 
@@ -18,4 +18,16 @@ class OttoLLM(Document):
 		title: DF.Data
 	# end: auto-generated types
 
-	pass
+	@staticmethod
+	def new(name: str, title: str, provider: str):
+		doc = frappe.get_doc(
+			{
+				"doctype": "Otto LLM",
+				"name": name,
+				"title": title,
+				"provider": provider,
+			}
+		)
+
+		doc.save()
+		return doc

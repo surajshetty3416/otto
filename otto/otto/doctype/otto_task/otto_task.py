@@ -47,11 +47,37 @@ class OttoTask(Document):
 	# end: auto-generated types
 
 	@staticmethod
-	def new(target_doctype: str, event: str):
+	def new(
+		title: str,
+		event: str,
+		target_doctype: str,
+		*,
+		llm: str | None = None,
+		condition: str | None = None,
+		get_context: str | None = None,
+		instruction: str | None = None,
+		tools: list[dict] | None = None,
+	):
 		doc = cast(
 			OttoTask,
-			frappe.get_doc({"doctype": "Otto Task", "target_doctype": target_doctype, "event": event}),
+			frappe.get_doc(
+				{
+					"doctype": "Otto Task",
+					"title": title,
+					"target_doctype": target_doctype,
+					"event": event,
+				}
+			),
 		)
+
+		doc.llm = llm
+		doc.condition = condition
+		doc.get_context = get_context
+		doc.instruction = instruction
+
+		for tool in tools or []:
+			doc.append("tools", {"tool": tool["tool"]})
+
 		doc.save()
 		return doc
 
@@ -92,6 +118,50 @@ class OttoTask(Document):
 	def list_tools(self):
 		assert self.name is not None, "type check"
 		return get_tools(self.name)
+
+	@frappe.whitelist()
+	def export_task(self):
+		llm = frappe.get_all("Otto LLM", filters={"name": self.llm}, fields=["name", "title", "provider"])[0]
+		data: dict = dict(
+			title=self.title,
+			llm=llm,
+			event=self.event,
+			condition=self.condition,
+			get_context=self.get_context,
+			instruction=self.instruction,
+			target_doctype=self.target_doctype,
+			tools=[],
+		)
+
+		tool_names = [tool.tool for tool in self.tools if tool.tool]
+
+		tools = frappe.get_all(
+			"Otto Tool",
+			filters={"name": ("in", tool_names)},
+			fields=["name", "slug", "description", "code", "is_valid", "reason"],
+		)
+		tool_map = {tool.name: tool for tool in tools}
+
+		args = frappe.get_all(
+			"Otto Tool Arg CT",
+			filters={"parent": ("in", tool_names)},
+			fields=["parent", "arg_name", "type", "is_required", "description"],
+		)
+		for arg in args:
+			tool_map.get(arg.parent, {}).setdefault("args", []).append(
+				{
+					"arg_name": arg.arg_name,
+					"type": arg.type,
+					"is_required": arg.is_required,
+					"description": arg.description,
+				}
+			)
+
+		for tool in tools:
+			del tool["name"]
+			data["tools"].append(tool)
+
+		return data
 
 
 def handler(name: str, doc: Document, event: str | None = None):
@@ -200,3 +270,34 @@ def test_condition(task: str, condition: str, doc: Document) -> bool:
 		)
 
 	return False
+
+
+@frappe.whitelist()
+def import_task(data: str):
+	_data = json.loads(data)
+
+	from otto.otto.doctype.otto_tool.otto_tool import OttoTool
+
+	llm = _data["llm"]
+	if not frappe.db.exists("Otto LLM", llm["name"]):
+		from otto.otto.doctype.otto_llm.otto_llm import OttoLLM
+
+		OttoLLM.new(llm["name"], llm["title"], llm["provider"])
+
+	tools = []
+	for t in _data["tools"]:
+		tool = OttoTool.new(t["slug"], t["description"], t["code"], args=t.get("args", []))
+		tools.append({"tool": tool.name})
+
+	task = OttoTask.new(
+		_data["title"],
+		_data["event"],
+		_data["target_doctype"],
+		llm=_data["llm"]["name"],
+		condition=_data["condition"],
+		get_context=_data["get_context"],
+		instruction=_data["instruction"],
+		tools=tools,
+	)
+
+	return task.name
