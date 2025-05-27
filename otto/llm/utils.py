@@ -166,11 +166,13 @@ def get_last_id(exchange: Exchange):
 
 
 def get_stats(exchange: Exchange):
+	import collections
 	import datetime
 
 	cost = 0
 	input_tokens = 0
 	output_tokens = 0
+	tools_called: dict[str, int] = collections.defaultdict(int)
 
 	_start = exchange["items"][exchange["first"]]["meta"]["timestamp"]
 	_end = exchange["items"][get_last_id(exchange)]["meta"]["end_time"]
@@ -182,13 +184,18 @@ def get_stats(exchange: Exchange):
 		input_tokens += item["meta"]["input_tokens"]
 		output_tokens += item["meta"]["output_tokens"]
 
+		for content_part in item["content"]:
+			if content_part["type"] == "tool_use":
+				tools_called[content_part["name"]] += 1
+
 	return dict(
 		cost=cost,
 		input_tokens=input_tokens,
 		output_tokens=output_tokens,
 		start=start.isoformat(),
-		end=start.isoformat(),
+		end=end.isoformat(),
 		duration=end - start,
+		tools=dict(tools_called),
 	)
 
 

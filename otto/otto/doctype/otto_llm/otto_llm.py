@@ -46,9 +46,13 @@ class OttoLLM(Document):
 			return reason
 
 		assert result is not None, "sanity check"
-		content = result["item"]["content"][-1]
 
-		if content["type"] == "text":
-			return content["text"]
+		try:
+			content = result["item"]["content"][-1]
 
-		return json.dumps(content, indent=2)
+			if content["type"] == "text":
+				return content["text"]
+
+			return json.dumps(content, indent=2)
+		except Exception:
+			return json.dumps(result.get("item", {}).get("content", []), indent=2)
