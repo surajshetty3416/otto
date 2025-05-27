@@ -166,16 +166,30 @@ def get_last_id(exchange: Exchange):
 
 
 def get_stats(exchange: Exchange):
+	import datetime
+
 	cost = 0
 	input_tokens = 0
 	output_tokens = 0
+
+	_start = exchange["items"][exchange["first"]]["meta"]["timestamp"]
+	_end = exchange["items"][get_last_id(exchange)]["meta"]["end_time"]
+	start = datetime.datetime.fromtimestamp(_start)
+	end = datetime.datetime.fromtimestamp(_end)
 
 	for item in exchange["items"].values():
 		cost += item["meta"]["cost"]
 		input_tokens += item["meta"]["input_tokens"]
 		output_tokens += item["meta"]["output_tokens"]
 
-	return dict(cost=cost, input_tokens=input_tokens, output_tokens=output_tokens)
+	return dict(
+		cost=cost,
+		input_tokens=input_tokens,
+		output_tokens=output_tokens,
+		start=start.isoformat(),
+		end=start.isoformat(),
+		duration=end - start,
+	)
 
 
 def get_file_content(file_path_or_url: str) -> dict[str, str]:

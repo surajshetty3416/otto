@@ -203,6 +203,14 @@ class OttoExecution(Document):
 			)
 			return str(e), True
 
+	@frappe.whitelist()
+	def get_stats(self):
+		if not self.execution:
+			return "No Execution"
+
+		exchange: Exchange = json.loads(self.execution)
+		return llm.get_stats(exchange)
+
 
 @functools.cache
 def get_tool_map(*names: str) -> dict[str, str]:
