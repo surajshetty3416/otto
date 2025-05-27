@@ -13,11 +13,9 @@ except ImportError:
 
 # Now import the function to test and types
 from otto.llm.litellm import interact  # Keep DEFAULT_LLM for info if needed
-from otto.llm.litellm import map as llm_map
 
 # Model to use for testing
-TEST_MODEL_NAME = "OpenAI GPT-4.1 nano"  # current cheapest model
-TEST_MODEL_ID = llm_map.get(TEST_MODEL_NAME)
+TEST_MODEL = "openai/gpt-4.1-mini"  # current cheapest model
 
 get_weather_tool = {
 	"type": "function",
@@ -62,7 +60,7 @@ class TestLiteLLMIntegration(unittest.TestCase):
 		system_prompt = "You are a concise assistant."
 
 		# Use the specific test model
-		response, error = interact(query, system=system_prompt, model=TEST_MODEL_NAME)
+		response, error = interact(query, system=system_prompt, model=TEST_MODEL)
 
 		# Basic checks
 		self.assertIsNone(error, f"Interaction failed with error: {error}")
@@ -119,8 +117,7 @@ class TestLiteLLMIntegration(unittest.TestCase):
 		self.assertEqual(second_item["id"], agent_item["id"])
 
 		# Check if the correct model name is reported
-		self.assertEqual(agent_item["meta"]["model"], TEST_MODEL_NAME)
-		self.assertEqual(agent_item["meta"]["model_id"], TEST_MODEL_ID)
+		self.assertEqual(agent_item["meta"]["model"], TEST_MODEL)
 		self.assertIn("input_tokens", agent_item["meta"])
 		self.assertIn("output_tokens", agent_item["meta"])
 		self.assertIn("cost", agent_item["meta"])
@@ -144,7 +141,7 @@ class TestLiteLLMIntegration(unittest.TestCase):
 		tools = [get_weather_tool]
 
 		# Use the specific test model known for tool calling
-		response, error = interact(query, tools=tools, model=TEST_MODEL_NAME)
+		response, error = interact(query, tools=tools, model=TEST_MODEL)
 
 		self.assertIsNone(error, f"Interaction failed with error: {error}")
 		self.assertIsNotNone(response)
@@ -182,7 +179,7 @@ class TestLiteLLMIntegration(unittest.TestCase):
 	def test_multiple_tool_calls(self):
 		query = "What is the weather like in London and Paris?"
 		tools = [get_weather_tool, get_weather_tool]
-		response, error = interact(query, tools=tools, model=TEST_MODEL_NAME)
+		response, error = interact(query, tools=tools, model=TEST_MODEL)
 
 		self.assertIsNone(error, f"Interaction failed with error: {error}")
 		self.assertIsNotNone(response)
@@ -197,7 +194,7 @@ class TestLiteLLMIntegration(unittest.TestCase):
 		update_with_tool_result(exchange=exchange, result="10 degrees celsius", id=tool_use[0]["id"])
 		update_with_tool_result(exchange=exchange, result="10 degrees celsius", id=tool_use[1]["id"])
 
-		response, error = interact(exchange=exchange, model=TEST_MODEL_NAME)
+		response, error = interact(exchange=exchange, model=TEST_MODEL)
 		self.assertIsNone(error, f"Interaction failed with error: {error}")
 		self.assertIsNotNone(response)
 		assert response is not None  # for type checker
@@ -207,7 +204,7 @@ class TestLiteLLMIntegration(unittest.TestCase):
 	def test_file_handling(self):
 		file = get_testfile_path("test.pdf")
 		query = to_content(["What is in this file?", file])
-		response, error = interact(query, model=TEST_MODEL_NAME)
+		response, error = interact(query, model=TEST_MODEL)
 
 		self.assertIsNone(error, f"Interaction failed with error: {error}")
 		self.assertIsNotNone(response)
@@ -227,7 +224,7 @@ class TestLiteLLMIntegration(unittest.TestCase):
 	def test_image_handling(self):
 		file = get_testfile_path("test.png")
 		query = to_content(["What is in this image?", file])
-		response, error = interact(query, model=TEST_MODEL_NAME)
+		response, error = interact(query, model=TEST_MODEL)
 
 		self.assertIsNone(error, f"Interaction failed with error: {error}")
 		self.assertIsNotNone(response)

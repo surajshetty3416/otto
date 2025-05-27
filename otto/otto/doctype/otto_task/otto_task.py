@@ -91,7 +91,9 @@ class OttoTask(Document):
 			target=target,
 			target_doctype=self.target_doctype,
 			event="Manual",
+			llm=llm,
 		)
+
 		frappe.db.commit()
 
 		frappe.enqueue_doc(
@@ -99,7 +101,6 @@ class OttoTask(Document):
 			name=execution.name,
 			method="execute",
 			timeout=get_timeout(),
-			llm=llm,
 		)
 		return execution.name
 
@@ -164,24 +165,6 @@ class OttoTask(Document):
 		return data
 
 
-def handler(name: str, doc: Document, event: str | None = None):
-	"""
-	Handler function is used to handle the Otto Task.
-	"""
-	from otto.otto.doctype.otto_execution.otto_execution import OttoExecution
-
-	assert doc.name is not None, "typecheck"
-
-	execution = OttoExecution.new(
-		name,
-		target=doc.doctype,
-		target_doctype=doc.name,
-		event=event,
-	)
-	frappe.db.commit()
-	return execution.execute()
-
-
 def common_handler(doctype: Document, event: str | None = None):
 	"""
 	Common handler function is used to enqueue tasks for a given doctype and
@@ -219,10 +202,36 @@ def common_handler(doctype: Document, event: str | None = None):
 			handler,
 			timeout=get_timeout(),
 			# Args
-			name=task.name,
-			doc=doctype,
-			event=event_label,
+			task=task.name,
+			target_doc=doctype,
+			target_event=event_label,
 		)
+
+
+def handler(task: str, target_doc: Document, target_event: str):
+	"""Handler function is used to handle the Otto Task."""
+
+	from otto.otto.doctype.otto_execution.otto_execution import OttoExecution
+
+	assert target_doc.name is not None, "typecheck"
+
+	execution = OttoExecution.new(
+		task,
+		target_doctype=target_doc.doctype,
+		target=target_doc.name,
+		event=target_event,
+	)
+	frappe.db.commit()
+	logger.info(
+		{
+			"message": "starting execution",
+			"execution": execution.name,
+			"task": task,
+			"doc": f"{target_doc.doctype}, {target_doc.name}",
+			"event": target_event,
+		}
+	)
+	return execution.execute()
 
 
 def get_tools(task: str):

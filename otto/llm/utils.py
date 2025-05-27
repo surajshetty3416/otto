@@ -45,7 +45,7 @@ def get_exchange_list(exchange: Exchange) -> list[ExchangeItem]:
 def get_user_item(content: list[UserContent] | None = None):
 	meta: ExchangeMeta = {
 		"role": "user",
-		"model_id": None,
+		"model": None,
 		"input_tokens": 0,
 		"output_tokens": 0,
 		"cost": 0,
@@ -69,10 +69,10 @@ def get_user_item(content: list[UserContent] | None = None):
 	return item
 
 
-def get_agent_item(model_id: str):
+def get_agent_item(model: str):
 	meta: ExchangeMeta = {
 		"role": "agent",
-		"model_id": model_id,
+		"model": model,
 		"timestamp": datetime.datetime.now().timestamp(),
 		"input_tokens": 0,
 		"output_tokens": 0,

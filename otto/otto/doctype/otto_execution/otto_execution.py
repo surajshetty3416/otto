@@ -43,7 +43,14 @@ class OttoExecution(Document):
 	# end: auto-generated types
 
 	@staticmethod
-	def new(task: str, *, target: str, target_doctype: str, event: str | None = None):
+	def new(
+		task: str,
+		*,
+		target: str,
+		target_doctype: str,
+		event: str | None = None,
+		llm: str | None = None,
+	):
 		doc = cast(OttoExecution, frappe.get_doc({"doctype": "Otto Execution", "task": task}))
 
 		if target and event:
@@ -51,25 +58,16 @@ class OttoExecution(Document):
 			doc.target = target
 			doc.event = event
 
+		doc.llm = llm or frappe.get_cached_value("Otto Task", task, "llm")
 		doc.save()
 		return doc
 
-	def execute(self, llm: str | None = None):
+	def execute(self):
 		doc = frappe.get_doc(self.target_doctype, self.target)
 		self.set_status("Running")
 		if not (context := self.get_context(doc, self.event)):
 			return
 
-		logger.info(
-			{
-				"execution": self.name,
-				"message": "system rendered",
-				"name": self.name,
-				"context": context,
-			}
-		)
-
-		self.llm = llm or self.llm
 		self.loop(context)
 
 	def validate(self):
@@ -93,13 +91,13 @@ class OttoExecution(Document):
 				context,  # type: ignore needed cause not strong enough type system
 				exchange=exchange,
 				tools=get_tools(self.task),
-				model_id=self.llm,
+				model=self.llm,
 				system=self.get_instruction(),
 			)
 			logger.info(
 				{
-					"execution": self.name,
 					"message": "interact success",
+					"execution": self.name,
 					"exchange_size": interaction and len(interaction["update"]),
 					"item": interaction and interaction["item"],
 				}
@@ -118,9 +116,6 @@ class OttoExecution(Document):
 		item = interaction["item"]
 		if self.run_tools(item, interaction["update"]):
 			return self.set_status("Success")
-
-		# if item["meta"]["end_reason"] == "turn_end":
-		# 	return self.set_status("Success")
 
 		self.loop(None)
 
@@ -195,7 +190,7 @@ class OttoExecution(Document):
 			return tool_doc.execute(
 				args,
 				task=self.task,
-				execution=self.execution,
+				execution=self.name,
 			)["result"], False
 		except Exception as e:
 			logger.error(

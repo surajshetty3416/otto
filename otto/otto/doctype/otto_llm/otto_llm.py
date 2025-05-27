@@ -1,6 +1,8 @@
 # Copyright (c) 2025, Alan Tom and contributors
 # For license information, please see license.txt
 
+import json
+
 import frappe
 from frappe.model.document import Document
 
@@ -31,3 +33,22 @@ class OttoLLM(Document):
 
 		doc.save()
 		return doc
+
+	@frappe.whitelist()
+	def ask(self, query: str, system: str | None = None):
+		"""Test the LLM with a query and system prompt."""
+		from otto.llm import interact
+
+		system = system or "You are a helpful assistant."
+
+		result, reason = interact(query, model=self.name, system=system)
+		if reason:
+			return reason
+
+		assert result is not None, "sanity check"
+		content = result["item"]["content"][-1]
+
+		if content["type"] == "text":
+			return content["text"]
+
+		return json.dumps(content, indent=2)

@@ -41,6 +41,7 @@ frappe.ui.form.on("Otto Task", {
 						doc: frm.doc,
 						args: {
 							target: values.target,
+							llm: values.llm || frm.doc.llm,
 						},
 						callback: function (r) {
 							if (r.message) {
@@ -145,7 +146,7 @@ frappe.ui.form.on("Otto Task", {
 		frm.add_custom_button("Export Task", export_task, "Utilities");
 
 		frappe.ui.keys.add_shortcut({ shortcut: "shift+x", action: run_task_execution });
-		frappe.ui.keys.add_shortcut({ shortcut: "shift+t", action: test_get_context });
+		frappe.ui.keys.add_shortcut({ shortcut: "shift+c", action: test_get_context });
 		frappe.ui.keys.add_shortcut({ shortcut: "shift+l", action: list_tools });
 	},
 });

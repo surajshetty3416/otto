@@ -56,6 +56,7 @@ if TYPE_CHECKING:
 
 
 DEFAULT_LLM = "openai/gpt-4.1-mini"
+MAX_RETRIES = 3
 
 logger = otto.logger("otto_litellm")
 thinking_budget_map: dict[ThinkingEffort, int] = {
@@ -70,7 +71,7 @@ def interact(
 	query: str | list[str | UserContent] | list[UserContent] | None = None,
 	*,
 	exchange: Exchange | None = None,
-	model_id: str | None = None,
+	model: str | None = None,
 	exchange_id: str | None = None,
 	system: str | None = None,
 	tools: list[dict] | None = None,
@@ -99,9 +100,7 @@ def interact(
 		exchange: The existing conversation history (Exchange object) WITHOUT the query.
 			Users query is added to the Exchange and an updated Exchange is returned.
 			Required if `query` is not provided.
-		model: The user-friendly name of the LLM model to use (e.g., "OpenAI GPT-4o").
-			Defaults to `DEFAULT_LLM` if not specified.
-		model_id: The specific LiteLLM model identifier (e.g., "openai/gpt-4o").
+		model: The specific LiteLLM model identifier (e.g., "openai/gpt-4o").
 			Overrides `model` if provided. If neither is provided, derived from `DEFAULT_LLM`.
 		exchange_id: An optional identifier for the exchange, potentially used for
 			real-time updates.
@@ -122,15 +121,15 @@ def interact(
 	)
 
 	content = None if query is None else to_content(query)
-	model_id = model_id or DEFAULT_LLM
+	model = model or DEFAULT_LLM
 
 	# Creates a new exchange if exchange is None, else uses a copy
 	update = get_exchange(content, exchange)
 
-	if reason := _set_key(model_id):
+	if reason := _set_key(model):
 		return None, reason
 
-	item = get_agent_item(model_id)
+	item = get_agent_item(model)
 	item["meta"]["start_time"] = time.time()
 
 	# Required cause of LiteLLM's spaghetti design
@@ -172,7 +171,7 @@ def interact(
 	messages, last_id = get_messages(
 		items,
 		system,
-		preserve_thinking=_should_preserve_thinking(model_id),
+		preserve_thinking=_should_preserve_thinking(model),
 	)
 
 	think = {}
@@ -181,8 +180,8 @@ def interact(
 		think["thinking"] = _get_thinking(thinking_effort)
 
 	logger.debug({"message": "calling litellm.completion", "id": item["id"]})
-	completion = litellm.completion(
-		model=model_id,
+	completion = completions(
+		model=model,
 		messages=messages,
 		tools=tools,
 		stream=True,
@@ -256,6 +255,25 @@ def _get_content(completion_response: dict):
 	return content
 
 
+def completions(**kwargs):
+	"""Wrapper around litellm.completion that retries on rate limit errors."""
+	retries = 0
+	import litellm
+
+	while True:
+		try:
+			return litellm.completion(**kwargs)
+		except litellm.RateLimitError as e:
+			otto.log_error("LiteLLM Completion Error", model=kwargs.get("model"))
+			if retries >= MAX_RETRIES or "request would exceed the rate limit" not in str(e):
+				raise e
+
+			retries += 1
+
+			# Anthropic rate limit is set on a per minute basis
+			time.sleep(61)
+
+
 def _stream(completion: CustomStreamWrapper, item: ExchangeItem, exchange_id: str | None):
 	"""
 	Iterates over the completion stream iterable, publishes the chunks, collates
@@ -268,7 +286,7 @@ def _stream(completion: CustomStreamWrapper, item: ExchangeItem, exchange_id: st
 
 	for chunk in completion:
 		if cc := _stream_chunk(chunk, item["id"], exchange_id):
-			logger.info({"id": item["id"], "content": cc["content"]})
+			logger.debug({"id": item["id"], "content": cc["content"]})
 			chunks.append(cc)
 
 		signature = _get_signature(chunk)
@@ -327,12 +345,12 @@ def _get_end_reason(completion_response: dict):
 	return None
 
 
-def _set_key(model_id: str) -> str | None:
+def _set_key(model: str) -> str | None:
 	from frappe.utils.password import get_decrypted_password
 
-	if model_id.startswith("openai"):
+	if model.startswith("openai"):
 		key = "OPENAI_API_KEY"
-	elif model_id.startswith("anthropic"):
+	elif model.startswith("anthropic"):
 		key = "ANTHROPIC_API_KEY"
 	else:
 		return None
@@ -359,10 +377,10 @@ def _get_signature(chunk: ModelResponseStream):
 	return thinking_blocks[0].get("signature") or None
 
 
-def _should_preserve_thinking(model_id: str):
+def _should_preserve_thinking(model: str):
 	# rn only Sonnet 3.7 requires reasoning to be preserved
 	# reference: https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking?q=thinking#preserving-thinking-blocks
-	return "sonnet" in model_id
+	return "sonnet" in model
 
 
 def _get_thinking(thinking_effort: ThinkingEffort | None):

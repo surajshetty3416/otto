@@ -85,7 +85,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fetch_from": "task.llm",
    "fieldname": "llm",
    "fieldtype": "Link",
    "label": "LLM",
@@ -99,7 +98,7 @@
    "link_fieldname": "execution"
   }
  ],
- "modified": "2025-05-26 12:17:17.731711",
+ "modified": "2025-05-27 12:04:52.161547",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Execution",
