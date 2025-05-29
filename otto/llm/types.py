@@ -40,8 +40,8 @@ class FileContent(TypedDict):
 	data: str  # base64 encoded file data, should be a PDF
 
 
-type UserContent = TextContent | ImageContent | FileContent
-type Content = TextContent | ThinkingContent | ToolUseContent | ImageContent | FileContent
+UserContent = TextContent | ImageContent | FileContent
+Content = TextContent | ThinkingContent | ToolUseContent | ImageContent | FileContent
 
 
 class ExchangeMeta(TypedDict):
@@ -109,4 +109,4 @@ All of the following inputs are converted into list[UserContent]:
 If input is None, it is treated as an empty list. It should be None only if the
 exchange provided has some update such as a tool result.
 """
-type InteractInput = str | list[str | UserContent] | list[UserContent] | None
+InteractInput = str | list[str | UserContent] | list[UserContent] | None
