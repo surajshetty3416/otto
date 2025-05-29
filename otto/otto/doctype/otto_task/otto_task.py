@@ -82,7 +82,7 @@ class OttoTask(Document):
 		return doc
 
 	@frappe.whitelist()
-	def run_task_execution(self, target: str, llm: str):
+	def execute_task(self, target: str, llm: str):
 		from otto.otto.doctype.otto_execution.otto_execution import OttoExecution
 
 		assert self.name is not None, "type check"
@@ -139,7 +139,16 @@ class OttoTask(Document):
 		tools = frappe.get_all(
 			"Otto Tool",
 			filters={"name": ("in", tool_names)},
-			fields=["name", "slug", "description", "code", "is_valid", "reason"],
+			fields=[
+				"name",
+				"slug",
+				"description",
+				"code",
+				"is_valid",
+				"reason",
+				"mock_tool",
+				"mock_return_value",
+			],
 		)
 		tool_map = {tool.name: tool for tool in tools}
 
@@ -295,7 +304,14 @@ def import_task(data: str):
 
 	tools = []
 	for t in _data["tools"]:
-		tool = OttoTool.new(t["slug"], t["description"], t["code"], args=t.get("args", []))
+		tool = OttoTool.new(
+			t["slug"],
+			t["description"],
+			t["code"],
+			args=t.get("args", []),
+			mock_tool=t.get("mock_tool", False),
+			mock_return_value=t.get("mock_return_value", None),
+		)
 		tools.append({"tool": tool.name})
 
 	task = OttoTask.new(

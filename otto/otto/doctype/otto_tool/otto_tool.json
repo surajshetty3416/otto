@@ -8,6 +8,8 @@
   "definition_section",
   "slug",
   "code",
+  "mock_tool",
+  "mock_return_value",
   "section_break_lafy",
   "description",
   "args",
@@ -83,6 +85,20 @@
    "fieldname": "reason",
    "fieldtype": "Small Text",
    "label": "Reason"
+  },
+  {
+   "default": "0",
+   "description": "If enabled, the args provided by the LLM are logged in <b>Otto Scrapbook</b>. The <code>main</code> function is not actually called.",
+   "fieldname": "mock_tool",
+   "fieldtype": "Check",
+   "label": "Mock Tool"
+  },
+  {
+   "depends_on": "eval:doc.mock_tool",
+   "description": "Return value to give the LLM when the tool is mocked. Should be a JSON loadable string.",
+   "fieldname": "mock_return_value",
+   "fieldtype": "Data",
+   "label": "Mock Return Value"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -92,7 +108,7 @@
    "link_fieldname": "tool"
   }
  ],
- "modified": "2025-05-26 12:30:28.492296",
+ "modified": "2025-05-29 11:28:29.452982",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Tool",

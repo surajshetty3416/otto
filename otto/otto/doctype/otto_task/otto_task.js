@@ -4,9 +4,9 @@
 frappe.ui.form.on("Otto Task", {
 	refresh(frm) {
 		if (!frm.doc.target_doctype || !frm.doc.get_context) return;
-		function run_task_execution() {
+		function execute_task() {
 			const run_dialog = new frappe.ui.Dialog({
-				title: __("Run Task Execution"),
+				title: __("Execute Task"),
 				fields: [
 					{
 						fieldname: "message",
@@ -37,7 +37,7 @@ frappe.ui.form.on("Otto Task", {
 				primary_action_label: __("Run"),
 				primary_action(values) {
 					frappe.call({
-						method: "run_task_execution",
+						method: "execute_task",
 						doc: frm.doc,
 						args: {
 							target: values.target,
@@ -140,12 +140,12 @@ frappe.ui.form.on("Otto Task", {
 			});
 		}
 
-		frm.add_custom_button("Run Task Execution", run_task_execution);
+		frm.add_custom_button("Execute Task", execute_task);
 		frm.add_custom_button("Test Get Context", test_get_context, "Utilities");
 		frm.add_custom_button("List Tool Schemas", list_tools, "Utilities");
 		frm.add_custom_button("Export Task", export_task, "Utilities");
 
-		frappe.ui.keys.add_shortcut({ shortcut: "shift+x", action: run_task_execution });
+		frappe.ui.keys.add_shortcut({ shortcut: "shift+e", action: execute_task });
 		frappe.ui.keys.add_shortcut({ shortcut: "shift+c", action: test_get_context });
 		frappe.ui.keys.add_shortcut({ shortcut: "shift+l", action: list_tools });
 	},

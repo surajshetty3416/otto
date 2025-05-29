@@ -10,7 +10,7 @@ from frappe.exceptions import ValidationError
 from frappe.model.document import Document
 
 from otto.otto.doctype.otto_tool import lib
-from otto.utils import execute
+from otto.utils import execute, json_dumps
 
 arg_type_to_json_type = {
 	"str": "string",
@@ -39,16 +39,28 @@ class OttoTool(Document):
 		is_valid: DF.Check
 		reason: DF.SmallText | None
 		slug: DF.Data
+		mock_tool: DF.Check
+		mock_return_value: DF.Data | None
 	# end: auto-generated types
 
 	@staticmethod
-	def new(slug: str, description: str, code: str, *, args: list[dict] | None = None):
+	def new(
+		slug: str,
+		description: str,
+		code: str,
+		*,
+		args: list[dict] | None = None,
+		mock_tool: bool = False,
+		mock_return_value: str | None = None,
+	):
 		doc = frappe.get_doc(
 			{
 				"doctype": "Otto Tool",
 				"slug": slug,
 				"description": description,
 				"code": code,
+				"mock_tool": mock_tool,
+				"mock_return_value": mock_return_value,
 			}
 		)
 
@@ -140,7 +152,7 @@ class OttoTool(Document):
 					},
 					**properties,
 				},
-				"required": [arg.arg_name for arg in self.args if arg.is_required] + ["explanation"],
+				"required": ["explanation"] + [arg.arg_name for arg in self.args if arg.is_required],
 			},
 		}
 
@@ -148,6 +160,24 @@ class OttoTool(Document):
 			"type": "function",
 			"function": schema,
 		}
+
+	def mock(
+		self,
+		args: dict[str, Any],
+		*,
+		task: str | None = None,
+		execution: str | None = None,
+	):
+		content = json_dumps(args)
+		if len(args) == 1:
+			content = list(args.values())[0]
+
+		lib.log(content, tool=self.name, task=task, execution=execution)
+		return execute.ExecutionResult(
+			result=json.loads(self.mock_return_value or "null"),
+			stdout="",
+			stderr="",
+		)
 
 	def execute(
 		self,
@@ -162,6 +192,9 @@ class OttoTool(Document):
 		- task: task document name (for logging if needed)
 		- execution: execution document name (for logging if needed)
 		"""
+		if self.mock_tool:
+			return self.mock(args, task=task, execution=execution)
+
 		if not self.is_valid and not force:
 			raise ValidationError("tool is invalid: " + (self.reason or ""))
 
