@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from otto.llm.litellm import interact
 from otto.llm.utils import get_file_content, get_stats, update_with_tool_result
 

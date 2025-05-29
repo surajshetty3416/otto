@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Literal, TypedDict
 
-type ID = str
-type ExchangeRole = Literal["user", "agent"]
-type ThinkingEffort = Literal["low", "medium", "high"]
+ID = str
+ExchangeRole = Literal["user", "agent"]
+ThinkingEffort = Literal["low", "medium", "high"]
 
 
 class ThinkingContent(TypedDict):

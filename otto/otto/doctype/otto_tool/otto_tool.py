@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 # Copyright (c) 2025, Alan Tom and contributors
 # For license information, please see license.txt
-
 # import frappe
 import json
 import textwrap
