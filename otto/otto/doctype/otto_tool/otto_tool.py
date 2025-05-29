@@ -3,6 +3,7 @@
 
 # import frappe
 import json
+import textwrap
 from typing import Any
 
 import frappe
@@ -168,9 +169,14 @@ class OttoTool(Document):
 		task: str | None = None,
 		execution: str | None = None,
 	):
-		content = json_dumps(args)
-		if len(args) == 1:
-			content = list(args.values())[0]
+		content = ""
+		for k, v in args.items():
+			content += f"{k}:\n"
+			if not isinstance(v, str):
+				v, _ = json_dumps(v)
+			content += textwrap.indent(v, "    ")
+			content += "\n\n"
+		content = content.strip()
 
 		lib.log(content, tool=self.name, task=task, execution=execution)
 		return execute.ExecutionResult(
