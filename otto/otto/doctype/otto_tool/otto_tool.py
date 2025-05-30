@@ -38,11 +38,12 @@ class OttoTool(Document):
 		args: DF.Table[OttoToolArgCT]
 		code: DF.Code
 		description: DF.LongText | None
+		group: DF.Link | None
 		is_valid: DF.Check
+		mock_return_value: DF.Data | None
+		mock_tool: DF.Check
 		reason: DF.SmallText | None
 		slug: DF.Data
-		mock_tool: DF.Check
-		mock_return_value: DF.Data | None
 	# end: auto-generated types
 
 	@staticmethod
@@ -135,7 +136,7 @@ class OttoTool(Document):
 		self.is_valid = False
 
 	@frappe.whitelist()
-	def get_function_schema(self):
+	def get_function_schema(self, slug: str | None = None):
 		"""Returns function schema for the tool, add meta properties that might aid in usage reasoning."""
 		properties = {
 			arg.arg_name: {"type": arg.type, "description": arg.description or ""} for arg in self.args
@@ -143,7 +144,7 @@ class OttoTool(Document):
 
 		"""Returns tool as a JSON Schema function"""
 		schema = {
-			"name": self.slug,
+			"name": slug or self.slug,
 			"description": self.description or "",
 			"parameters": {
 				"type": "object",
@@ -193,6 +194,7 @@ class OttoTool(Document):
 		force: bool = False,
 		task: str | None = None,
 		execution: str | None = None,
+		env: dict | None = None,
 	):
 		"""Execute tool with given args.
 		- force: bypass validation
@@ -220,11 +222,19 @@ class OttoTool(Document):
 		globals = dict(otto=lib.get_lib(), refs=refs)
 
 		return execute.execute(
-			self.code,
+			self.render_code(env),
 			args=args,
 			arg_names=arg_names,
 			globals=globals,
 		)
+
+	def render_code(self, env: dict | None = None) -> str:
+		from jinja2 import Template
+
+		global_env_str = frappe.get_cached_value("Otto Settings", "Otto Settings", "global_env") or "{}"
+		global_env = json.loads(global_env_str)
+		global_env.update(env or {})
+		return Template(self.code).render({"env": frappe._dict(global_env)})
 
 	@frappe.whitelist()
 	def test_execute(self, args: dict[str, Any]):

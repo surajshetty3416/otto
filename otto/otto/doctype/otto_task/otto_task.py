@@ -249,15 +249,14 @@ def get_tools(task: str):
 	tools = []
 	for tool in frappe.get_all(
 		"Otto Task Tool CT",
-		filters={"parent": task},
-		pluck="tool",
+		fields=["tool", "slug"],
+		filters={"parent": task, "is_enabled": True},
 	):
-		tool_doc = otto.get(OttoTool, tool)
-		print(tool_doc.is_valid, tool_doc.get_function_schema())
+		tool_doc = otto.get(OttoTool, tool.tool)
 		if not tool_doc.is_valid:
 			continue
 
-		tools.append(tool_doc.get_function_schema())
+		tools.append(tool_doc.get_function_schema(tool.slug))
 
 	tools.extend(meta_tools)
 	return tools

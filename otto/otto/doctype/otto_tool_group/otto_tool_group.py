@@ -5,7 +5,7 @@
 from frappe.model.document import Document
 
 
-class OttoTaskToolCT(Document):
+class OttoToolGroup(Document):
 	# begin: auto-generated types
 	# This code is auto-generated. Do not modify anything in this block.
 
@@ -14,13 +14,7 @@ class OttoTaskToolCT(Document):
 	if TYPE_CHECKING:
 		from frappe.types import DF
 
-		env: DF.JSON | None
-		is_enabled: DF.Check
-		parent: DF.Data
-		parentfield: DF.Data
-		parenttype: DF.Data
-		slug: DF.Data | None
-		tool: DF.Link
+		description: DF.SmallText | None
 	# end: auto-generated types
 
 	pass

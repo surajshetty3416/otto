@@ -17,10 +17,11 @@ from otto.otto.doctype.otto_task.otto_task import get_tools
 from otto.otto.doctype.otto_task.tools import has_task_ended, is_meta_tool
 from otto.utils.execute import run_get_context
 
-logger = otto.logger("otto_execution")
-
 if TYPE_CHECKING:
 	from otto.llm.types import Exchange, ExchangeItem
+	from otto.otto.doctype.otto_task.otto_task import OttoTask
+
+logger = otto.logger("otto_execution")
 
 
 class OttoExecution(Document):
@@ -77,9 +78,16 @@ class OttoExecution(Document):
 		reasons = []
 
 		for tool in tools:
-			if tool.is_valid:
+			if not tool.is_valid:
+				reasons.append(f"Tool {tool.slug} is not valid")
+
+			if not tool.env:
 				continue
-			reasons.append(f"Tool {tool.slug} is not valid")
+
+			try:
+				json.loads(tool.env)
+			except Exception as e:
+				reasons.append(f"Tool {tool.slug} env is not valid JSON: {e}")
 
 		if reasons:
 			self.set_status("Failure", "\n".join(reasons))
@@ -124,12 +132,13 @@ class OttoExecution(Document):
 		from otto.otto.doctype.otto_task.otto_task import OttoTask
 
 		task = otto.get(OttoTask, self.task)
-		tool_map = get_tool_map(*[tool.tool for tool in task.tools if tool.tool])
-		task_ended = False
+		env_map = {t.name: t.env for t in task.tools}
+		tool_map = get_tool_map(task)
 
 		# Move meta tools to the end of the list
 		content = sorted(item["content"], key=lambda x: is_meta_tool(x))
 
+		task_ended = False
 		for content in item["content"]:
 			if content["type"] != "tool_use":
 				continue
@@ -140,7 +149,8 @@ class OttoExecution(Document):
 				task_ended = task_ended or has_task_ended(content)
 			else:
 				tool_name = tool_map[content["name"]]
-				result, is_error = self.execute_tool(tool_name, content["args"])
+				env_str = env_map.get(tool_name, None)
+				result, is_error = self.execute_tool(tool_name, content["args"], env_str)
 
 			llm.update_with_tool_result(exchange=exchange, result=result, id=content["id"], is_error=is_error)
 			self.set_execution(exchange)
@@ -180,17 +190,19 @@ class OttoExecution(Document):
 		self.save(ignore_permissions=True, ignore_version=True)
 		frappe.db.commit()
 
-	def execute_tool(self, tool_name: str, args: dict) -> tuple[Any, bool]:
+	def execute_tool(self, tool_name: str, args: dict, env_str: str | None) -> tuple[Any, bool]:
 		"""Executes tool and returns tuple of (result, is_error)"""
 		from otto.otto.doctype.otto_tool.otto_tool import OttoTool
 
 		tool_doc = otto.get(OttoTool, tool_name)
 
 		try:
+			env = json.loads(env_str) if env_str else None
 			return tool_doc.execute(
 				args,
 				task=self.task,
 				execution=self.name,
+				env=env,
 			)["result"], False
 		except Exception as e:
 			logger.error(
@@ -212,8 +224,17 @@ class OttoExecution(Document):
 		return llm.get_stats(exchange)
 
 
-@functools.cache
-def get_tool_map(*names: str) -> dict[str, str]:
+def get_tool_map(task: OttoTask) -> dict[str, str]:
 	"""returns dict[slug, name]"""
-	tools = frappe.get_all("Otto Tool", filters={"name": ("in", names)}, fields=["slug", "name"])
-	return {tool.slug: tool.name for tool in tools}
+	names = [t.name for t in task.tools]
+	tool_map = {
+		t.slug: t.name
+		for t in frappe.get_all("Otto Tool", filters={"name": ("in", names)}, fields=["slug", "name"])
+	}
+
+	# Update tool map with overridden slugs
+	# such is in the case of duplicate tools
+	dupes = {t.slug: t.name for t in task.tools if t.slug}
+	tool_map.update(dupes)
+
+	return tool_map

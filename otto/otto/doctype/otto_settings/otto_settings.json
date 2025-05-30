@@ -11,7 +11,9 @@
   "task_execution_timeout",
   "api_keys_section",
   "anthropic_api_key",
-  "openai_api_key"
+  "openai_api_key",
+  "env_section",
+  "global_env"
  ],
  "fields": [
   {
@@ -43,7 +45,7 @@
   },
   {
    "default": "0",
-   "description": "Master switch that enables Otto, if unchecked all task handling will be disabled.",
+   "description": "Master switch that enables Otto, if unchecked all task handling will be disabled.\n<br>\nDoes not prevent manual execution.",
    "fieldname": "is_enabled",
    "fieldtype": "Check",
    "label": "Is Enabled"
@@ -51,12 +53,23 @@
   {
    "fieldname": "column_break_bylk",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "env_section",
+   "fieldtype": "Section Break",
+   "label": "Env"
+  },
+  {
+   "description": "JSON object used to pass env values to tools.\n<br><br>\nFor example the value of <code>message</code> below: <pre><code>    { \"message\": \"Hello, World\" }</code></pre> can be accessed in a tool like so:\n<pre><code>    def main():\n        print(\"{{ env.message }}\")\n</code></pre>\n",
+   "fieldname": "global_env",
+   "fieldtype": "JSON",
+   "label": "Global Env"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-05-23 09:27:18.318049",
+ "modified": "2025-05-30 14:29:55.610163",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Settings",

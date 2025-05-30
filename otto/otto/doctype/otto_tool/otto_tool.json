@@ -5,11 +5,13 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "definition_section",
   "slug",
-  "code",
   "mock_tool",
+  "column_break_byai",
+  "group",
   "mock_return_value",
+  "definition_section",
+  "code",
   "section_break_lafy",
   "description",
   "args",
@@ -35,6 +37,7 @@
    "label": "Definition"
   },
   {
+   "description": "Used to generate tool schema. This is required by the LLM to understand the tool.",
    "fieldname": "section_break_lafy",
    "fieldtype": "Section Break",
    "label": "Description"
@@ -80,7 +83,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "depends_on": "eval:doc.reason",
+   "depends_on": "eval:doc.reason || !doc.is_valid",
    "description": "Reason for why tool is invalid.",
    "fieldname": "reason",
    "fieldtype": "Small Text",
@@ -99,6 +102,18 @@
    "fieldname": "mock_return_value",
    "fieldtype": "Data",
    "label": "Mock Return Value"
+  },
+  {
+   "fieldname": "column_break_byai",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "group",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Group",
+   "options": "Otto Tool Group"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -108,7 +123,7 @@
    "link_fieldname": "tool"
   }
  ],
- "modified": "2025-05-29 11:28:29.452982",
+ "modified": "2025-05-30 13:30:35.036761",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Tool",

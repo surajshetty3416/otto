@@ -15,6 +15,7 @@ class OttoSettings(Document):
 		from frappe.types import DF
 
 		anthropic_api_key: DF.Password | None
+		global_env: DF.JSON | None
 		is_enabled: DF.Check
 		openai_api_key: DF.Password | None
 		task_execution_timeout: DF.Int
