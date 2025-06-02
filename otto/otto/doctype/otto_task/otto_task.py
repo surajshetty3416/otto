@@ -76,7 +76,7 @@ class OttoTask(Document):
 		doc.instruction = instruction
 
 		for tool in tools or []:
-			doc.append("tools", {"tool": tool["tool"]})
+			doc.append("tools", tool)
 
 		doc.save()
 		return doc
