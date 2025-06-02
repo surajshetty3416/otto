@@ -5,7 +5,7 @@ from __future__ import annotations
 # import frappe
 import json
 import textwrap
-from typing import Any
+from typing import Any, cast
 
 import frappe
 from frappe.exceptions import ValidationError
@@ -53,19 +53,21 @@ class OttoTool(Document):
 		code: str,
 		*,
 		args: list[dict] | None = None,
+		group: str | None = None,
 		mock_tool: bool = False,
 		mock_return_value: str | None = None,
 	):
-		doc = frappe.get_doc(
+		doc = cast(OttoTool, frappe.get_doc(
 			{
 				"doctype": "Otto Tool",
 				"slug": slug,
 				"description": description,
 				"code": code,
+				"group": group,
 				"mock_tool": mock_tool,
 				"mock_return_value": mock_return_value,
 			}
-		)
+		))
 
 		for arg in args or []:
 			doc.append("args", arg)

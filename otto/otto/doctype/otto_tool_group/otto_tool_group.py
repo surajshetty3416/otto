@@ -1,7 +1,9 @@
 # Copyright (c) 2025, Alan Tom and contributors
 # For license information, please see license.txt
 
-# import frappe
+from typing import cast
+
+import frappe
 from frappe.model.document import Document
 
 
@@ -17,4 +19,18 @@ class OttoToolGroup(Document):
 		description: DF.SmallText | None
 	# end: auto-generated types
 
-	pass
+	@staticmethod
+	def new(name: str, description: str | None = None):
+		doc = cast(
+			OttoToolGroup,
+			frappe.get_doc(
+				{
+					"doctype": "Otto Tool Group",
+					"name": name,
+					"description": description,
+				}
+			),
+		)
+
+		doc.save()
+		return doc

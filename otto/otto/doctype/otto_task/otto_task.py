@@ -150,7 +150,6 @@ class OttoTask(Document):
 
 	@frappe.whitelist()
 	def export_task(self):
-		# TODO: Update export task to include group and other slug override (no env)
 		llm = frappe.get_all("Otto LLM", filters={"name": self.llm}, fields=["name", "title", "provider"])[0]
 		data: dict = dict(
 			title=self.title,
@@ -161,10 +160,10 @@ class OttoTask(Document):
 			instruction=self.instruction,
 			target_doctype=self.target_doctype,
 			tools=[],
+			groups=[],
 		)
 
-		tool_names = [tool.tool for tool in self.tools if tool.tool]
-
+		tool_names = [tool.tool for tool in self.tools if tool.is_enabled]
 		tools = frappe.get_all(
 			"Otto Tool",
 			filters={"name": ("in", tool_names)},
@@ -173,8 +172,8 @@ class OttoTask(Document):
 				"slug",
 				"description",
 				"code",
+				"group",
 				"is_valid",
-				"reason",
 				"mock_tool",
 				"mock_return_value",
 			],
@@ -196,9 +195,24 @@ class OttoTask(Document):
 				}
 			)
 
+		slug_map = {t.name: t.slug for t in tools}
 		for tool in tools:
+			if not tool.get("is_valid"):
+				raise frappe.ValidationError(f"Tool {tool.get('slug')} is not valid")
+
 			del tool["name"]
+			del tool["is_valid"]
 			data["tools"].append(tool)
+
+		groups = list(set([tool.group for tool in tools if tool.group]))
+		data["groups"] = frappe.get_all(
+			"Otto Tool Group",
+			filters={"name": ("in", groups)},
+			fields=["name", "description"],
+		)
+
+		# (actual slug, override slug)
+		data["task_tools"] = [(slug_map.get(t.tool), t.slug or None) for t in self.tools if t.is_enabled]
 
 		return data
 
@@ -308,6 +322,7 @@ def import_task(data: str):
 	_data = json.loads(data)
 
 	from otto.otto.doctype.otto_tool.otto_tool import OttoTool
+	from otto.otto.doctype.otto_tool_group.otto_tool_group import OttoToolGroup
 
 	llm = _data["llm"]
 	if not frappe.db.exists("Otto LLM", llm["name"]):
@@ -315,17 +330,22 @@ def import_task(data: str):
 
 		OttoLLM.new(llm["name"], llm["title"], llm["provider"])
 
-	tools = []
+	for group in _data["groups"]:
+		if not frappe.db.exists("Otto Tool Group", group["name"]):
+			OttoToolGroup.new(group["name"], group["description"])
+
+	slug_map = {}  # dict[tool_name, tool_slug]
 	for t in _data["tools"]:
 		tool = OttoTool.new(
 			t["slug"],
 			t["description"],
 			t["code"],
+			group=t.get("group", None),
 			args=t.get("args", []),
 			mock_tool=t.get("mock_tool", False),
 			mock_return_value=t.get("mock_return_value", None),
 		)
-		tools.append({"tool": tool.name})
+		slug_map[tool.slug] = tool.name
 
 	task = OttoTask.new(
 		_data["title"],
@@ -335,7 +355,7 @@ def import_task(data: str):
 		condition=_data["condition"],
 		get_context=_data["get_context"],
 		instruction=_data["instruction"],
-		tools=tools,
+		tools=[{"tool": slug_map[a], "slug": o} for a, o in _data["task_tools"]],
 	)
 
 	return task.name

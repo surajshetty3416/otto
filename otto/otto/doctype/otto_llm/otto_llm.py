@@ -3,6 +3,7 @@ from __future__ import annotations
 # Copyright (c) 2025, Alan Tom and contributors
 # For license information, please see license.txt
 import json
+from typing import cast
 
 import frappe
 from frappe.model.document import Document
@@ -23,13 +24,16 @@ class OttoLLM(Document):
 
 	@staticmethod
 	def new(name: str, title: str, provider: str):
-		doc = frappe.get_doc(
-			{
-				"doctype": "Otto LLM",
-				"name": name,
-				"title": title,
-				"provider": provider,
-			}
+		doc = cast(
+			OttoLLM,
+			frappe.get_doc(
+				{
+					"doctype": "Otto LLM",
+					"name": name,
+					"title": title,
+					"provider": provider,
+				}
+			),
 		)
 
 		doc.save()
