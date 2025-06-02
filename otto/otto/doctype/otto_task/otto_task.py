@@ -83,6 +83,22 @@ class OttoTask(Document):
 
 	@frappe.whitelist()
 	def execute_task(self, target: str, llm: str):
+		return self.trigger_execution(
+			target=target,
+			event="Manual",
+			llm=llm,
+			is_background=True,
+		)
+
+	def trigger_execution(
+		self,
+		*,
+		target: str,
+		event: str,
+		llm: str | None = None,
+		instruction: str | None = None,
+		is_background: bool = True,
+	):
 		from otto.otto.doctype.otto_execution.otto_execution import OttoExecution
 
 		assert self.name is not None, "type check"
@@ -90,19 +106,31 @@ class OttoTask(Document):
 			self.name,
 			target=target,
 			target_doctype=self.target_doctype,
-			event="Manual",
+			event=event,
 			llm=llm,
+			instruction=instruction,
 		)
-
 		frappe.db.commit()
-
-		frappe.enqueue_doc(
-			doctype="Otto Execution",
-			name=execution.name,
-			method="execute",
-			timeout=get_timeout(),
+		logger.info(
+			{
+				"message": "starting execution",
+				"execution": execution.name,
+				"task": self.name,
+				"doc": f"{self.target_doctype}, {target}",
+				"event": event,
+			}
 		)
-		return execution.name
+
+		if is_background:
+			frappe.enqueue_doc(
+				doctype="Otto Execution",
+				name=execution.name,
+				method="execute",
+				timeout=get_timeout(),
+			)
+			return execution.name
+
+		return execution.execute()
 
 	@frappe.whitelist()
 	def test_get_context(self, target: str):
@@ -122,6 +150,7 @@ class OttoTask(Document):
 
 	@frappe.whitelist()
 	def export_task(self):
+		# TODO: Update export task to include group and other slug override (no env)
 		llm = frappe.get_all("Otto LLM", filters={"name": self.llm}, fields=["name", "title", "provider"])[0]
 		data: dict = dict(
 			title=self.title,
@@ -219,28 +248,13 @@ def common_handler(doctype: Document, event: str | None = None):
 
 def handler(task: str, target_doc: Document, target_event: str):
 	"""Handler function is used to handle the Otto Task."""
-
-	from otto.otto.doctype.otto_execution.otto_execution import OttoExecution
-
 	assert target_doc.name is not None, "typecheck"
 
-	execution = OttoExecution.new(
-		task,
-		target_doctype=target_doc.doctype,
+	return otto.get(OttoTask, task).trigger_execution(
 		target=target_doc.name,
 		event=target_event,
+		is_background=False,
 	)
-	frappe.db.commit()
-	logger.info(
-		{
-			"message": "starting execution",
-			"execution": execution.name,
-			"task": task,
-			"doc": f"{target_doc.doctype}, {target_doc.name}",
-			"event": target_event,
-		}
-	)
-	return execution.execute()
 
 
 def get_tools(task: str):

@@ -7,7 +7,6 @@
  "field_order": [
   "task",
   "status",
-  "llm",
   "column_break_seuy",
   "reason",
   "section_break_wljf",
@@ -16,7 +15,10 @@
   "column_break_ivzi",
   "target_doctype",
   "section_break_excj",
-  "execution"
+  "execution",
+  "task_section",
+  "llm",
+  "instruction"
  ],
  "fields": [
   {
@@ -89,6 +91,17 @@
    "fieldtype": "Link",
    "label": "LLM",
    "options": "Otto LLM"
+  },
+  {
+   "description": "Set from the Task definition, but may be different.",
+   "fieldname": "task_section",
+   "fieldtype": "Section Break",
+   "label": "Task"
+  },
+  {
+   "fieldname": "instruction",
+   "fieldtype": "Code",
+   "label": "Instruction"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -98,7 +111,7 @@
    "link_fieldname": "execution"
   }
  ],
- "modified": "2025-05-27 12:04:52.161547",
+ "modified": "2025-06-02 09:50:25.794933",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Execution",

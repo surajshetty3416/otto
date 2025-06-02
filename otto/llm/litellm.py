@@ -326,7 +326,7 @@ def _stream_chunk(chunk: ModelResponseStream, item_id: str, exchange_id: str | N
 
 	if exchange_id and frappe.session.user:
 		frappe.realtime.publish_realtime(
-			event="fl_interaction",
+			event="otto_interaction",
 			user=frappe.session.user,
 			message={"type": "content_chunk", "data": cc},
 		)

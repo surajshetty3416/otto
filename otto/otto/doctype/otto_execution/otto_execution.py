@@ -35,6 +35,7 @@ class OttoExecution(Document):
 
 		event: DF.Data | None
 		execution: DF.JSON | None
+		instruction: DF.Code | None
 		llm: DF.Link | None
 		reason: DF.SmallText | None
 		status: DF.Literal["Pending", "Running", "Success", "Failure"]
@@ -51,6 +52,7 @@ class OttoExecution(Document):
 		target_doctype: str,
 		event: str | None = None,
 		llm: str | None = None,
+		instruction: str | None = None,
 	):
 		doc = cast(OttoExecution, frappe.get_doc({"doctype": "Otto Execution", "task": task}))
 
@@ -60,6 +62,7 @@ class OttoExecution(Document):
 			doc.event = event
 
 		doc.llm = llm or frappe.get_cached_value("Otto Task", task, "llm")
+		doc.instruction = instruction or frappe.get_cached_value("Otto Task", task, "llm")
 		doc.save()
 		return doc
 
