@@ -52,7 +52,7 @@ frappe.ui.form.on("Otto Tool", {
 
 			function callTestExecute(values) {
 				frappe.call({
-					method: "test_execute",
+					method: "test_tool",
 					doc: frm.doc,
 					args: values,
 					callback: function (r) {

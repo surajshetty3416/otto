@@ -176,16 +176,13 @@ class OttoTool(Document):
 		task: str | None = None,
 		execution: str | None = None,
 	):
-		content = ""
-		for k, v in args.items():
-			content += f"{k}:\n"
-			if not isinstance(v, str):
-				v, _ = json_dumps(v)
-			content += textwrap.indent(v, "    ")
-			content += "\n\n"
-		content = content.strip()
+		lib.log(
+			args,
+			tool=self.name,
+			task=task,
+			execution=execution,
+		)
 
-		lib.log(content, tool=self.name, task=task, execution=execution)
 		return execute.ExecutionResult(
 			result=json.loads(self.mock_return_value or "null"),
 			stdout="",
@@ -234,15 +231,12 @@ class OttoTool(Document):
 		)
 
 	@frappe.whitelist()
-	def test_execute(self, args: dict[str, Any]):
-		try:
-			result = dict(self.execute(args, force=True))
-			if not result["stdout"]:
-				del result["stdout"]
+	def test_tool(self, args: dict[str, Any]):
+		result = dict(self.execute(args, force=True))
+		if not result["stdout"]:
+			del result["stdout"]
 
-			if not result["stderr"]:
-				del result["stderr"]
+		if not result["stderr"]:
+			del result["stderr"]
 
-			return json.dumps(result, indent=2)
-		except Exception as e:
-			return f"error: {e}"
+		return json.dumps(result, indent=2)

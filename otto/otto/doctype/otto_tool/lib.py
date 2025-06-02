@@ -25,7 +25,7 @@ def log(
 	from otto.otto.doctype.otto_scrapbook.otto_scrapbook import OttoScrapbook
 
 	if not isinstance(content, str):
-		content = json_dumps(content)
+		content = json_dumps(content)[0]
 
 	OttoScrapbook.new(content, tool=tool, task=task, execution=execution)
 
