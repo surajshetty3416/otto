@@ -32,6 +32,7 @@ def log(
 
 def get_file(url: str):
 	"""If url is private or public Frappe File then returns base64 encoded file data else returns as it is"""
+
 	from otto.llm.utils import get_file_content
 
 	assert isinstance(url, str), "url must be a string"
@@ -39,12 +40,17 @@ def get_file(url: str):
 	if url.startswith("data:") or url.startswith("http"):
 		return url
 
-	file_url = frappe.get_site_path(url)
-	if url.startswith("/"):
-		file_url = frappe.get_site_path(url[1:])
+	if not (files := frappe.get_all("File", filters={"file_url": url}, pluck="name", limit=1)):
+		return url
 
 	try:
-		return get_file_content(file_url)["data"]
+		from frappe.core.doctype.file.file import File
+
+		import otto
+
+		path = otto.get(File, files[0]).get_full_path()
+		assert isinstance(path, str), "unsafe type check"
+		return get_file_content(path)["data"]
 	except Exception:
 		return url
 
