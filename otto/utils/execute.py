@@ -64,21 +64,29 @@ def execute(
 	)
 
 
-def run_get_context(get_context: str, doc: Document, event: str | None = None) -> str | list[str]:
+def run_get_context(
+	get_context: str,
+	doc: Document,
+	event: str,
+	globals: dict[str, Any] | None = None,
+) -> str | list[str]:
 	if not get_context:
 		return doc.as_json()
 
-	script, globals = get_script_and_globals(
+	script, _globals = get_script_and_globals(
 		get_context,
 		{"doc": doc, "event": event},
 		["doc", "event"],
 		function_name="get_context",
 	)
 
+	if globals is not None:
+		_globals.update(globals)
+
 	stdout = io.StringIO()
 	stderr = io.StringIO()
 	with capture_output(stdout, stderr):
-		result = safe_exec(script, globals)
+		result = safe_exec(script, _globals)
 	result = result[0][OUT_VAR_NAME]
 	if isinstance(result, str):
 		return result

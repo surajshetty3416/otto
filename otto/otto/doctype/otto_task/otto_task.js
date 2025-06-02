@@ -95,8 +95,12 @@ frappe.ui.form.on("Otto Task", {
 							target: values.target,
 						},
 						callback: function (r) {
-							if (r.message)
-								frappe.msgprint(`<pre>${r.message}</pre>`, __("Context"));
+							let message = r.message;
+							if (typeof message !== "string" && message.length > 0) {
+								message = JSON.stringify(message, null, 2);
+							}
+
+							if (message) frappe.msgprint(`<pre>${message}</pre>`, __("Context"));
 							else frappe.msgprint(`No context`, __("Context"));
 						},
 					});

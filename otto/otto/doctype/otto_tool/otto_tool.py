@@ -57,17 +57,20 @@ class OttoTool(Document):
 		mock_tool: bool = False,
 		mock_return_value: str | None = None,
 	):
-		doc = cast(OttoTool, frappe.get_doc(
-			{
-				"doctype": "Otto Tool",
-				"slug": slug,
-				"description": description,
-				"code": code,
-				"group": group,
-				"mock_tool": mock_tool,
-				"mock_return_value": mock_return_value,
-			}
-		))
+		doc = cast(
+			OttoTool,
+			frappe.get_doc(
+				{
+					"doctype": "Otto Tool",
+					"slug": slug,
+					"description": description,
+					"code": code,
+					"group": group,
+					"mock_tool": mock_tool,
+					"mock_return_value": mock_return_value,
+				}
+			),
+		)
 
 		for arg in args or []:
 			doc.append("args", arg)
@@ -221,22 +224,14 @@ class OttoTool(Document):
 				"execution": execution,
 			}
 		)
-		globals = dict(otto=lib.get_lib(), refs=refs)
+		globals = dict(otto=lib.get_lib(env), refs=refs)
 
 		return execute.execute(
-			self.render_code(env),
+			self.code,
 			args=args,
 			arg_names=arg_names,
 			globals=globals,
 		)
-
-	def render_code(self, env: dict | None = None) -> str:
-		from jinja2 import Template
-
-		global_env_str = frappe.get_cached_value("Otto Settings", "Otto Settings", "global_env") or "{}"
-		global_env = json.loads(global_env_str)
-		global_env.update(env or {})
-		return Template(self.code).render({"env": frappe._dict(global_env)})
 
 	@frappe.whitelist()
 	def test_execute(self, args: dict[str, Any]):

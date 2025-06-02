@@ -15,7 +15,6 @@ from otto import llm
 from otto.llm.types import ToolUseContent
 from otto.otto.doctype.otto_task.otto_task import get_tools
 from otto.otto.doctype.otto_task.tools import has_task_ended, is_meta_tool
-from otto.utils.execute import run_get_context
 
 if TYPE_CHECKING:
 	from otto.llm.types import Exchange, ExchangeItem
@@ -62,14 +61,14 @@ class OttoExecution(Document):
 			doc.event = event
 
 		doc.llm = llm or frappe.get_cached_value("Otto Task", task, "llm")
-		doc.instruction = instruction or frappe.get_cached_value("Otto Task", task, "llm")
+		doc.instruction = instruction or frappe.get_cached_value("Otto Task", task, "instruction")
 		doc.save()
 		return doc
 
 	def execute(self):
 		doc = frappe.get_doc(self.target_doctype, self.target)
 		self.set_status("Running")
-		if not (context := self.get_context(doc, self.event)):
+		if not (context := self.get_context(doc, self.event or "Manual")):
 			return
 
 		self.loop(context)
@@ -103,7 +102,7 @@ class OttoExecution(Document):
 				exchange=exchange,
 				tools=get_tools(self.task),
 				model=self.llm,
-				system=self.get_instruction(),
+				system=self.instruction,
 			)
 			logger.info(
 				{
@@ -159,12 +158,9 @@ class OttoExecution(Document):
 			self.set_execution(exchange)
 		return task_ended
 
-	def get_instruction(self):
-		instruction = frappe.get_cached_value("Otto Task", self.task, "instruction")
-		assert isinstance(instruction, str), "typecheck"
-		return instruction
+	def get_context(self, doc: Document, event: str):
+		from otto.otto.doctype.otto_task.otto_task import run_get_context
 
-	def get_context(self, doc: Document, event: str | None = None):
 		get_context = frappe.get_value("Otto Task", self.task, "get_context")
 		if not get_context or not isinstance(get_context, str):
 			return doc.as_json()

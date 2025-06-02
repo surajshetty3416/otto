@@ -134,11 +134,9 @@ class OttoTask(Document):
 
 	@frappe.whitelist()
 	def test_get_context(self, target: str):
-		from otto.utils.execute import run_get_context
-
 		assert self.get_context is not None, "type check"
 		return run_get_context(
-			self.get_context,
+			get_context=self.get_context,
 			doc=frappe.get_doc(self.target_doctype, target),
 			event="Manual",
 		)
@@ -359,3 +357,15 @@ def import_task(data: str):
 	)
 
 	return task.name
+
+
+def run_get_context(get_context: str, doc: Document, event: str):
+	from otto.otto.doctype.otto_tool.lib import get_lib
+	from otto.utils import execute
+
+	return execute.run_get_context(
+		get_context=get_context,
+		doc=doc,
+		event=event,
+		globals=dict(otto=get_lib()),
+	)

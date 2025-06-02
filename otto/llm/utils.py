@@ -179,10 +179,18 @@ def get_stats(exchange: Exchange):
 	start = datetime.datetime.fromtimestamp(_start)
 	end = datetime.datetime.fromtimestamp(_end)
 
+	max_input_tokens = 0
+	max_output_tokens = 0
+
 	for item in exchange["items"].values():
 		cost += item["meta"]["cost"]
 		input_tokens += item["meta"]["input_tokens"]
 		output_tokens += item["meta"]["output_tokens"]
+
+		if item["meta"]["input_tokens"] > max_input_tokens:
+			max_input_tokens = item["meta"]["input_tokens"]
+		if item["meta"]["output_tokens"] > max_output_tokens:
+			max_output_tokens = item["meta"]["output_tokens"]
 
 		for content_part in item["content"]:
 			if content_part["type"] == "tool_use":
@@ -190,12 +198,14 @@ def get_stats(exchange: Exchange):
 
 	return dict(
 		cost=cost,
-		input_tokens=input_tokens,
-		output_tokens=output_tokens,
+		total_input_tokens=input_tokens,
+		total_output_tokens=output_tokens,
 		start=start.isoformat(),
 		end=end.isoformat(),
 		duration=end - start,
 		tools=dict(tools_called),
+		max_input_tokens=max_input_tokens,
+		max_output_tokens=max_output_tokens,
 	)
 
 
@@ -264,10 +274,14 @@ def to_content(query: str | list[str | UserContent] | list[UserContent]) -> list
 		if q.endswith(".pdf"):
 			d = get_file_content(q)
 			c = FileContent(type="file", name=d["name"], data=d["data"])
+		elif q.startswith("data:application/"):
+			c = FileContent(type="file", name="", data=q)
 
 		elif q.endswith(("png", "jpg", "jpeg")):
 			if q.startswith("http"):
 				c = ImageContent(type="image", url=q, data=None)
+			elif q.startswith("data:image/"):
+				c = ImageContent(type="image", data=q, url=None)
 			else:
 				d = get_file_content(q)
 				c = ImageContent(type="image", data=d["data"], url=None)
