@@ -263,7 +263,7 @@ def completions(**kwargs):
 	while True:
 		try:
 			return litellm.completion(**kwargs)
-		except litellm.RateLimitError as e:
+		except litellm.RateLimitError as e: # type: ignore
 			otto.log_error("LiteLLM Completion Error", model=kwargs.get("model"))
 			if retries >= MAX_RETRIES or "request would exceed the rate limit" not in str(e):
 				raise e

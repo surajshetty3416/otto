@@ -94,7 +94,16 @@ def run_get_context(
 	if not isinstance(result, list):
 		return json_dumps(result)[0]
 
-	return [r if isinstance(r, str) else json_dumps(r)[0] for r in result]
+	from otto.llm.utils import is_user_content
+
+	content = []
+	for r in result:
+		if is_user_content(r) or isinstance(r, str):
+			content.append(r)
+		else:
+			content.append(json_dumps(r)[0])
+
+	return content
 
 
 def get_script_and_globals(

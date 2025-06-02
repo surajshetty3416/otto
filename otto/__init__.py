@@ -40,7 +40,7 @@ def log_error(
 	if not title:
 		title = "Unknown Error"
 
-	title_prefix = "[Flow]"
+	title_prefix = "[Otto]"
 	if not title.startswith(title_prefix):
 		title = f"{title_prefix} {title}"
 

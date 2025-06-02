@@ -71,7 +71,11 @@ class OttoExecution(Document):
 		if not (context := self.get_context(doc, self.event or "Manual")):
 			return
 
-		self.loop(context)
+		try:
+			self.loop(context)
+		except Exception as e:
+			otto.log_error(title="execute error", doc=self)
+			self.set_status("Failure", f"Error in execution loop: {e}")
 
 	def validate(self):
 		tool_names = frappe.get_all("Otto Task Tool CT", filters={"parent": self.task}, pluck="tool")
@@ -225,15 +229,17 @@ class OttoExecution(Document):
 
 def get_tool_map(task: OttoTask) -> dict[str, str]:
 	"""returns dict[slug, name]"""
-	names = [t.name for t in task.tools]
-	tool_map = {
-		t.slug: t.name
+	names = [t.tool for t in task.tools if not t.slug and t.is_enabled]
+	_tool_map = {
+		t.name: t.slug
 		for t in frappe.get_all("Otto Tool", filters={"name": ("in", names)}, fields=["slug", "name"])
 	}
 
-	# Update tool map with overridden slugs
-	# such is in the case of duplicate tools
-	dupes = {t.slug: t.name for t in task.tools if t.slug}
-	tool_map.update(dupes)
+	tool_map = {}
+	for t in task.tools:
+		if not t.is_enabled:
+			continue
 
+		slug = t.slug or _tool_map[t.tool]
+		tool_map[slug] = t.tool
 	return tool_map

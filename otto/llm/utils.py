@@ -6,11 +6,12 @@ import json
 import mimetypes
 import os
 import uuid
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeGuard
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
 from otto.llm.types import Exchange
+from otto.utils import json_dumps
 
 if TYPE_CHECKING:
 	from otto.llm.types import Exchange, ExchangeItem, ExchangeMeta, UserContent
@@ -253,6 +254,31 @@ def _get_content(file_path_or_url: str):
 	return filename, mime_type, content
 
 
+def is_user_content(data: Any) -> TypeGuard[UserContent]:
+	if not isinstance(data, dict):
+		return False
+
+	if data.get("type") not in ("text", "image", "file"):
+		return False
+
+	if data["type"] == "text":
+		return isinstance(data.get("text"), str)
+
+	if data["type"] == "image":
+		url = data.get("url")
+		img_data = data.get("data")
+		return (
+			(url is None or isinstance(url, str))
+			and (img_data is None or isinstance(img_data, str))
+			and (url is not None or img_data is not None)
+		)
+
+	if data["type"] == "file":
+		return isinstance(data.get("name"), str) and isinstance(data.get("data"), str)
+
+	return False
+
+
 def to_content(query: str | list[str | UserContent] | list[UserContent]) -> list[UserContent]:
 	"""
 	Convenience function to convert list of strings into UserContent, i.e.
@@ -266,22 +292,28 @@ def to_content(query: str | list[str | UserContent] | list[UserContent]) -> list
 	content = []
 	for q in query:
 		if isinstance(q, dict):
-			content.append(q)
-			continue
+			if is_user_content(q):
+				content.append(q)
+				continue
+			else:
+				q = json_dumps(q)[0]
 
 		c = TextContent(type="text", text=q)
-
-		if q.endswith(".pdf"):
-			d = get_file_content(q)
-			c = FileContent(type="file", name=d["name"], data=d["data"])
-		elif q.startswith("data:application/"):
+		if q.startswith("data:application/"):
 			c = FileContent(type="file", name="", data=q)
 
+		elif q.startswith("data:image/"):
+			c = ImageContent(type="image", data=q, url=None)
+
+		elif q.endswith(".pdf"):
+			d = get_file_content(q)
+			c = FileContent(type="file", name=d["name"], data=d["data"])
+
 		elif q.endswith(("png", "jpg", "jpeg")):
+			# Will not work for private frappe files
 			if q.startswith("http"):
 				c = ImageContent(type="image", url=q, data=None)
-			elif q.startswith("data:image/"):
-				c = ImageContent(type="image", data=q, url=None)
+
 			else:
 				d = get_file_content(q)
 				c = ImageContent(type="image", data=d["data"], url=None)

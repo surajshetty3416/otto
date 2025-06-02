@@ -31,8 +31,10 @@ def log(
 
 
 def get_file(url: str):
-	"""Converts given url to base64 encoded file data"""
+	"""If url is private or public Frappe File then returns base64 encoded file data else returns as it is"""
 	from otto.llm.utils import get_file_content
+
+	assert isinstance(url, str), "url must be a string"
 
 	if url.startswith("data:") or url.startswith("http"):
 		return url
