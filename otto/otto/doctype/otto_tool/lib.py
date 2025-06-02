@@ -49,9 +49,38 @@ def get_file(url: str):
 		return url
 
 
-def get_imgs(html: str):
-	"""Extracts all images from given html and returns ImageContents"""
-	return []
+def interpolate_imgs(html: str):
+	"""
+	Interpolate img urls within images, the images can then be converted
+	into the right content types.
+
+	Eg:
+		from: '<div><img src="file.png"></div>'
+		to: ['from: '<div><img src="file.png">', 'file.png' , '</div>']
+	"""
+	from bs4 import BeautifulSoup
+
+	soup = BeautifulSoup(html, "html.parser")
+	if not (imgs := soup.find_all("img")):
+		return [html]
+
+	content = []
+	last_idx = 0
+	for img in imgs:
+		start_idx = html.find("<img", last_idx)
+
+		if start_idx == -1:
+			continue
+
+		end_idx = html.find(">", start_idx) + 1
+		content.append(html[last_idx:end_idx])
+
+		# get image
+		content.append(get_file(str(img.get("src"))))
+		last_idx = end_idx
+
+	content.append(html[last_idx:])
+	return [c for c in content if c]
 
 
 def get_env(env: dict | None = None):
@@ -69,6 +98,6 @@ def get_lib(env: dict | None = None):
 			"env": get_env(env),
 			"log": log,
 			"get_file": get_file,
-			"get_imgs": get_imgs,
+			"interpolate_imgs": interpolate_imgs,
 		}
 	)

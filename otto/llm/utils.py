@@ -279,7 +279,7 @@ def is_user_content(data: Any) -> TypeGuard[UserContent]:
 	return False
 
 
-def to_content(query: str | list[str | UserContent] | list[UserContent]) -> list[UserContent]:
+def to_content(query: str | list[Any]) -> list[UserContent]:
 	"""
 	Convenience function to convert list of strings into UserContent, i.e.
 	dicts that pertain to image, text or file types.

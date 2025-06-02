@@ -133,13 +133,20 @@ class OttoTask(Document):
 		return execution.execute()
 
 	@frappe.whitelist()
-	def test_get_context(self, target: str):
+	def test_get_context(self, target: str, as_content: bool = False):
 		assert self.get_context is not None, "type check"
-		return run_get_context(
+		context = run_get_context(
 			get_context=self.get_context,
 			doc=frappe.get_doc(self.target_doctype, target),
 			event="Manual",
 		)
+
+		if as_content:
+			from otto.llm.utils import to_content
+
+			return to_content(context)
+
+		return context
 
 	@frappe.whitelist()
 	def list_tools(self):

@@ -85,6 +85,13 @@ frappe.ui.form.on("Otto Task", {
 						options: frm.doc.target_doctype,
 						reqd: 1,
 					},
+					{
+						description: "View context as content passed to LLM",
+						fieldname: "as_content",
+						label: __("As Content"),
+						fieldtype: "Check",
+						default: 0,
+					},
 				],
 				primary_action_label: __("Test"),
 				primary_action(values) {
@@ -93,6 +100,7 @@ frappe.ui.form.on("Otto Task", {
 						doc: frm.doc,
 						args: {
 							target: values.target,
+							as_content: values.as_content,
 						},
 						callback: function (r) {
 							let message = r.message;

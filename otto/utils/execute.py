@@ -36,6 +36,7 @@ OUT_VAR_NAME = "out"
 if TYPE_CHECKING:
 	import io
 
+
 Args = dict[str, Any]
 
 
@@ -69,7 +70,7 @@ def run_get_context(
 	doc: Document,
 	event: str,
 	globals: dict[str, Any] | None = None,
-) -> str | list[str]:
+):
 	if not get_context:
 		return doc.as_json()
 
