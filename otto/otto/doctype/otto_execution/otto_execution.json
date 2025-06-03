@@ -44,6 +44,7 @@
    "reqd": 1
   },
   {
+   "depends_on": "eval:doc.reason",
    "description": "Set only if status is failure",
    "fieldname": "reason",
    "fieldtype": "Small Text",
@@ -111,7 +112,7 @@
    "link_fieldname": "execution"
   }
  ],
- "modified": "2025-06-02 09:50:25.794933",
+ "modified": "2025-06-03 10:57:20.237804",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Execution",
