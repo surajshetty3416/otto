@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import os
+import random
 import threading
 import time
 from typing import TYPE_CHECKING
@@ -56,7 +57,7 @@ if TYPE_CHECKING:
 
 
 DEFAULT_LLM = "openai/gpt-4.1-mini"
-MAX_RETRIES = 3
+MAX_RETRIES = 6
 
 logger = otto.logger("otto_litellm")
 thinking_budget_map: dict[ThinkingEffort, int] = {
@@ -272,10 +273,11 @@ def completions(**kwargs):
 			):
 				raise e
 
-			retries += 1
-
 			# Anthropic rate limit is set on a per minute basis
-			time.sleep(61)
+			delay = min(random.randint(0, 5 * (2**retries)), 60)
+			time.sleep(delay)
+
+			retries += 1
 
 
 def _stream(completion: CustomStreamWrapper, item: ExchangeItem, exchange_id: str | None):
