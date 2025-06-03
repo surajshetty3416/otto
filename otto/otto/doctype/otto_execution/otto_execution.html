@@ -1,11 +1,4 @@
 <div class="otto-execution-container">
-  <h4>Task Execution Flow</h4>
-  <p class="text-muted">
-    This view shows the sequence of interactions and tool uses within the
-    execution.
-    User messages are typically highlighted with a blue left border, and
-    agent/LLM messages with a yellow one.
-  </p>
   <div class="execution-items">
     <!-- Items will be rendered here by JS -->
   </div>
@@ -13,186 +6,210 @@
 
 <style>
   .otto-execution-container {
-    margin-top: 15px;
-    padding: 15px;
-    border: 1px solid #d1d8dd;
-    border-radius: 4px;
-    background-color: #fdfdfd;
-  }
+    /* Color Palette */
+    --color-text-dark: var(--gray-800);
 
-  .execution-items {
-    margin-top: 15px;
+    /* Specific for agent role text on its background */
+    --color-text-medium: #666;
+    --color-text-light: #aaa;
+    --color-text-subtle: #555;
+    --color-text-thinking: #545b62;
+    --color-white: white;
+    --color-link: var(--blue-700);
+
+    /* Spacing Units */
+    --spacing-xxs: 3px;
+
+    /* Font Sizes */
+    --font-size-xxs: 0.75em;
+    /* item-id */
+    --font-size-xs: 0.8em;
+    /* item-role */
+    --font-size-s: 0.85em;
+    /* item-meta */
+    --font-size-m: 0.9em;
+
+    /* Border Widths */
+    --border-width-thin: 1px;
+    --border-width-medium: 3px;
+
+    padding: var(--margin-sm) 0;
+    border-top: var(--border-width-thin) solid var(--gray-200);
+    border-bottom: var(--border-width-thin) solid var(--gray-200);
+
+    max-height: 50vh;
+    overflow-y: auto;
+    margin-bottom: var(--margin-lg);
+
+    pre {
+      margin: 0;
+    }
   }
 
   .execution-item {
-    margin-bottom: 20px;
-    padding: 15px;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-    background-color: #fff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    margin-bottom: var(--margin-lg);
+    border: var(--border-width-thin) solid var(--gray-200);
+  }
+
+  .execution-item:last-child {
+    margin-bottom: 0;
   }
 
   .item-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
-    padding-bottom: 8px;
-    border-bottom: 1px dashed #efefef;
+    padding: var(--margin-sm);
+    border-bottom: var(--border-width-thin) solid var(--gray-200);
   }
 
   .item-role {
-    padding: 4px 10px;
-    border-radius: 12px;
-    color: white;
-    font-size: 0.8em;
+    padding: var(--spacing-xxs) var(--margin-sm);
+    font-size: var(--font-size-xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
 
-  .item-id {
-    font-size: 0.75em;
-    color: #aaa;
+  .item-header-meta {
+    font-size: var(--font-size-xxs);
+    color: var(--color-text-light);
     font-family: monospace;
   }
 
   .role-user {
-    border-left: 4px solid #17a2b8;
+    border-left: var(--border-width-medium) solid var(--orange-200);
+
+    .item-role {
+      background-color: var(--orange-200);
+      color: var(--orange-700);
+    }
   }
 
-  /* Light blue for user */
-  .role-user .item-role {
-    background-color: #17a2b8;
-  }
 
   .role-agent {
-    border-left: 4px solid #ffc107;
+    border-left: var(--border-width-medium) solid var(--teal-200);
+
+    .item-role {
+      background-color: var(--teal-200);
+      color: var(--teal-700);
+    }
   }
 
-  /* Amber for agent */
-  .role-agent .item-role {
-    background-color: #ffc107;
-    color: #333;
-  }
 
   .item-meta {
-    font-size: 0.85em;
-    color: #666;
-    margin-bottom: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: var(--margin-sm);
+    font-size: var(--font-size-s);
+    color: var(--color-text-medium);
     line-height: 1.6;
-  }
-
-  .item-meta div {
-    margin-bottom: 3px;
-  }
-
-  .item-meta strong {
-    color: #333;
-    font-weight: 600;
+    border-bottom: var(--border-width-thin) solid var(--gray-200);
   }
 
   .item-meta code {
-    background-color: #f0f0f0;
-    padding: 1px 4px;
-    border-radius: 3px;
-    font-size: 0.9em;
+    color: var(--color-text-medium);
+    font-size: var(--font-size-m);
   }
 
   .item-content-list {
-    margin-left: 0;
+    margin: 0;
     padding-left: 0;
     list-style-type: none;
-    margin-top: 10px;
   }
 
   .item-content {
-    padding: 12px;
-    border: 1px solid #eee;
-    border-left-width: 3px;
-    margin-bottom: 10px;
-    background-color: #fcfcfc;
-    border-radius: 3px;
-  }
-
-  .item-content strong:first-child {
-    display: block;
-    margin-bottom: 5px;
-    font-size: 0.9em;
-    color: #555;
-    text-transform: capitalize;
-  }
-
-  .content-text .content-value {
-    white-space: pre-wrap;
-    word-wrap: break-word;
-  }
-
-  .content-tool_use .tool-name {
-    font-weight: bold;
-    color: #0056b3;
-    margin-bottom: 5px;
-  }
-
-  /* Darker blue for tool name */
-  .content-tool_use .tool-args {
+    padding: var(--margin-sm);
+    border-bottom: var(--border-width-thin) dashed var(--gray-400);
     font-family: monospace, "Courier New", Courier;
-    background-color: #e9ecef;
-    padding: 8px;
-    border-radius: 3px;
-    white-space: pre-wrap;
-    display: block;
-    margin-top: 5px;
-    font-size: 0.9em;
-    color: #333;
-    border: 1px solid #ddd;
   }
 
-  .content-tool_use .tool-status {
-    margin-top: 8px;
-    font-weight: bold;
-    text-transform: capitalize;
+  .item-index {
+    font-weight: 600;
   }
 
-  .content-tool_use .tool-status-success {
-    color: #20c997;
+  .item-content:last-child {
+    border-bottom: none;
   }
 
-  /* Teal for success */
-  .content-tool_use .tool-status-error {
-    color: #e74c3c;
+  .item-content strong {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-dark);
   }
 
-  /* Softer red for error */
-  .content-tool_use .tool-result {
-    margin-top: 8px;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    background-color: #f8f9fa;
-    padding: 8px;
-    border-radius: 3px;
-    font-size: 0.9em;
-    border: 1px solid #eee;
+  .content-value {
+    padding: var(--margin-sm);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-dark);
+    background-color: var(--gray-50);
+    border: var(--border-width-thin) solid var(--gray-200);
+  }
+
+  .multi-content-value {
+    display: flex;
+    flex-direction: column;
+    gap: var(--margin-sm);
+  }
+
+  .content-value:has(img) {
+    padding: 0;
+    font-style: italic;
+    font-size: var(--font-size-m);
+  }
+
+  .content-value img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .content-tool_use {
+    .tool-name {
+      font-weight: bold;
+      color: var(--blue-700);
+      background-color: var(--blue-100);
+      padding: var(--spacing-xxs) var(--margin-sm);
+    }
+
+
+    .tool-args,
+    .tool-result {
+      font-family: monospace, "Courier New", Courier;
+      overflow-x: auto;
+    }
+
+
+    .tool-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tool-status {
+      font-size: var(--font-size-xs);
+      text-transform: capitalize;
+      font-weight: normal;
+      padding: 2px 6px;
+
+      &.tool-status-success {
+        color: var(--green-600);
+        background-color: var(--green-100);
+      }
+
+      &.tool-status-error {
+        color: var(--red-600);
+        background-color: var(--red-100);
+      }
+    }
   }
 
   .content-thinking .content-value {
     font-style: italic;
-    color: #545b62;
+    color: var(--color-text-thinking);
     white-space: pre-wrap;
   }
 
-  /* Darker grey for thinking */
-  .content-image img {
-    max-width: 100%;
-    height: auto;
-    border: 1px solid #ddd;
-    border-radius: 3px;
-    margin-top: 5px;
-  }
-
   .content-file a {
-    color: #0056b3;
+    color: var(--color-link);
     text-decoration: none;
   }
 
