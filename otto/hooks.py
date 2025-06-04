@@ -5,6 +5,16 @@ app_description = "Test app to validate ideas in Flow"
 app_email = "alan@frappe.io"
 app_license = "agpl-3.0"
 
+add_to_apps_screen = [
+	{
+		"name": "otto",
+		"logo": "/assets/otto/desk/otto-logo.svg",
+		"title": "Otto",
+		"route": "/app/otto",
+	}
+]
+
+
 otto_task_handler = "otto.otto.doctype.otto_task.otto_task.common_handler"
 doc_events = {
 	"*": {
