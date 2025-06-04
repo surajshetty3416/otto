@@ -1,7 +1,7 @@
 {
  "app": "otto",
  "charts": [],
- "content": "[{\"id\":\"2UYCYKODNn\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Otto</span>\",\"col\":12}},{\"id\":\"1DITlb5Buy\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Otto Task\",\"col\":6}},{\"id\":\"5jjopFTC6b\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Otto Tool\",\"col\":6}},{\"id\":\"1PI2yn6NlY\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Otto Scrapbook\",\"col\":6}},{\"id\":\"6MDoaECuZ_\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Otto Execution\",\"col\":6}}]",
+ "content": "[{\"id\":\"h0U80YUVCV\",\"type\":\"paragraph\",\"data\":{\"text\":\"<a href=\\\"/app/view-otto-execution\\\">View Executions</a>\",\"col\":12}},{\"id\":\"4eVkcmtiVn\",\"type\":\"card\",\"data\":{\"card_name\":\"Definitions\",\"col\":4}},{\"id\":\"OMj0VoZNL6\",\"type\":\"card\",\"data\":{\"card_name\":\"Executions\",\"col\":4}},{\"id\":\"lmh9Z242qd\",\"type\":\"card\",\"data\":{\"card_name\":\"Configs\",\"col\":4}}]",
  "creation": "2025-06-04 10:38:24.349553",
  "custom_blocks": [],
  "docstatus": 0,
@@ -14,8 +14,106 @@
  "is_hidden": 0,
  "label": "Otto",
  "link_type": "DocType",
- "links": [],
- "modified": "2025-06-04 10:45:44.540832",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Executions",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Otto Execution",
+   "link_count": 0,
+   "link_to": "Otto Execution",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Otto Scrapbook",
+   "link_count": 0,
+   "link_to": "Otto Scrapbook",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Definitions",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Otto Task",
+   "link_count": 0,
+   "link_to": "Otto Task",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Otto Tool",
+   "link_count": 0,
+   "link_to": "Otto Tool",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Configs",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Otto Settings",
+   "link_count": 0,
+   "link_to": "Otto Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Otto LLM",
+   "link_count": 0,
+   "link_to": "Otto LLM",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Otto Tool Group",
+   "link_count": 0,
+   "link_to": "Otto Tool Group",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2025-06-04 17:24:29.031914",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto",
@@ -26,40 +124,7 @@
  "quick_lists": [],
  "roles": [],
  "sequence_id": 32.0,
- "shortcuts": [
-  {
-   "color": "Grey",
-   "doc_view": "List",
-   "label": "Otto Task",
-   "link_to": "Otto Task",
-   "stats_filter": "[]",
-   "type": "DocType"
-  },
-  {
-   "color": "Grey",
-   "doc_view": "List",
-   "label": "Otto Tool",
-   "link_to": "Otto Tool",
-   "stats_filter": "[]",
-   "type": "DocType"
-  },
-  {
-   "color": "Grey",
-   "doc_view": "List",
-   "label": "Otto Scrapbook",
-   "link_to": "Otto Scrapbook",
-   "stats_filter": "[]",
-   "type": "DocType"
-  },
-  {
-   "color": "Grey",
-   "doc_view": "List",
-   "label": "Otto Execution",
-   "link_to": "Otto Execution",
-   "stats_filter": "[]",
-   "type": "DocType"
-  }
- ],
+ "shortcuts": [],
  "title": "Otto",
  "type": "Workspace"
 }

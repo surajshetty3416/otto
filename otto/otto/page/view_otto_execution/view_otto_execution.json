@@ -1,0 +1,23 @@
+{
+ "content": null,
+ "creation": "2025-06-04 16:04:34.908449",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2025-06-04 16:41:09.165781",
+ "modified_by": "Administrator",
+ "module": "Otto",
+ "name": "view-otto-execution",
+ "owner": "Administrator",
+ "page_name": "view-otto-execution",
+ "roles": [
+  {
+   "role": "System Manager"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "View Execution"
+}
