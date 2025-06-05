@@ -51,7 +51,9 @@ class ViewExecution {
 	}
 
 	setup_app() {
-		const app = createApp(ViewExecutionVue);
+		const app = createApp(ViewExecutionVue, {
+			executionName: this.execution,
+		});
 
 		this.$view_execution = app.mount(this.$wrapper.get(0));
 	}

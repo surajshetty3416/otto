@@ -376,3 +376,32 @@ def run_get_context(get_context: str, doc: Document, event: str):
 		event=event,
 		globals=dict(otto=get_lib()),
 	)
+
+
+@frappe.whitelist()
+def get_tool_info(task_name: str):
+	task_tools = frappe.db.get_all(
+		"Otto Task Tool CT",
+		filters={"parent": task_name},
+		fields=["tool", "slug"],
+	)
+	tools = frappe.db.get_all(
+		"Otto Tool",
+		filters={"name": ["in", [t.tool for t in task_tools]]},
+		fields=["name", "slug", "description"],
+	)
+
+	slug_map = {}
+	tool_map = {}
+
+	for tool in tools:
+		tool_map[tool.name] = tool
+
+	for tool in task_tools:
+		if tool.slug:
+			slug_map[tool.slug] = tool.tool
+		else:
+			slug = tool_map[tool.tool]["slug"]
+			slug_map[slug] = tool.tool
+
+	return dict(tool_map=tool_map, slug_map=slug_map)
