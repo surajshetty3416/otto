@@ -379,7 +379,8 @@ def run_get_context(get_context: str, doc: Document, event: str):
 
 
 @frappe.whitelist()
-def get_tool_info(task_name: str):
+def get_exec_view_info(task_name: str):
+	"""Return task relevant info for the execution view."""
 	task_tools = frappe.db.get_all(
 		"Otto Task Tool CT",
 		filters={"parent": task_name},
@@ -404,4 +405,12 @@ def get_tool_info(task_name: str):
 			slug = tool_map[tool.tool]["slug"]
 			slug_map[slug] = tool.tool
 
-	return dict(tool_map=tool_map, slug_map=slug_map)
+	values = frappe.db.get_values("Otto Task", task_name, ["title", "llm"])
+	assert values is not None
+
+	return dict(
+		tool_map=tool_map,
+		slug_map=slug_map,
+		task_title=values[0][0],
+		llm_title=frappe.db.get_value("Otto LLM", values[0][1], "title"),
+	)

@@ -26,7 +26,7 @@ const icon = computed(() => {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	padding: var(--padding-md);
+	padding: var(--padding-xs) var(--padding-md);
 	cursor: pointer;
 
 	h2 {

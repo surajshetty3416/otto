@@ -243,31 +243,3 @@ def get_tool_map(task: OttoTask) -> dict[str, str]:
 		slug = t.slug or _tool_map[t.tool]
 		tool_map[slug] = t.tool
 	return tool_map
-
-
-@frappe.whitelist()
-def get_execution_details_api(execution_name: str):
-	if not execution_name:
-		frappe.throw("Execution name is required.")
-	doc = cast(OttoExecution, frappe.get_doc("Otto Execution", execution_name))
-	return doc.as_dict()
-
-
-@frappe.whitelist()
-def get_execution_stats_api(execution_name: str):
-	if not execution_name:
-		frappe.throw("Execution name is required.")
-	doc = cast(OttoExecution, frappe.get_doc("Otto Execution", execution_name))
-	return doc.get_stats()
-
-
-@frappe.whitelist()
-def get_scrapbook_entries_api(execution_name: str):
-	if not execution_name:
-		frappe.throw("Execution name is required.")
-	return frappe.get_list(
-		"Otto Scrapbook",
-		filters={"execution": execution_name},
-		fields=["name", "content", "task", "tool", "creation", "modified"],
-		order_by="modified desc",
-	)
