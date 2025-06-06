@@ -1,14 +1,14 @@
 <script setup>
 import { onMounted, reactive, ref } from "vue";
 import Detail from "./components/Detail.vue";
-import Scrapbook from "./components/Scrapbook.vue";
+import ScrapbookViewer from "./components/ScrapbookViewer.vue";
 import SectionContainer from "./components/SectionContainer.vue";
 import {
-	get_stats,
 	format_date,
 	format_duration,
 	format_number,
 	get_link,
+	get_stats,
 	link_icon,
 } from "./utils";
 
@@ -87,11 +87,11 @@ onMounted(async () => await fetchData());
 /**
  * TODO:
  * - execution selection
- * - scrapbook section
  * - exchange section
  * - instruction section
  * - tools section
  * - execution comparison
+ * - highlight instruction, json, etc
  */
 </script>
 
@@ -172,26 +172,35 @@ onMounted(async () => await fetchData());
 			v-show="scrapbooks && scrapbooks.length > 0"
 		>
 			<template v-for="(book, index) in scrapbooks" :key="book.name">
-				<Scrapbook :scrapbook="book" :index="index" />
+				<ScrapbookViewer :scrapbook="book" :index="index" />
 			</template>
 		</SectionContainer>
 
 		<!-- 4. Exchange -->
-		<SectionContainer title="Exchange" :isLoading="loading.execution" :error="errors.execution"
+		<SectionContainer
+			title="Execution"
+			:isLoading="loading.execution"
+			:error="errors.execution"
 			>exchange</SectionContainer
 		>
 
 		<!-- 5. Instruction -->
 		<SectionContainer
+			:show="false"
 			title="Instruction"
 			:isLoading="loading.execution"
 			:error="errors.execution"
-			>instruction</SectionContainer
 		>
+			<pre class="instruction">{{ doc.instruction }}</pre>
+		</SectionContainer>
 	</div>
 </template>
 <style scoped>
 .detail-header {
+	position: sticky;
+	top: calc(var(--navbar-height) + var(--page-head-height) + 1px);
+	background-color: var(--white);
+
 	display: flex;
 	align-items: center;
 	gap: var(--padding-md);
@@ -229,6 +238,12 @@ onMounted(async () => await fetchData());
 		padding: 0.15rem 0.5rem;
 		border-radius: var(--border-radius-sm);
 	}
+}
+
+.instruction {
+	color: var(--gray-700);
+	padding: 0;
+	margin: 0;
 }
 
 .detail-container {

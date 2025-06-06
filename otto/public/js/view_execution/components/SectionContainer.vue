@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import SectionHeader from "./SectionHeader.vue";
 
 const props = defineProps({
@@ -15,9 +15,25 @@ const props = defineProps({
 		type: String,
 		default: null,
 	},
+	show: {
+		type: Boolean,
+		default: true,
+	},
 });
 
-const isOpen = ref(true);
+function get_default_state() {
+	const stored = localStorage.getItem(`otto_section_${props.title}`);
+	if (stored !== null) {
+		return stored === "true";
+	}
+
+	return props.show;
+}
+const isOpen = ref(get_default_state());
+watch(isOpen, (newVal) => {
+	isOpen.value = newVal;
+	localStorage.setItem(`otto_section_${props.title}`, newVal);
+});
 </script>
 
 <template>

@@ -9,8 +9,8 @@ const props = defineProps({
 
 const icon = computed(() => {
 	return props.modelValue
-		? frappe.utils.icon("chevron-down", "sm")
-		: frappe.utils.icon("chevron-up", "sm");
+		? frappe.utils.icon("chevron-up", "sm")
+		: frappe.utils.icon("chevron-down", "sm");
 });
 </script>
 
