@@ -1,8 +1,16 @@
 <script setup>
-import { onMounted, ref, reactive } from "vue";
+import { onMounted, reactive, ref } from "vue";
 import Detail from "./components/Detail.vue";
+import Scrapbook from "./components/Scrapbook.vue";
 import SectionContainer from "./components/SectionContainer.vue";
-import { link_icon, calculateStats } from "./utils";
+import {
+	get_stats,
+	format_date,
+	format_duration,
+	format_number,
+	get_link,
+	link_icon,
+} from "./utils";
 
 const props = defineProps({
 	executionName: {
@@ -25,36 +33,21 @@ const errors = reactive({
 	scrapbook: null,
 });
 
-function get_link(doctype, name) {
-	return frappe.utils.get_form_link(doctype, name);
-}
-
-function format_date(datetimeStr) {
-	if (!datetimeStr) return "N/A";
-	return new Date(datetimeStr).toLocaleString();
-}
-
-function format_duration(duration) {
-	return frappe.utils.get_formatted_duration(duration);
-}
-
-function format_number(number) {
-	return number.toLocaleString();
-}
-
 async function fetchData() {
 	// Fetch Execution and Related Data
 	const executionPromise = frappe.db
 		.get_doc("Otto Execution", props.executionName)
-		.then(async (_doc) => {
-			const _info = await frappe.call({
+		.then((_doc) => {
+			doc.value = _doc;
+			execution.value = JSON.parse(_doc.execution);
+			stats.value = get_stats(execution.value);
+
+			return frappe.call({
 				method: "otto.otto.doctype.otto_task.otto_task.get_exec_view_info",
 				args: { task_name: _doc.task },
 			});
-
-			doc.value = _doc;
-			execution.value = JSON.parse(_doc.execution);
-			stats.value = calculateStats(execution.value);
+		})
+		.then((_info) => {
 			info.value = _info.message;
 			loading.execution = false;
 		})
@@ -66,7 +59,7 @@ async function fetchData() {
 	const scrapbookPromise = frappe.db
 		.get_list("Otto Scrapbook", {
 			filters: { execution: props.executionName },
-			fields: ["name", "content", "tool"],
+			fields: ["name", "content", "tool", "creation"],
 		})
 		.then((_scrapbooks) => {
 			scrapbooks.value = _scrapbooks;
@@ -77,6 +70,9 @@ async function fetchData() {
 		});
 
 	await Promise.all([executionPromise, scrapbookPromise]);
+	for (const book of scrapbooks.value) {
+		book.tool_slug = info.value.tool_map[book.tool].slug;
+	}
 }
 
 function get_status_style(status) {
@@ -87,13 +83,23 @@ function get_status_style(status) {
 }
 
 onMounted(async () => await fetchData());
+
+/**
+ * TODO:
+ * - execution selection
+ * - scrapbook section
+ * - exchange section
+ * - instruction section
+ * - tools section
+ * - execution comparison
+ */
 </script>
 
 <template>
 	<div class="execution-viewer">
-		<!-- Header -->
+		<!-- 0. Header -->
 		<div class="detail-header" v-if="doc">
-			<a class="name" :href="get_link('Otto Execution', doc.name)">
+			<a class="name" :href="get_link('Otto Execution', doc.name)" target="_blank">
 				Execution <span>{{ doc.name }}</span> <span v-html="link_icon"></span
 			></a>
 			<div class="date">{{ format_date(doc.creation) }}</div>
@@ -132,7 +138,7 @@ onMounted(async () => await fetchData());
 		<!-- 2. Execution Stats -->
 		<SectionContainer title="Stats" :isLoading="loading.execution" :error="errors.execution">
 			<div class="detail-container">
-				<Detail label="Cost" :value="`$${stats.cost}`" />
+				<Detail label="Cost" :value="`$${stats.cost.toFixed(6)}`" />
 				<Detail
 					label="Duration"
 					:value="format_duration(stats.duration)"
@@ -163,8 +169,12 @@ onMounted(async () => await fetchData());
 			title="Scrapbook"
 			:isLoading="loading.scrapbook"
 			:error="errors.scrapbook"
-			>scrapbook</SectionContainer
+			v-show="scrapbooks && scrapbooks.length > 0"
 		>
+			<template v-for="(book, index) in scrapbooks" :key="book.name">
+				<Scrapbook :scrapbook="book" :index="index" />
+			</template>
+		</SectionContainer>
 
 		<!-- 4. Exchange -->
 		<SectionContainer title="Exchange" :isLoading="loading.execution" :error="errors.execution"
@@ -180,7 +190,6 @@ onMounted(async () => await fetchData());
 		>
 	</div>
 </template>
-<
 <style scoped>
 .detail-header {
 	display: flex;
@@ -196,7 +205,7 @@ onMounted(async () => await fetchData());
 		span {
 			margin-left: var(--padding-sm);
 			color: var(--gray-600);
-			font-family: var(--font-mono);
+			font-family: monospace;
 		}
 	}
 

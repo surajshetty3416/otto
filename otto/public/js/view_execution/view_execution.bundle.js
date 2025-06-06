@@ -5,7 +5,7 @@ class ViewExecution {
 	constructor({ wrapper, page, execution }) {
 		this.$wrapper = $(wrapper);
 		this.page = page;
-		this.page.set_indicator("Sigma", "purple");
+		// this.page.set_indicator("Sigma", "purple");
 		this.execution = execution;
 
 		// this.page.add_field({
@@ -36,9 +36,9 @@ class ViewExecution {
 		// 	this.store.save_changes()
 		// );
 
-		this.reset_changes_btn = this.page.add_button(__("Go to Execution"), () => {
-			frappe.set_route("Form", "Otto Execution", this.execution);
-		});
+		// this.reset_changes_btn = this.page.add_button(__("Go to Execution"), () => {
+		// 	frappe.set_route("Form", "Otto Execution", this.execution);
+		// });
 
 		// this.go_to_doctype_btn = this.page.add_menu_item(__("Go to Execution"), () =>
 		// 	frappe.set_route("Form", "Otto Execution", this.execution)

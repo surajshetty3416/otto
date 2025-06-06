@@ -30,6 +30,7 @@ const icon = computed(() => {
 	cursor: pointer;
 
 	h2 {
+		color: var(--gray-800);
 		font-size: var(--text-md);
 		margin: 0;
 	}

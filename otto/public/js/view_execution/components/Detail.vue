@@ -1,5 +1,6 @@
 <script setup>
-import { link_icon } from "../utils";
+// import { link_icon } from "../utils";
+import Link from "./Link.vue";
 
 const props = defineProps({
 	label: { type: String, required: true },
@@ -11,12 +12,7 @@ const props = defineProps({
 <template>
 	<div class="detail">
 		<label>{{ label }}</label>
-		<a v-if="link" :href="link" target="_blank">
-			<p>
-				{{ value }}
-			</p>
-			<div v-html="link_icon" />
-		</a>
+		<Link class="link" v-if="link" :value="value" :link="link" />
 		<p v-else>{{ value }}</p>
 	</div>
 </template>
@@ -31,24 +27,12 @@ const props = defineProps({
 		/* margin-bottom: var(--padding-xs); */
 	}
 
-	p {
+	p,
+	.link {
 		color: var(--gray-800);
 		font-size: var(--text-md);
 		margin: 0;
 		padding: 0;
-	}
-
-	a {
-		display: flex;
-		align-items: center;
-		gap: var(--padding-sm);
-	}
-
-	a:hover {
-		p {
-			color: var(--gray-900);
-		}
-		text-decoration: none;
 	}
 }
 </style>

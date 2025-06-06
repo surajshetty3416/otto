@@ -1,6 +1,6 @@
 export const link_icon = frappe.utils.icon("es-line-arrow-up-right", "xs");
 
-export function calculateStats(execution) {
+export function get_stats(execution) {
 	const stats = {
 		cost: 0,
 		total_input_tokens: 0,
@@ -46,4 +46,21 @@ export function calculateStats(execution) {
 	stats.duration = (stats.end.valueOf() - stats.start.valueOf()) / 1000;
 
 	return stats;
+}
+
+export function get_link(doctype, name) {
+	return frappe.utils.get_form_link(doctype, name);
+}
+
+export function format_date(datetimeStr) {
+	if (!datetimeStr) return "N/A";
+	return new Date(datetimeStr).toLocaleString();
+}
+
+export function format_duration(duration) {
+	return frappe.utils.get_formatted_duration(duration);
+}
+
+export function format_number(number) {
+	return number.toLocaleString();
 }

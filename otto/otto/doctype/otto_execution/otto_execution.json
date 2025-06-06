@@ -1,6 +1,6 @@
 {
  "actions": [],
- "allow_rename": 1,
+ "autoname": "hash",
  "creation": "2025-04-29 21:03:19.454876",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -112,10 +112,11 @@
    "link_fieldname": "execution"
   }
  ],
- "modified": "2025-06-03 10:57:20.237804",
+ "modified": "2025-06-06 10:45:28.770605",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Execution",
+ "naming_rule": "Random",
  "owner": "Administrator",
  "permissions": [
   {
