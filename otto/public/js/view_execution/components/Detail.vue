@@ -12,7 +12,7 @@ const props = defineProps({
 <template>
 	<div class="detail">
 		<label>{{ label }}</label>
-		<Link class="link" v-if="link" :value="value" :link="link" />
+		<Link class="link" v-if="link" :link="link">{{ value }}</Link>
 		<p v-else>{{ value }}</p>
 	</div>
 </template>

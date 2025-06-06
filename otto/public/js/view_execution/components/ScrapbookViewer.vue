@@ -16,17 +16,19 @@ const props = defineProps({
 			<span class="separator">·</span>
 			<Link
 				:title="`Scrapbook: ${scrapbook.name}`"
-				:value="scrapbook.name"
 				:link="get_link('Otto Scrapbook', scrapbook.name)"
 				class="scrapbook-link"
-			/>
+			>
+				{{ scrapbook.name }}
+			</Link>
 			<span class="separator">·</span>
 			<Link
 				:title="`Tool: ${scrapbook.tool_slug}`"
-				:value="scrapbook.tool_slug"
 				:link="get_link('Otto Tool', scrapbook.tool)"
 				class="tool-link"
-			/>
+			>
+				{{ scrapbook.tool_slug ?? "unknown-tool" }}
+			</Link>
 			<p class="created" :title="`Created: ${scrapbook.creation}`">
 				{{ format_date(scrapbook.creation) }}
 			</p>

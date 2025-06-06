@@ -86,3 +86,10 @@ export function escape_html(str) {
 export function get_icon(name, size = "xs") {
 	return frappe.utils.icon(name, size);
 }
+
+
+export function get_chevron(show) {
+	let chevron = "chevron-up";
+	if (!show) chevron = "chevron-down";
+	return frappe.utils.icon(chevron, "sm");
+}

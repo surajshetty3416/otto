@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from "vue";
 import ObjectViewer from "./ObjectViewer.vue";
+import PreViewer from "./PreViewer.vue";
 
 const props = defineProps({
 	value: { type: [Object, String], required: true },
@@ -14,11 +15,10 @@ const content = computed(() => {
 	}
 
 	try {
-		console.log(props.value);
 		const value = JSON.parse(props.value);
 		delete value.explanation;
 		return value;
-	} catch {
+	} catch (e) {
 		return props.value;
 	}
 });
@@ -30,34 +30,31 @@ const explanation = computed(() => {
 
 	try {
 		return JSON.parse(props.value).explanation;
-	} catch {
+	} catch (e) {
 		return null;
 	}
-});
-
-const content_style = computed(() => {
-	if (!explanation.value) return "";
-
-	return "border-bottom: 1px solid var(--gray-200);";
 });
 </script>
 <template>
 	<div class="content">
 		<ObjectViewer
 			class="content-object"
-			:style="content_style"
 			v-if="typeof content === 'object' && Object.keys(content).length > 0"
 			:object="content"
 		/>
-		<pre
+		<PreViewer
 			v-else-if="typeof content !== 'object' && content"
 			class="content-regular"
 			:style="content_style"
-			>{{ content }}</pre
-		>
+			:value="content"
+		/>
 		<p v-else class="no-content">No content</p>
 
-		<p v-if="explanation" title="Explanation given by LLM for tool use" class="explanation">
+		<p
+			v-if="explanation"
+			title="Explanation is a meta arg used by the LLM to explain the tool use"
+			class="explanation"
+		>
 			{{ explanation }}
 		</p>
 	</div>
@@ -85,12 +82,13 @@ const content_style = computed(() => {
 	}
 
 	.explanation {
+		font-style: italic;
 		padding: 0;
 		margin: 0;
 		font-size: var(--text-xs);
 		color: var(--gray-600);
 		padding: var(--padding-xs);
-		background-color: var(--gray-50);
+		border-top: 1px dashed var(--gray-300);
 	}
 
 	pre {

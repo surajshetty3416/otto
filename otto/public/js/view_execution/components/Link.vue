@@ -1,7 +1,7 @@
 <script setup>
 import { link_icon } from "../utils";
 const props = defineProps({
-	value: { type: String, required: true },
+	// value: { type: String, required: true },
 	link: { type: String, required: false },
 });
 </script>
@@ -9,7 +9,7 @@ const props = defineProps({
 <template>
 	<a v-if="link" :href="link" target="_blank" class="link">
 		<p>
-			{{ value }}
+			<slot></slot>
 		</p>
 		<span v-html="link_icon" />
 	</a>

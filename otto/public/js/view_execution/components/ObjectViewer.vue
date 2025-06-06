@@ -1,4 +1,5 @@
 <script setup>
+import PreViewer from "./PreViewer.vue";
 const props = defineProps({
 	object: { type: Object, required: true },
 });
@@ -9,7 +10,7 @@ const props = defineProps({
 		<template v-for="(value, key) in object" :key="key">
 			<div class="item">
 				<div class="key">{{ key }}</div>
-				<pre class="value">{{ value }}</pre>
+				<PreViewer :value="value" />
 			</div>
 		</template>
 	</div>
@@ -28,16 +29,6 @@ const props = defineProps({
 	font-family: monospace;
 	margin: 0;
 	padding: 0;
-}
-
-.value {
-	color: var(--gray-700);
-	font-size: var(--text-sm);
-	font-family: monospace;
-	margin: 0;
-	padding: 0;
-	overflow-x: auto;
-	/* white-space: pre; */
 }
 
 .item {

@@ -1,9 +1,10 @@
 <script setup>
-import { onMounted, reactive, ref, computed } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 import Detail from "./components/Detail.vue";
+import ExchangeViewer from "./components/ExchangeViewer.vue";
+import PreViewer from "./components/PreViewer.vue";
 import ScrapbookViewer from "./components/ScrapbookViewer.vue";
 import SectionContainer from "./components/SectionContainer.vue";
-import ExchangeViewer from "./components/ExchangeViewer.vue";
 import {
 	format_date,
 	format_duration,
@@ -112,12 +113,9 @@ onMounted(async () => await fetchData());
 
 /**
  * TODO:
- * - execution selection
- * - exchange section
- * - instruction section
- * - tools section
  * - execution comparison
  * - highlight instruction, json, etc
+ * - feedback section
  */
 </script>
 
@@ -161,8 +159,43 @@ onMounted(async () => await fetchData());
 			</div>
 		</SectionContainer>
 
-		<!-- 2. Execution Stats -->
-		<SectionContainer title="Stats" :isLoading="loading.execution" :error="errors.execution">
+		<!-- 2. Scrapbook -->
+		<SectionContainer
+			title="Scrapbook: mocked tool args or other logs recorded in Otto Scrapbook"
+			label="Scrapbook"
+			:isLoading="loading.scrapbook"
+			:error="errors.scrapbook"
+			v-show="scrapbooks && scrapbooks.length > 0"
+		>
+			<template v-for="(book, index) in scrapbooks" :key="book.name">
+				<ScrapbookViewer v-if="book" :scrapbook="book" :index="index" />
+			</template>
+		</SectionContainer>
+
+		<!-- 3. Exchange -->
+		<SectionContainer
+			title="Execution: execution sequence of the task"
+			label="Execution"
+			:isLoading="loading.execution"
+			:error="errors.execution"
+		>
+			<div v-if="execution">
+				<ExchangeViewer
+					v-for="(item, index) in exchange_sequence"
+					:key="item.id"
+					:item="item"
+					:index="index"
+				/>
+			</div>
+		</SectionContainer>
+
+		<!-- 4. Stats -->
+		<SectionContainer
+			title="Stats: metadata about the execution run"
+			label="Stats"
+			:isLoading="loading.execution"
+			:error="errors.execution"
+		>
 			<div class="detail-container">
 				<Detail label="Cost" :value="`$${stats.cost.toFixed(6)}`" />
 				<Detail
@@ -190,42 +223,15 @@ onMounted(async () => await fetchData());
 			</div>
 		</SectionContainer>
 
-		<!-- 3. Scrapbook -->
-		<SectionContainer
-			title="Scrapbook"
-			:isLoading="loading.scrapbook"
-			:error="errors.scrapbook"
-			v-show="scrapbooks && scrapbooks.length > 0"
-		>
-			<template v-for="(book, index) in scrapbooks" :key="book.name">
-				<ScrapbookViewer v-if="book" :scrapbook="book" :index="index" />
-			</template>
-		</SectionContainer>
-
-		<!-- 4. Exchange -->
-		<SectionContainer
-			title="Execution"
-			:isLoading="loading.execution"
-			:error="errors.execution"
-		>
-			<div v-if="execution">
-				<ExchangeViewer
-					v-for="(item, index) in exchange_sequence"
-					:key="item.id"
-					:item="item"
-					:index="index"
-				/>
-			</div>
-		</SectionContainer>
-
 		<!-- 5. Instruction -->
 		<SectionContainer
+			title="Instruction: system prompt used to instruct the LLM on how to execute the task"
+			label="Instruction"
 			:show="false"
-			title="Instruction"
 			:isLoading="loading.execution"
 			:error="errors.execution"
 		>
-			<pre class="instruction">{{ doc.instruction }}</pre>
+			<PreViewer :value="doc.instruction" />
 		</SectionContainer>
 	</div>
 </template>

@@ -3,7 +3,7 @@ import { ref, watch } from "vue";
 import SectionHeader from "./SectionHeader.vue";
 
 const props = defineProps({
-	title: {
+	label: {
 		type: String,
 		required: true,
 	},
@@ -22,7 +22,7 @@ const props = defineProps({
 });
 
 function get_default_state() {
-	const stored = localStorage.getItem(`otto_section_${props.title}`);
+	const stored = localStorage.getItem(`otto_section_${props.label}`);
 	if (stored !== null) {
 		return stored === "true";
 	}
@@ -32,15 +32,15 @@ function get_default_state() {
 const isOpen = ref(get_default_state());
 watch(isOpen, (newVal) => {
 	isOpen.value = newVal;
-	localStorage.setItem(`otto_section_${props.title}`, newVal);
+	localStorage.setItem(`otto_section_${props.label}`, newVal);
 });
 </script>
 
 <template>
 	<div class="section">
 		<SectionHeader
-			v-if="title"
-			:title="title"
+			v-if="label"
+			:title="label"
 			v-model="isOpen"
 			:style="{
 				borderBottom: isOpen ? '1px dashed var(--gray-300)' : '1px solid var(--gray-200) ',

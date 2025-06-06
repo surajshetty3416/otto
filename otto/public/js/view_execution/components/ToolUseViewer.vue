@@ -1,6 +1,6 @@
 <script setup>
-import { ref } from "vue";
-import { get_link } from "../utils";
+import { computed, ref } from "vue";
+import { get_link, get_chevron } from "../utils";
 import ContentViewer from "./ContentViewer.vue";
 import Link from "./Link.vue";
 
@@ -21,22 +21,49 @@ function get_status_style(status) {
 	if (status === "error") return "color: var(--red-600); background-color: var(--red-100);";
 }
 
-function get_chevron(show) {
-	let chevron = "chevron-up";
-	if (!show) chevron = "chevron-down";
-	return frappe.utils.icon(chevron, "sm");
-}
+const isMetaTool = computed(() => {
+	return ["think"].includes(props.content.name);
+});
 </script>
 
 <template>
 	<div class="tool-use">
 		<div class="tool-use-header">
-			<Link
-				:title="`Tool: ${content.tool?.slug}, Alt Slug: ${content.name}`"
-				:link="get_link('Otto Tool', content.tool?.name)"
-				:value="content.name"
-				class="tool-name"
-			/>
+			<div class="index-title-container">
+				<span :title="`Content Index: ${index + 1}`" class="index">{{ index + 1 }}.</span>
+
+				<!-- Tool Name -->
+				<Link
+					v-if="content.tool?.name"
+					:title="`Tool: ${content.tool?.slug ?? content.name}, Alt Slug: ${
+						content.name
+					}`"
+					:link="get_link('Otto Tool', content.tool?.name)"
+					class="tool-name"
+				>
+					<span class="tool-name-text">{{ content.name }}</span>
+					<span
+						:title="`${content.name} is a meta tool used to improve task handling`"
+						v-if="isMetaTool"
+						class="meta-tool-label"
+					>
+						[meta]</span
+					>
+				</Link>
+
+				<!-- Tool Name if no link -->
+				<p v-else class="tool-name">
+					<span class="tool-name-text">{{ content.name }}</span>
+					<span
+						:title="`${content.name} is a meta tool used to improve task handling`"
+						v-if="isMetaTool"
+						class="meta-tool-label"
+					>
+						[meta]</span
+					>
+				</p>
+			</div>
+
 			<p
 				:title="`Tool Execution Status: ${content.status}`"
 				class="status"
@@ -84,6 +111,28 @@ function get_chevron(show) {
 		justify-content: space-between;
 		align-items: center;
 		font-size: var(--text-sm);
+
+		.index-title-container {
+			display: flex;
+			align-items: center;
+			gap: var(--padding-sm);
+
+			.index {
+				color: var(--gray-500);
+				font-weight: normal;
+			}
+
+			.tool-name-text,
+			.meta-tool-label {
+				font-family: monospace;
+			}
+
+			.meta-tool-label {
+				font-size: var(--text-xs);
+				color: var(--violet-500);
+				font-weight: normal;
+			}
+		}
 	}
 
 	.tool-use-section {
@@ -91,9 +140,8 @@ function get_chevron(show) {
 
 		p {
 			font-size: var(--text-xs);
-			font-family: monospace;
 			color: var(--gray-600);
-			margin: var(--padding-xs) 0;
+			margin: 0;
 		}
 
 		.tool-use-section-header {
@@ -101,6 +149,7 @@ function get_chevron(show) {
 			justify-content: space-between;
 			align-items: center;
 			font-size: var(--text-sm);
+			padding: var(--padding-xs) 0;
 		}
 
 		.tool-use-section-header:hover {
@@ -119,6 +168,7 @@ function get_chevron(show) {
 	.tool-name {
 		font-weight: 600;
 		color: var(--gray-700);
+		margin: 0;
 	}
 
 	.status {

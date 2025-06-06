@@ -2,6 +2,8 @@
 import { computed } from "vue";
 import { format_date, format_duration, format_number } from "../utils";
 import ToolUseViewer from "./ToolUseViewer.vue";
+import TextViewer from "./TextViewer.vue";
+import ImageViewer from "./ImageViewer.vue";
 
 const props = defineProps({
 	index: {
@@ -69,42 +71,46 @@ const duration = computed(() => {
 			</div>
 		</div>
 
-    <!-- Content List -->
+		<!-- Content List -->
 		<div class="content-wrapper">
 			<div v-for="(content, index) in item.content" :key="index" class="content-block">
 				<!-- Text Block -->
-				<div v-if="content.type === 'text'">
-					<pre class="content-pre">{{ content.text }}</pre>
-				</div>
+				<TextViewer
+					v-if="content.type === 'text'"
+					:index="index"
+					:value="content.text"
+					:is-thinking="false"
+				/>
 
 				<!-- Thinking Block -->
-				<div v-else-if="content.type === 'thinking'">
-					<details>
-						<summary>Thinking</summary>
-						<pre class="content-pre">{{ content.text }}</pre>
-					</details>
-				</div>
+				<TextViewer
+					v-else-if="content.type === 'thinking'"
+					:index="index"
+					:value="content.text"
+					:is-thinking="true"
+				/>
 
-				<ToolUseViewer v-else-if="content.type === 'tool_use'" :content="content" />
+				<ToolUseViewer
+					v-else-if="content.type === 'tool_use'"
+					:index="index"
+					:content="content"
+				/>
 
 				<!-- Image Block -->
-				<div v-else-if="content.type === 'image'">
-					add show, hide image
-					<!-- <img
-						:src="content.url || content.data"
-						alt="image content"
-						class="image-content"
-					/> -->
-				</div>
+				<ImageViewer
+					v-else-if="content.type === 'image'"
+					:index="index"
+					:content="content"
+				/>
 
 				<!-- File Block -->
 				<div v-else-if="content.type === 'file'">
-					<div class="file-content">
+					<!-- <div class="file-content">
 						<p>
 							<span class="file-icon">📄</span>
 							<span>{{ content.name }}</span>
 						</p>
-					</div>
+					</div> -->
 				</div>
 			</div>
 		</div>
@@ -214,39 +220,6 @@ const duration = computed(() => {
 
 .content-block:last-child {
 	border-bottom: none;
-}
-
-.content-pre {
-	white-space: pre-wrap;
-	word-wrap: break-word;
-	background-color: var(--gray-100);
-	padding: var(--padding-sm);
-	color: var(--gray-800);
-	margin: 0;
-	font-family: var(--font-family-mono);
-	font-size: var(--text-xs);
-}
-
-details {
-	margin-top: var(--padding-sm);
-}
-
-summary {
-	cursor: pointer;
-	font-weight: 600;
-	color: var(--gray-600);
-	font-size: var(--text-xs);
-}
-
-.image-content {
-	max-width: 100%;
-	border: 1px solid var(--gray-200);
-}
-
-.file-content {
-	display: flex;
-	align-items: center;
-	gap: var(--padding-sm);
 }
 
 .separator {
