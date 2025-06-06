@@ -1,8 +1,9 @@
 <script setup>
-import { onMounted, reactive, ref } from "vue";
+import { onMounted, reactive, ref, computed } from "vue";
 import Detail from "./components/Detail.vue";
 import ScrapbookViewer from "./components/ScrapbookViewer.vue";
 import SectionContainer from "./components/SectionContainer.vue";
+import ExchangeViewer from "./components/ExchangeViewer.vue";
 import {
 	format_date,
 	format_duration,
@@ -31,6 +32,31 @@ const loading = reactive({
 const errors = reactive({
 	execution: null,
 	scrapbook: null,
+});
+
+const exchange_sequence = computed(() => {
+	if (!execution.value) return [];
+	const items = [];
+	let current_id = execution.value.first;
+	while (current_id) {
+		const item = execution.value.items[current_id];
+		if (!item) break;
+		items.push(item);
+
+		for (const content of item.content) {
+			if (content.type !== "tool_use") continue;
+			const tool_name = info.value.slug_map[content.name];
+			content.tool = info.value.tool_map[tool_name];
+		}
+
+		if (item.next && item.next.length > 0) {
+			const next_index = item.selected_next || 0;
+			current_id = item.next[next_index];
+		} else {
+			current_id = null;
+		}
+	}
+	return items;
 });
 
 async function fetchData() {
@@ -172,7 +198,7 @@ onMounted(async () => await fetchData());
 			v-show="scrapbooks && scrapbooks.length > 0"
 		>
 			<template v-for="(book, index) in scrapbooks" :key="book.name">
-				<ScrapbookViewer :scrapbook="book" :index="index" />
+				<ScrapbookViewer v-if="book" :scrapbook="book" :index="index" />
 			</template>
 		</SectionContainer>
 
@@ -181,8 +207,16 @@ onMounted(async () => await fetchData());
 			title="Execution"
 			:isLoading="loading.execution"
 			:error="errors.execution"
-			>exchange</SectionContainer
 		>
+			<div v-if="execution">
+				<ExchangeViewer
+					v-for="(item, index) in exchange_sequence"
+					:key="item.id"
+					:item="item"
+					:index="index"
+				/>
+			</div>
+		</SectionContainer>
 
 		<!-- 5. Instruction -->
 		<SectionContainer
@@ -200,6 +234,7 @@ onMounted(async () => await fetchData());
 	position: sticky;
 	top: calc(var(--navbar-height) + var(--page-head-height) + 1px);
 	background-color: var(--white);
+	z-index: 20;
 
 	display: flex;
 	align-items: center;

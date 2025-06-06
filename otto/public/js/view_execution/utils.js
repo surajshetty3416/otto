@@ -52,12 +52,20 @@ export function get_link(doctype, name) {
 	return frappe.utils.get_form_link(doctype, name);
 }
 
-export function format_date(datetimeStr) {
-	if (!datetimeStr) return "N/A";
-	return new Date(datetimeStr).toLocaleString();
+export function format_date(timestamp) {
+	if (typeof timestamp === "number" && timestamp < 1600000000000) {
+		timestamp = timestamp * 1000;
+	}
+
+	if (!timestamp) return "N/A";
+	return new Date(timestamp).toLocaleString();
 }
 
 export function format_duration(duration) {
+	if (duration < 60) {
+		return `${duration.toFixed(2)}s`;
+	}
+
 	return frappe.utils.get_formatted_duration(duration);
 }
 
@@ -73,4 +81,8 @@ export function escape_html(str) {
 		.replace(/>/g, "&gt;")
 		.replace(/"/g, "&quot;")
 		.replace(/'/g, "&#039;");
+}
+
+export function get_icon(name, size = "xs") {
+	return frappe.utils.icon(name, size);
 }
