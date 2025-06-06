@@ -130,7 +130,7 @@ const duration = computed(() => {
 }
 
 .user-item {
-	border-left: 3px solid var(--purple-200);
+	border-left: 3px solid var(--violet-200);
 }
 
 .llm-item {
@@ -165,8 +165,8 @@ const duration = computed(() => {
 	}
 
 	.role-system {
-		background-color: var(--purple-100);
-		color: var(--purple-700);
+		background-color: var(--violet-100);
+		color: var(--violet-700);
 	}
 
 	.role-llm {

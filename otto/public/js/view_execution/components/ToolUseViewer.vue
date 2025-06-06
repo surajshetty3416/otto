@@ -22,7 +22,7 @@ function get_status_style(status) {
 }
 
 const isMetaTool = computed(() => {
-	return ["think"].includes(props.content.name);
+	return ["think", "end_task"].includes(props.content.name);
 });
 </script>
 
@@ -35,15 +35,13 @@ const isMetaTool = computed(() => {
 				<!-- Tool Name -->
 				<Link
 					v-if="content.tool?.name"
-					:title="`Tool: ${content.tool?.slug ?? content.name}, Alt Slug: ${
-						content.name
-					}`"
-					:link="get_link('Otto Tool', content.tool?.name)"
+					:title="`Tool: ${content.tool.slug}\nAlt Slug: ${content.name}\nDescription: ${content.tool.description}`"
+					:link="get_link('Otto Tool', content.tool.name)"
 					class="tool-name"
 				>
 					<span class="tool-name-text">{{ content.name }}</span>
 					<span
-						:title="`${content.name} is a meta tool used to improve task handling`"
+						:title="`${content.name} is a meta tool used to assist task handling`"
 						v-if="isMetaTool"
 						class="meta-tool-label"
 					>
@@ -52,10 +50,10 @@ const isMetaTool = computed(() => {
 				</Link>
 
 				<!-- Tool Name if no link -->
-				<p v-else class="tool-name">
+				<p v-else class="tool-name" :title="`Tool: ${content.name}`">
 					<span class="tool-name-text">{{ content.name }}</span>
 					<span
-						:title="`${content.name} is a meta tool used to improve task handling`"
+						:title="`${content.name} is a meta tool used to assist task handling`"
 						v-if="isMetaTool"
 						class="meta-tool-label"
 					>

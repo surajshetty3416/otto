@@ -5,7 +5,7 @@ class ViewExecution {
 	constructor({ wrapper, page, execution }) {
 		this.$wrapper = $(wrapper);
 		this.page = page;
-		// this.page.set_indicator("Sigma", "purple");
+		// this.page.set_indicator("Sigma", "violet");
 		this.execution = execution;
 
 		// this.page.add_field({

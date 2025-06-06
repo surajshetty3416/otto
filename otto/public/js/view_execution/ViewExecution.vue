@@ -225,6 +225,7 @@ onMounted(async () => await fetchData());
 
 		<!-- 5. Instruction -->
 		<SectionContainer
+			v-if="doc?.instruction"
 			title="Instruction: system prompt used to instruct the LLM on how to execute the task"
 			label="Instruction"
 			:show="false"
@@ -276,8 +277,8 @@ onMounted(async () => await fetchData());
 
 	.status {
 		font-size: var(--text-xs);
-		padding: 0.15rem 0.5rem;
-		border-radius: var(--border-radius-sm);
+		padding: 3px var(--padding-sm);
+		margin: 0;
 	}
 }
 
