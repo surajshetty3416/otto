@@ -15,7 +15,7 @@ const show = ref({
 });
 
 function showDefault(obj) {
-	if (typeof obj !== "object") {
+	if (typeof obj !== "object" || obj === null) {
 		return !!obj;
 	}
 

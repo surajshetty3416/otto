@@ -52,7 +52,7 @@ function validate_execution(execution, display_wrapper) {
 		return false;
 	}
 
-	if (typeof execution.items !== "object" || !execution.first) {
+	if (typeof execution.items !== "object" || execution.items === null || !execution.first) {
 		display_wrapper.html(
 			'<p class="text-warning">Execution data is incomplete or malformed.</p>'
 		);

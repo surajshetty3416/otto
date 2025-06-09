@@ -1,17 +1,5 @@
-export function prompt_for_execution(wrapper) {
-	frappe.call({
-		method: "otto.otto.doctype.otto_execution.otto_execution.get_recent_executions",
-		callback: (r) => {
-			if (r.message && r.message.length) {
-				show_execution_dialog(r.message);
-			}
-		},
-	});
-}
-
 export function show_execution_dialog(executions) {
-	let selected_executions = [];
-
+	const selected_executions = [];
 	const dialog = new frappe.ui.Dialog({
 		title: __("Select Execution"),
 		// title: __("Select up to 3 Executions"),

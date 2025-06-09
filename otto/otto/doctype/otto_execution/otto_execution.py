@@ -262,3 +262,29 @@ def get_recent_executions(limit: int = 20) -> list[dict]:
 		execution["task_name"] = task_map[execution["task"]]["title"]
 
 	return executions
+
+
+@frappe.whitelist()
+def get_adjacent_execution(name: str, next: str | bool):
+	if isinstance(next, str):
+		"""frappe.call appears to be sending a string instead of a boolean, wt"""
+		next = next == "true"
+
+	"""Get the next or previous execution in chronological order"""
+	order = "asc" if next else "desc"
+	operator = ">" if next else "<"
+
+	execution = frappe.get_all(
+		"Otto Execution",
+		filters={
+			"modified": (operator, frappe.get_value("Otto Execution", name, "modified")),
+		},
+		order_by=f"modified {order}",
+		limit=1,
+		pluck="name",
+	)
+
+	if execution:
+		return execution[0]
+
+	return None

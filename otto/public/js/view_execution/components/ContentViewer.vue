@@ -8,7 +8,7 @@ const props = defineProps({
 });
 
 const content = computed(() => {
-	if (typeof props.value === "object") {
+	if (typeof props.value === "object" && props.value !== null) {
 		const value = { ...props.value };
 		delete value.explanation;
 		return value;
@@ -24,7 +24,7 @@ const content = computed(() => {
 });
 
 const explanation = computed(() => {
-	if (typeof props.value === "object") {
+	if (typeof props.value === "object" && props.value !== null) {
 		return props.value.explanation;
 	}
 

@@ -12,17 +12,13 @@ const props = defineProps({
 	// 	required: true,
 	// },
 });
-
-const styles = computed(() => {
-	// const maxWidth = "100vw";
-});
 </script>
 <template>
 	<div class="container">
 		<!-- <template v-for="execution in executions" :key="execution">
 			<ViewExecution :execution-name="execution" />
 		</template> -->
-		<ViewExecution :execution-name="execution" />
+		<ViewExecution v-if="execution" :execution-name="execution" />
 	</div>
 </template>
 

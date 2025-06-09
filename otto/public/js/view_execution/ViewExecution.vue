@@ -119,7 +119,6 @@ onMounted(async () => await fetchData());
  * TODO:
  * - feedback section
  * - handle no executions
- * - allow show and hide tool use body
  */
 </script>
 
@@ -264,7 +263,7 @@ onMounted(async () => await fetchData());
 	position: sticky;
 	top: calc(var(--navbar-height) + var(--page-head-height) + 1px);
 	background-color: var(--white);
-	z-index: 20;
+	/* z-index: 20; */
 
 	display: flex;
 	align-items: center;
