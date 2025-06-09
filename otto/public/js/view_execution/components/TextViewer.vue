@@ -23,5 +23,6 @@ const show = ref(!props.isThinking);
 .content {
 	padding: var(--padding-sm);
 	border: 1px solid var(--gray-200);
+	background-color: var(--gray-50);
 }
 </style>

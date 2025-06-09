@@ -33,7 +33,7 @@ const props = defineProps({
 				{{ format_date(scrapbook.creation) }}
 			</p>
 		</div>
-		<ContentViewer :value="scrapbook.content" />
+		<ContentViewer class="content-viewer" :value="scrapbook.content" />
 	</div>
 </template>
 <style scoped>
@@ -77,6 +77,10 @@ const props = defineProps({
 		padding: 0;
 		overflow-x: auto;
 		white-space: pre;
+	}
+
+	.content-viewer {
+		background-color: var(--gray-50);
 	}
 }
 

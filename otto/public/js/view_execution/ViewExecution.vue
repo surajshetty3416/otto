@@ -114,10 +114,7 @@ onMounted(async () => await fetchData());
 /**
  * TODO:
  * - execution comparison
- * - highlight instruction, json, etc
  * - feedback section
- * - show args only if not super long
- * - show result if not super long
  * - if error show reason
  * - handle no executions
  * - allow show and hide tool use body

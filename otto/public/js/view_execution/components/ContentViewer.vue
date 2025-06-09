@@ -45,7 +45,6 @@ const explanation = computed(() => {
 		<PreViewer
 			v-else-if="typeof content !== 'object' && content"
 			class="content-regular"
-			:style="content_style"
 			:value="content"
 		/>
 		<p v-else class="no-content">No content</p>

@@ -10,9 +10,28 @@ const props = defineProps({
 });
 
 const show = ref({
-	args: true,
-	result: false,
+	args: showDefault(props.content.args),
+	result: showDefault(props.content.result) && props.content.name !== "end_task",
 });
+
+function showDefault(obj) {
+	if (typeof obj !== "object") {
+		return !!obj;
+	}
+
+	const keys = Object.keys(obj).filter((k) => k !== "explanation");
+	if (keys.length === 0) return false;
+
+	const length = keys
+		.map((k) => {
+			const value = obj[k];
+			if (typeof value === "string") return value.length;
+			return 0;
+		})
+		.reduce((a, b) => a + b, 0);
+
+	return length < 1000;
+}
 
 function get_status_style(status) {
 	if (status === "pending") return "color: var(--gray-600); background-color: var(--gray-100);";
@@ -81,7 +100,7 @@ const isMetaTool = computed(() => {
 				<p>Args</p>
 				<div v-html="get_chevron(show.args)"></div>
 			</div>
-			<ContentViewer v-if="show.args" :value="content.args" />
+			<ContentViewer v-if="show.args" class="content-viewer" :value="content.args" />
 		</div>
 
 		<!-- Results -->
@@ -94,7 +113,7 @@ const isMetaTool = computed(() => {
 				<p>Result</p>
 				<div v-html="get_chevron(show.result)"></div>
 			</div>
-			<ContentViewer v-if="show.result" :value="content.result" />
+			<ContentViewer v-if="show.result" class="content-viewer" :value="content.result" />
 		</div>
 	</div>
 </template>
@@ -153,6 +172,10 @@ const isMetaTool = computed(() => {
 		.tool-use-section-header:hover {
 			background-color: var(--gray-50);
 			cursor: pointer;
+		}
+
+		.content-viewer {
+			background-color: var(--gray-50);
 		}
 	}
 
