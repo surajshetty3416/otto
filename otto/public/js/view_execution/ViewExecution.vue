@@ -66,8 +66,10 @@ async function fetchData() {
 		.get_doc("Otto Execution", props.executionName)
 		.then((_doc) => {
 			doc.value = _doc;
-			execution.value = JSON.parse(_doc.execution);
-			stats.value = get_stats(execution.value);
+			if (_doc.execution) {
+				execution.value = JSON.parse(_doc.execution);
+				stats.value = get_stats(execution.value);
+			}
 
 			return frappe.call({
 				method: "otto.otto.doctype.otto_task.otto_task.get_exec_view_info",
@@ -79,6 +81,7 @@ async function fetchData() {
 			loading.execution = false;
 		})
 		.catch((e) => {
+			loading.execution = false;
 			errors.execution = e.message || "Failed to load execution.";
 		});
 
@@ -93,6 +96,7 @@ async function fetchData() {
 			loading.scrapbook = false;
 		})
 		.catch((e) => {
+			loading.scrapbook = false;
 			errors.scrapbook = e.message || "Failed to load scrapbooks.";
 		});
 
@@ -114,10 +118,8 @@ onMounted(async () => await fetchData());
 /**
  * TODO:
  * - feedback section
- * - if error show reason
  * - handle no executions
  * - allow show and hide tool use body
- * - fix width of the container
  */
 </script>
 
@@ -166,21 +168,34 @@ onMounted(async () => await fetchData());
 			</div>
 		</SectionContainer>
 
-		<!-- 2. Scrapbook -->
+		<!-- Error -->
 		<SectionContainer
+			v-if="doc?.reason"
+			title="Error: reason for the execution failure"
+			label="Error"
+			:show="true"
+			:isLoading="loading.execution"
+			:error="errors.execution"
+		>
+			<PreViewer :value="doc.reason" />
+		</SectionContainer>
+
+		<!-- Scrapbook -->
+		<SectionContainer
+			v-if="scrapbooks && scrapbooks.length > 0"
 			title="Scrapbook: mocked tool args or other logs recorded in Otto Scrapbook"
 			label="Scrapbook"
 			:isLoading="loading.scrapbook"
 			:error="errors.scrapbook"
-			v-show="scrapbooks && scrapbooks.length > 0"
 		>
 			<template v-for="(book, index) in scrapbooks" :key="book.name">
 				<ScrapbookViewer v-if="book" :scrapbook="book" :index="index" />
 			</template>
 		</SectionContainer>
 
-		<!-- 3. Exchange -->
+		<!-- Exchange -->
 		<SectionContainer
+			v-if="execution"
 			title="Execution: execution sequence of the task"
 			label="Execution"
 			:isLoading="loading.execution"
@@ -196,8 +211,9 @@ onMounted(async () => await fetchData());
 			</div>
 		</SectionContainer>
 
-		<!-- 4. Stats -->
+		<!-- Stats -->
 		<SectionContainer
+			v-if="stats"
 			title="Stats: metadata about the execution run"
 			label="Stats"
 			:isLoading="loading.execution"
@@ -230,7 +246,7 @@ onMounted(async () => await fetchData());
 			</div>
 		</SectionContainer>
 
-		<!-- 5. Instruction -->
+		<!-- Instruction -->
 		<SectionContainer
 			v-if="doc?.instruction"
 			title="Instruction: system prompt used to instruct the LLM on how to execute the task"
@@ -258,7 +274,7 @@ onMounted(async () => await fetchData());
 
 	.name {
 		font-weight: 600;
-		font-size: var(--text-sm);
+		font-size: var(--text-md);
 		color: var(--gray-800);
 		span {
 			margin-left: var(--padding-sm);
