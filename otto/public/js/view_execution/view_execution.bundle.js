@@ -20,7 +20,7 @@ class ViewExecution {
 	}
 
 	init() {
-		this.page.set_title(__("Viewing Execution"));
+		this.page.set_title(__("Execution Viewer"));
 		this.setup_page_actions();
 		this.setup_app();
 	}

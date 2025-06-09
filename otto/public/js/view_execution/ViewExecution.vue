@@ -116,6 +116,11 @@ onMounted(async () => await fetchData());
  * - execution comparison
  * - highlight instruction, json, etc
  * - feedback section
+ * - show args only if not super long
+ * - show result if not super long
+ * - if error show reason
+ * - handle no executions
+ * - allow show and hide tool use body
  */
 </script>
 
@@ -135,7 +140,12 @@ onMounted(async () => await fetchData());
 		<div v-else class="detail-header">Loading...</div>
 
 		<!-- 1. Execution Details -->
-		<SectionContainer title="" :isLoading="loading.execution" :error="errors.execution">
+		<SectionContainer
+			title=""
+			label=""
+			:isLoading="loading.execution"
+			:error="errors.execution"
+		>
 			<div>
 				<!-- Details -->
 				<div class="detail-container">
