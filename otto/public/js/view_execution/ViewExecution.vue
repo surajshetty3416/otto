@@ -114,12 +114,6 @@ function get_status_style(status) {
 }
 
 onMounted(async () => await fetchData());
-
-/**
- * TODO:
- * - feedback section
- * - handle no executions
- */
 </script>
 
 <template>

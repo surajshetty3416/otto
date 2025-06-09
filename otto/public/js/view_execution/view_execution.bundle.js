@@ -35,10 +35,10 @@ class ExecutionViewer {
 		});
 		if (!this.execution) return;
 
-		this.page.set_primary_action(__("Feedback"), this.feedback);
+		this.page.set_primary_action(__("Log Feedback"), () => feedback(this.execution));
 		frappe.ui.keys.add_shortcut({
 			shortcut: "shift+f",
-			action: this.feedback,
+			action: () => feedback(this.execution),
 			page: this.page,
 		});
 
@@ -76,10 +76,6 @@ class ExecutionViewer {
 			method: "otto.otto.doctype.otto_execution.otto_execution.get_recent_executions",
 			callback: (r) => show_execution_dialog(r.message),
 		});
-	}
-
-	feedback() {
-		console.log("feedback");
 	}
 
 	get_adjacent_execution(next) {
@@ -123,9 +119,9 @@ function show_help() {
 			description: __("Select an execution to view"),
 		},
 		{
-			name: __("Feedback"),
+			name: __("Log Feedback"),
 			shortcut: "Shift+F",
-			description: __("Provide feedback on the execution"),
+			description: __("Log feedback for selected execution"),
 		},
 		{ name: __("Next"), shortcut: "Shift+N", description: __("Go to the next execution") },
 		{
@@ -166,4 +162,80 @@ function show_help() {
 		message: html,
 		wide: true,
 	});
+}
+
+function feedback(execution) {
+	let value = 0;
+	const dialog = new frappe.ui.Dialog({
+		title: __("Provide Feedback for {0}", [execution]),
+		fields: [
+			{ fieldname: "thumb_buttons", fieldtype: "HTML" },
+			{ fieldname: "spacer", fieldtype: "HTML", options: "<br>" },
+			{
+				label: __("Comment"),
+				fieldname: "comment",
+				fieldtype: "Small Text",
+			},
+		],
+		primary_action_label: __("Log"),
+		primary_action: ({ comment }) => {
+			if (value === 0 && !comment) {
+				frappe.show_alert({
+					message: __("Please provide a comment or select a thumb"),
+					indicator: "orange",
+				});
+				return;
+			}
+
+			frappe.db.insert({
+				doctype: "Otto Feedback",
+				execution,
+				value,
+				comment,
+			});
+
+			dialog.hide();
+			frappe.show_alert({
+				message: __("Feedback logged for {0}", [execution]),
+				indicator: "green",
+			});
+		},
+
+		secondary_action_label: __("Cancel"),
+		secondary_action: () => dialog.hide(),
+	});
+
+	const field = dialog.get_field("thumb_buttons");
+	const thumbs_html = `
+			<p>Was this task handled correctly?</p>
+			<div class="btn-group" role="group">
+				<button type="button" class="btn btn-default"  name="up">
+					&#128077;
+				</button>
+				<button type="button" class="btn btn-default" name="down">
+					&#128078;
+				</button>
+			</div>
+		`;
+	$(field.wrapper).html(thumbs_html);
+
+	$(field.wrapper)
+		.find(".btn")
+		.on("click", (e) => {
+			const button = $(e.currentTarget);
+			const name = button.attr("name");
+			$(field.wrapper).find(".btn").removeClass("btn-primary").addClass("btn-default");
+
+			if ((name === "up" && value === 1) || (name === "down" && value === -1)) {
+				value = 0;
+			} else if (name === "up") {
+				value = 1;
+				button.removeClass("btn-default").addClass("btn-primary");
+			} else if (name === "down") {
+				value = -1;
+				button.removeClass("btn-default").addClass("btn-primary");
+			}
+		});
+
+	dialog.show();
 }
