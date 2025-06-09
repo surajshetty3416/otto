@@ -113,11 +113,11 @@ onMounted(async () => await fetchData());
 
 /**
  * TODO:
- * - execution comparison
  * - feedback section
  * - if error show reason
  * - handle no executions
  * - allow show and hide tool use body
+ * - fix width of the container
  */
 </script>
 

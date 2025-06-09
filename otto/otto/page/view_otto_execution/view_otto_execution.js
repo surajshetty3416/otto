@@ -24,7 +24,6 @@ frappe.pages["view-otto-execution"].on_page_load = (wrapper) => {
 };
 
 function load_execution_viewer(wrapper) {
-	const route = frappe.get_route();
 	const $parent = $(wrapper).find(".layout-main-section");
 	$parent.empty();
 
@@ -32,7 +31,6 @@ function load_execution_viewer(wrapper) {
 		frappe.execution_viewer = new frappe.ui.ExecutionViewer({
 			wrapper: $parent,
 			page: wrapper.page,
-			execution: route[1],
 		});
 	});
 }

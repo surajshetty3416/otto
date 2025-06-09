@@ -243,3 +243,22 @@ def get_tool_map(task: OttoTask) -> dict[str, str]:
 		slug = t.slug or _tool_map[t.tool]
 		tool_map[slug] = t.tool
 	return tool_map
+
+
+@frappe.whitelist()
+def get_recent_executions(limit: int = 20) -> list[dict]:
+	executions = frappe.get_all(
+		"Otto Execution",
+		fields=["name", "status", "creation", "task", "target", "target_doctype"],
+		limit=limit,
+		order_by="modified desc",
+	)
+	tasks = frappe.get_all(
+		"Otto Task", filters={"name": ("in", [e["task"] for e in executions])}, fields=["name", "title"]
+	)
+	task_map = {t["name"]: t for t in tasks}
+
+	for execution in executions:
+		execution["task_name"] = task_map[execution["task"]]["title"]
+
+	return executions

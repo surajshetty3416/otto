@@ -18,6 +18,9 @@ frappe.ui.form.on("Otto Execution", {
 		frm.add_custom_button(__("View Stats"), get_stats);
 
 		frm.add_custom_button(__("Open in Execution Viewer"), () => {
+			// frappe.set_route("view-otto-execution", {
+			// 	executions: JSON.stringify([frm.doc.name]),
+			// });
 			frappe.set_route("view-otto-execution", frm.doc.name);
 		});
 
