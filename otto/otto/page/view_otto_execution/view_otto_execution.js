@@ -8,7 +8,7 @@
  *
  * In the frappe folder (check command is defined in its package.json).
  */
-frappe.pages["view-otto-execution"].on_page_show = (wrapper) => load_view_execution(wrapper);
+frappe.pages["view-otto-execution"].on_page_show = (wrapper) => load_execution_viewer(wrapper);
 frappe.pages["view-otto-execution"].on_page_load = (wrapper) => {
 	const page = frappe.ui.make_app_page({
 		parent: wrapper,
@@ -19,17 +19,17 @@ frappe.pages["view-otto-execution"].on_page_load = (wrapper) => {
 	// hot reload in development
 	if (frappe.boot.developer_mode) {
 		frappe.hot_update = frappe.hot_update || [];
-		frappe.hot_update.push(() => load_view_execution(wrapper));
+		frappe.hot_update.push(() => load_execution_viewer(wrapper));
 	}
 };
 
-function load_view_execution(wrapper) {
+function load_execution_viewer(wrapper) {
 	const route = frappe.get_route();
 	const $parent = $(wrapper).find(".layout-main-section");
 	$parent.empty();
 
 	frappe.require("view_execution.bundle.js").then(() => {
-		frappe.view_execution = new frappe.ui.ViewExecution({
+		frappe.execution_viewer = new frappe.ui.ExecutionViewer({
 			wrapper: $parent,
 			page: wrapper.page,
 			execution: route[1],
