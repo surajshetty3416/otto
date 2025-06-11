@@ -73,7 +73,7 @@ async function fetchData() {
 
 			return frappe.call({
 				method: "otto.otto.doctype.otto_task.otto_task.get_exec_view_info",
-				args: { task_name: _doc.task },
+				args: { task_name: _doc.task, llm_name: _doc.llm },
 			});
 		})
 		.then((_info) => {

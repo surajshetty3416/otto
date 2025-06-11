@@ -1,6 +1,6 @@
 <script setup>
-import { computed, ref } from "vue";
-import { get_link, get_chevron } from "../utils";
+import { computed, reactive, ref } from "vue";
+import { get_link, get_chevron, safe_stringify } from "../utils";
 import ContentViewer from "./ContentViewer.vue";
 import Link from "./Link.vue";
 
@@ -9,28 +9,28 @@ const props = defineProps({
 	content: { type: Object, required: true },
 });
 
-const show = ref({
-	args: showDefault(props.content.args),
-	result: showDefault(props.content.result) && props.content.name !== "end_task",
+const lengths = reactive({
+	args: 0,
+	result: 0,
 });
 
-function showDefault(obj) {
+const show = ref({
+	args: showDefault("args"),
+	result: showDefault("result") && props.content.name !== "end_task",
+});
+
+function showDefault(key) {
+	const obj = props.content[key];
+	lengths[key] = safe_stringify(obj).length;
+
 	if (typeof obj !== "object" || obj === null) {
-		return !!obj;
+		return lengths[key] < 1000;
 	}
 
 	const keys = Object.keys(obj).filter((k) => k !== "explanation");
 	if (keys.length === 0) return false;
 
-	const length = keys
-		.map((k) => {
-			const value = obj[k];
-			if (typeof value === "string") return value.length;
-			return 0;
-		})
-		.reduce((a, b) => a + b, 0);
-
-	return length < 1000;
+	return lengths[key] < 2000;
 }
 
 function get_status_style(status) {
@@ -98,7 +98,12 @@ const isMetaTool = computed(() => {
 				@click="show.args = !show.args"
 			>
 				<p>Args</p>
-				<div v-html="get_chevron(show.args)"></div>
+				<div class="chevron-container">
+					<p :title="`Length of args when stringified ${lengths.args}`">
+						{{ lengths.args }}
+					</p>
+					<div v-html="get_chevron(show.args)"></div>
+				</div>
 			</div>
 			<ContentViewer v-if="show.args" class="content-viewer" :value="content.args" />
 		</div>
@@ -111,7 +116,12 @@ const isMetaTool = computed(() => {
 				@click="show.result = !show.result"
 			>
 				<p>Result</p>
-				<div v-html="get_chevron(show.result)"></div>
+				<div class="chevron-container">
+					<p :title="`Length of result when stringified ${lengths.result}`">
+						{{ lengths.result }}
+					</p>
+					<div v-html="get_chevron(show.result)"></div>
+				</div>
 			</div>
 			<ContentViewer v-if="show.result" class="content-viewer" :value="content.result" />
 		</div>
@@ -176,6 +186,15 @@ const isMetaTool = computed(() => {
 
 		.content-viewer {
 			background-color: var(--gray-50);
+		}
+
+		.chevron-container {
+			display: flex;
+			align-items: center;
+			gap: var(--padding-md);
+			p {
+				color: var(--gray-400);
+			}
 		}
 	}
 

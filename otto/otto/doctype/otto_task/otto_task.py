@@ -87,7 +87,7 @@ class OttoTask(Document):
 		return doc
 
 	@frappe.whitelist()
-	def execute_task(self, target: str, llm: str, reasoning_effort: str | None = None):
+	def execute_task(self, target: str, llm: str | None, reasoning_effort: str | None = None):
 		return self.trigger_execution(
 			target=target,
 			event="Manual",
@@ -405,7 +405,7 @@ def run_get_context(get_context: str, doc: Document, event: str):
 
 
 @frappe.whitelist()
-def get_exec_view_info(task_name: str):
+def get_exec_view_info(task_name: str, llm_name: str):
 	"""Return task relevant info for the execution view."""
 	task_tools = frappe.db.get_all(
 		"Otto Task Tool CT",
@@ -438,5 +438,5 @@ def get_exec_view_info(task_name: str):
 		tool_map=tool_map,
 		slug_map=slug_map,
 		task_title=values[0][0],
-		llm_title=frappe.db.get_value("Otto LLM", values[0][1], "title"),
+		llm_title=frappe.db.get_value("Otto LLM", llm_name or values[0][1], "title"),
 	)

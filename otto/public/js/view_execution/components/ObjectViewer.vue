@@ -3,6 +3,18 @@ import PreViewer from "./PreViewer.vue";
 const props = defineProps({
 	object: { type: Object, required: true },
 });
+
+function format(value) {
+	if (typeof value === "object") {
+		try {
+			return JSON.stringify(value, null, 2);
+		} catch (e) {
+			return value;
+		}
+	}
+
+	return value;
+}
 </script>
 
 <template>
@@ -10,7 +22,7 @@ const props = defineProps({
 		<template v-for="(value, key) in object" :key="key">
 			<div class="item">
 				<div class="key">{{ key }}</div>
-				<PreViewer :value="value" />
+				<PreViewer :value="format(value)" />
 			</div>
 		</template>
 	</div>

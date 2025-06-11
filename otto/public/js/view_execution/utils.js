@@ -87,9 +87,16 @@ export function get_icon(name, size = "xs") {
 	return frappe.utils.icon(name, size);
 }
 
-
 export function get_chevron(show) {
 	let chevron = "chevron-up";
 	if (!show) chevron = "chevron-down";
 	return frappe.utils.icon(chevron, "sm");
+}
+
+export function safe_stringify(obj) {
+	try {
+		return JSON.stringify(obj);
+	} catch {
+		return String(obj);
+	}
 }
