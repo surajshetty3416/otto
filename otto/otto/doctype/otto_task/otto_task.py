@@ -58,6 +58,7 @@ class OttoTask(Document):
 		get_context: str | None = None,
 		instruction: str | None = None,
 		tools: list[dict] | None = None,
+		reasoning_effort: str | None = None,
 	):
 		doc = cast(
 			OttoTask,
@@ -75,6 +76,9 @@ class OttoTask(Document):
 		doc.condition = condition
 		doc.get_context = get_context
 		doc.instruction = instruction
+
+		if reasoning_effort and reasoning_effort in ["None", "Low", "Medium", "High"]:
+			doc.reasoning_effort = reasoning_effort  # type: ignore
 
 		for tool in tools or []:
 			doc.append("tools", tool)
@@ -166,7 +170,11 @@ class OttoTask(Document):
 
 	@frappe.whitelist()
 	def export_task(self):
-		llm = frappe.get_all("Otto LLM", filters={"name": self.llm}, fields=["name", "title", "provider"])[0]
+		llm = frappe.get_all(
+			"Otto LLM",
+			filters={"name": self.llm},
+			fields=["name", "title", "provider", "is_reasoning"],
+		)[0]
 		data: dict = dict(
 			title=self.title,
 			llm=llm,
@@ -175,6 +183,7 @@ class OttoTask(Document):
 			get_context=self.get_context,
 			instruction=self.instruction,
 			target_doctype=self.target_doctype,
+			reasoning_effort=self.reasoning_effort,
 			tools=[],
 			groups=[],
 		)
@@ -344,7 +353,12 @@ def import_task(data: str):
 	if not frappe.db.exists("Otto LLM", llm["name"]):
 		from otto.otto.doctype.otto_llm.otto_llm import OttoLLM
 
-		OttoLLM.new(llm["name"], llm["title"], llm["provider"])
+		OttoLLM.new(
+			llm["name"],
+			llm["title"],
+			llm["provider"],
+			is_reasoning=llm.get("is_reasoning", False),
+		)
 
 	for group in _data["groups"]:
 		if not frappe.db.exists("Otto Tool Group", group["name"]):
@@ -367,6 +381,7 @@ def import_task(data: str):
 		_data["title"],
 		_data["event"],
 		_data["target_doctype"],
+		reasoning_effort=_data.get("reasoning_effort", "None"),
 		llm=_data["llm"]["name"],
 		condition=_data["condition"],
 		get_context=_data["get_context"],

@@ -141,7 +141,21 @@ class OttoExecution(Document):
 		if self.run_tools(item, interaction["update"]):
 			return self.set_status("Success")
 
+		if self.should_stop(item):
+			return self.set_status("Success")
+
 		self.loop(None)
+
+	def should_stop(self, item: ExchangeItem) -> bool:
+		"""
+		This has been added cause Gemini 2.5 Flash did not call end_task and
+		instead so for smaller models, this check should suffice until a better
+		solution is found.
+		"""
+		if item["meta"]["end_reason"] != "turn_end":
+			return False
+
+		return item["meta"]["output_tokens"] == 0
 
 	def run_tools(self, item: ExchangeItem, exchange: Exchange):
 		"""Runs tools and checks if meta tool end_task is used"""

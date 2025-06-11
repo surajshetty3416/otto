@@ -153,9 +153,15 @@ onMounted(async () => await fetchData());
 					/>
 					<Detail label="Event" :value="doc.event" />
 					<Detail
+						title="LLM used to handle this task"
 						label="LLM"
 						:value="info.llm_title"
 						:link="get_link('Otto LLM', doc.llm)"
+					/>
+					<Detail
+						title="Reasoning effort used to handle task"
+						label="Reasoning"
+						:value="doc.reasoning_effort"
 					/>
 				</div>
 			</div>

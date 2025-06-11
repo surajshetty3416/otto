@@ -28,7 +28,7 @@ class OttoLLM(Document):
 	# end: auto-generated types
 
 	@staticmethod
-	def new(name: str, title: str, provider: str):
+	def new(name: str, title: str, provider: str, is_reasoning: bool = False):
 		doc = cast(
 			OttoLLM,
 			frappe.get_doc(
@@ -37,6 +37,7 @@ class OttoLLM(Document):
 					"name": name,
 					"title": title,
 					"provider": provider,
+					"is_reasoning": is_reasoning,
 				}
 			),
 		)
