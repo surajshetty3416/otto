@@ -357,6 +357,8 @@ def _set_key(model: str) -> str | None:
 		key = "OPENAI_API_KEY"
 	elif model.startswith("anthropic"):
 		key = "ANTHROPIC_API_KEY"
+	elif model.startswith("gemini"):
+		key = "GEMINI_API_KEY"
 	else:
 		return None
 

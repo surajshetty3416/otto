@@ -12,6 +12,7 @@
   "api_keys_section",
   "anthropic_api_key",
   "openai_api_key",
+  "gemini_api_key",
   "env_section",
   "global_env"
  ],
@@ -64,12 +65,17 @@
    "fieldname": "global_env",
    "fieldtype": "JSON",
    "label": "Global Env"
+  },
+  {
+   "fieldname": "gemini_api_key",
+   "fieldtype": "Password",
+   "label": "Gemini API Key (Google)"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-06-02 12:06:15.920567",
+ "modified": "2025-06-11 12:23:53.100259",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Settings",

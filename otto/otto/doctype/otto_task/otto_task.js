@@ -30,6 +30,7 @@ frappe.ui.form.on("Otto Task", {
 						label: __("LLM"),
 						fieldtype: "Link",
 						options: "Otto LLM",
+						link_filters: '[["Otto LLM","enabled","=",1]]',
 						default: frm.doc.llm,
 						reqd: 1,
 					},

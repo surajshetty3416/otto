@@ -18,7 +18,8 @@ class OttoLLM(Document):
 	if TYPE_CHECKING:
 		from frappe.types import DF
 
-		provider: DF.Literal["Anthropic", "OpenAI"]
+		enabled: DF.Check
+		provider: DF.Literal["Anthropic", "OpenAI", "Google"]
 		title: DF.Data
 	# end: auto-generated types
 

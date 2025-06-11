@@ -93,6 +93,7 @@
    "fieldname": "llm",
    "fieldtype": "Link",
    "label": "LLM",
+   "link_filters": "[[\"Otto LLM\",\"enabled\",\"=\",1]]",
    "options": "Otto LLM"
   },
   {
@@ -123,7 +124,7 @@
    "link_fieldname": "task"
   }
  ],
- "modified": "2025-06-06 10:45:17.427207",
+ "modified": "2025-06-11 12:39:27.791670",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Task",
