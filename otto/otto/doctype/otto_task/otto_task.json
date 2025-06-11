@@ -9,6 +9,7 @@
   "llm",
   "column_break_dagd",
   "is_enabled",
+  "reasoning_effort",
   "instruction_section",
   "instruction",
   "tools",
@@ -111,6 +112,14 @@
    "fieldtype": "Code",
    "label": "Condition",
    "options": "Python"
+  },
+  {
+   "default": "None",
+   "description": "Valid only if selected LLM supports reasoning.",
+   "fieldname": "reasoning_effort",
+   "fieldtype": "Select",
+   "label": "Reasoning Effort",
+   "options": "None\nLow\nMedium\nHigh"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -124,7 +133,7 @@
    "link_fieldname": "task"
   }
  ],
- "modified": "2025-06-11 12:39:27.791670",
+ "modified": "2025-06-11 13:25:38.384545",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Task",

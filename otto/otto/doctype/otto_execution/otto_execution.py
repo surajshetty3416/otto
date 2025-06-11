@@ -37,6 +37,7 @@ class OttoExecution(Document):
 		instruction: DF.Code | None
 		llm: DF.Link | None
 		reason: DF.SmallText | None
+		reasoning_effort: DF.Literal["None", "Low", "Medium", "High"]
 		status: DF.Literal["Pending", "Running", "Success", "Failure"]
 		target: DF.DynamicLink
 		target_doctype: DF.Link
@@ -51,6 +52,7 @@ class OttoExecution(Document):
 		target_doctype: str,
 		event: str | None = None,
 		llm: str | None = None,
+		reasoning_effort: str | None = None,
 		instruction: str | None = None,
 	):
 		doc = cast(OttoExecution, frappe.get_doc({"doctype": "Otto Execution", "task": task}))
@@ -62,6 +64,11 @@ class OttoExecution(Document):
 
 		doc.llm = llm or frappe.get_cached_value("Otto Task", task, "llm")
 		doc.instruction = instruction or frappe.get_cached_value("Otto Task", task, "instruction")
+		if reasoning_effort and reasoning_effort in ["None", "Low", "Medium", "High"]:
+			doc.reasoning_effort = reasoning_effort  # type: ignore
+		else:
+			doc.reasoning_effort = frappe.get_cached_value("Otto Task", task, "reasoning_effort")
+
 		doc.save()
 		return doc
 
@@ -99,6 +106,8 @@ class OttoExecution(Document):
 			self.set_status("Failure", "\n".join(reasons))
 
 	def loop(self, context: str | list[str] | None = None):
+		from otto.otto.doctype.otto_llm.otto_llm import get_reasoning_effort
+
 		exchange = json.loads(self.execution) if self.execution else None
 		try:
 			interaction, reason = llm.interact(
@@ -107,6 +116,7 @@ class OttoExecution(Document):
 				tools=get_tools(self.task),
 				model=self.llm,
 				system=self.instruction,
+				reasoning_effort=get_reasoning_effort(self.reasoning_effort),
 			)
 			logger.info(
 				{

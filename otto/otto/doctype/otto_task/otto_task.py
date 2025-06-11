@@ -32,6 +32,7 @@ class OttoTask(Document):
 
 	if TYPE_CHECKING:
 		from frappe.types import DF
+
 		from otto.otto.doctype.otto_task_tool_ct.otto_task_tool_ct import OttoTaskToolCT
 
 		condition: DF.Code | None
@@ -40,6 +41,7 @@ class OttoTask(Document):
 		instruction: DF.Code | None
 		is_enabled: DF.Check
 		llm: DF.Link | None
+		reasoning_effort: DF.Literal["None", "Low", "Medium", "High"]
 		target_doctype: DF.Link
 		title: DF.Data | None
 		tools: DF.Table[OttoTaskToolCT]
@@ -81,13 +83,21 @@ class OttoTask(Document):
 		return doc
 
 	@frappe.whitelist()
-	def execute_task(self, target: str, llm: str):
+	def execute_task(self, target: str, llm: str, reasoning_effort: str | None = None):
 		return self.trigger_execution(
 			target=target,
 			event="Manual",
 			llm=llm,
+			reasoning_effort=reasoning_effort,
 			is_background=True,
 		)
+
+	def before_save(self):
+		if not self.llm or self.reasoning_effort == "None":
+			return
+
+		if not frappe.get_cached_value("Otto LLM", self.llm, "is_reasoning"):
+			self.reasoning_effort = "None"
 
 	def trigger_execution(
 		self,
@@ -95,6 +105,7 @@ class OttoTask(Document):
 		target: str,
 		event: str,
 		llm: str | None = None,
+		reasoning_effort: str | None = None,
 		instruction: str | None = None,
 		is_background: bool = True,
 	):
@@ -107,6 +118,7 @@ class OttoTask(Document):
 			target_doctype=self.target_doctype,
 			event=event,
 			llm=llm,
+			reasoning_effort=reasoning_effort,
 			instruction=instruction,
 		)
 		frappe.db.commit()

@@ -18,6 +18,7 @@
   "execution",
   "task_section",
   "llm",
+  "reasoning_effort",
   "instruction"
  ],
  "fields": [
@@ -103,6 +104,13 @@
    "fieldname": "instruction",
    "fieldtype": "Code",
    "label": "Instruction"
+  },
+  {
+   "default": "None",
+   "fieldname": "reasoning_effort",
+   "fieldtype": "Select",
+   "label": "Reasoning Effort",
+   "options": "None\nLow\nMedium\nHigh"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -112,7 +120,7 @@
    "link_fieldname": "execution"
   }
  ],
- "modified": "2025-06-06 14:35:43.731719",
+ "modified": "2025-06-11 13:28:54.216384",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Execution",

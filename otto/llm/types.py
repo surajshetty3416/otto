@@ -4,7 +4,7 @@ from typing import Literal, TypedDict
 
 ID = str
 ExchangeRole = Literal["user", "agent"]
-ThinkingEffort = Literal["low", "medium", "high"]
+ReasoningEffort = Literal["low", "medium", "high"]
 
 
 class ThinkingContent(TypedDict):

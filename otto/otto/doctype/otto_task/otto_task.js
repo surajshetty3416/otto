@@ -34,6 +34,14 @@ frappe.ui.form.on("Otto Task", {
 						default: frm.doc.llm,
 						reqd: 1,
 					},
+					{
+						fieldname: "reasoning_effort",
+						label: __("Reasoning Effort"),
+						fieldtype: "Select",
+						default: "None",
+						options: ["None", "Low", "Medium", "High"],
+						description: __("Valid only if model supports reasoning"),
+					},
 				],
 				primary_action_label: __("Run"),
 				primary_action(values) {
@@ -43,6 +51,7 @@ frappe.ui.form.on("Otto Task", {
 						args: {
 							target: values.target,
 							llm: values.llm || frm.doc.llm,
+							reasoning_effort: values.reasoning_effort,
 						},
 						callback: function (r) {
 							if (r.message) {

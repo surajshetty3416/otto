@@ -35,9 +35,9 @@ from otto.llm.types import (
 	Exchange,
 	ExchangeItem,
 	InteractResponse,
+	ReasoningEffort,
 	TextContent,
 	ThinkingContent,
-	ThinkingEffort,
 	ToolUseContent,
 	UserContent,
 )
@@ -60,10 +60,10 @@ DEFAULT_LLM = "openai/gpt-4.1-mini"
 MAX_RETRIES = 6
 
 logger = otto.logger("otto_litellm")
-thinking_budget_map: dict[ThinkingEffort, int] = {
-	"low": 8000,
-	"medium": 16000,
-	"high": 32000,
+thinking_budget_map: dict[ReasoningEffort, int] = {
+	"low": 4096,
+	"medium": 8192,
+	"high": 16384,
 }
 
 
@@ -76,7 +76,7 @@ def interact(
 	exchange_id: str | None = None,
 	system: str | None = None,
 	tools: list[dict] | None = None,
-	thinking_effort: ThinkingEffort | None = None,
+	reasoning_effort: ReasoningEffort | None = None,
 ) -> tuple[InteractResponse, None] | tuple[None, str]:
 	"""
 	Interacts with an LLM using LiteLLM, handling conversation history,
@@ -176,9 +176,11 @@ def interact(
 	)
 
 	think = {}
-	if thinking_effort:
-		think["reasoning_effort"] = thinking_effort
-		think["thinking"] = _get_thinking(thinking_effort)
+	if reasoning_effort:
+		think["reasoning_effort"] = reasoning_effort
+
+	if reasoning_effort and (model.startswith("anthropic") or model.startswith("gemini")):
+		think["thinking"] = _get_thinking(reasoning_effort)
 
 	logger.debug({"message": "calling litellm.completion", "id": item["id"]})
 	completion = completions(
@@ -390,7 +392,8 @@ def _should_preserve_thinking(model: str):
 	return "sonnet" in model
 
 
-def _get_thinking(thinking_effort: ThinkingEffort | None):
+def _get_thinking(thinking_effort: ReasoningEffort | None):
+	# Used by Gemini and Anthropic models
 	if thinking_effort is None:
 		return None
 

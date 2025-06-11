@@ -31,6 +31,14 @@ frappe.ui.form.on("Otto LLM", {
 						default: "You are a helpful assistant.",
 						reqd: 1,
 					},
+					{
+						fieldname: "reasoning_effort",
+						label: __("Reasoning Effort"),
+						fieldtype: "Select",
+						default: "None",
+						options: ["None", "Low", "Medium", "High"],
+						description: __("Valid only if model supports reasoning"),
+					},
 				],
 				primary_action_label: __("Ask"),
 				primary_action(values) {
@@ -40,6 +48,7 @@ frappe.ui.form.on("Otto LLM", {
 						args: {
 							query: values.query,
 							system: values.system,
+							reasoning_effort: values.reasoning_effort,
 						},
 						callback(r) {
 							frappe.msgprint(
