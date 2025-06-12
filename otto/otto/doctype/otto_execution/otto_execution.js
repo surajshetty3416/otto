@@ -15,6 +15,20 @@ frappe.ui.form.on("Otto Execution", {
 				},
 			});
 		}
+		if (frm.doc.status === "Failure") {
+			frm.add_custom_button(__("Retry"), () => {
+				frappe.call({
+					method: "retry",
+					doc: frm.doc,
+					callback(r) {
+						frappe.msgprint(r.message, __("Retry"));
+						frm.reload_doc();
+						frm.refresh();
+					},
+				});
+			});
+		}
+
 		frm.add_custom_button(__("View Stats"), get_stats);
 
 		frm.add_custom_button(__("Open in Execution Viewer"), () => {

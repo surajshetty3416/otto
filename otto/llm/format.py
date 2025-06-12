@@ -49,14 +49,9 @@ class C:
 	def thinking(text: str, signature: str | None):
 		# LiteLLM specific, used only by Anthropic, OpenAI throws error
 		return {
-			"type": "reasoning",
-			"summary": [
-				{
-					"type": "summary_text",
-					"text": text,
-					"signature": signature,
-				},
-			],
+			"type": "thinking",
+			"thinking": text,
+			"signature": signature,
 		}
 
 

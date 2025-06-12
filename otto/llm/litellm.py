@@ -59,7 +59,7 @@ if TYPE_CHECKING:
 DEFAULT_LLM = "openai/gpt-4.1-mini"
 MAX_RETRIES = 6
 
-logger = otto.logger("otto_litellm")
+logger = otto.logger("otto_litellm", "INFO")
 thinking_budget_map: dict[ReasoningEffort, int] = {
 	"low": 4096,
 	"medium": 8192,
@@ -205,6 +205,15 @@ def interact(
 
 	# Rest of the item updation is handled in litellm.success_callback
 	# Thinking signature is required by anthropic
+
+	logger.debug(
+		{
+			"message": "after wait",
+			"signature": signature,
+			"content_len": len(item["content"]),
+			"thinking_content": [c for c in item["content"] if c["type"] == "thinking"],
+		}
+	)
 	if signature:
 		for c in item["content"]:
 			if c["type"] == "thinking":
@@ -296,7 +305,7 @@ def _stream(completion: CustomStreamWrapper, item: ExchangeItem, exchange_id: st
 			logger.debug({"id": item["id"], "content": cc["content"]})
 			chunks.append(cc)
 
-		signature = _get_signature(chunk)
+		signature = signature or _get_signature(chunk)
 	return chunks, signature
 
 
@@ -305,6 +314,15 @@ def _stream_chunk(chunk: ModelResponseStream, item_id: str, exchange_id: str | N
 	publish using user, exchange_id, item_id
 	"""
 	delta = chunk.choices[0].delta
+	logger.debug(
+		{
+			"message": "_stream_chunk",
+			"id": item_id,
+			"exchange_id": exchange_id,
+			"delta": delta.to_json(indent=None),
+		}
+	)
+
 	cc = ContentChunk(
 		type="text",
 		content="",
@@ -377,19 +395,41 @@ def _get_signature(chunk: ModelResponseStream):
 	Signature is not passed in the completions object and needs to be extracted
 	from the stream chunk.
 	"""
-	if not (delta := (chunk.choices or [{}])[0].get("delta", {})):
+	if not (delta := chunk.choices[0].delta):
 		return None
 
-	if not (thinking_blocks := delta.get("thinking_blocks", [])):
+	# Check thinking blocks for signature
+	thinking_blocks = delta.get("thinking_blocks")
+	if signature := _get_signature_from_thinking_blocks(thinking_blocks):
+		return signature
+
+	# Check provider specific fields for signature
+	provider_fields = delta.get("provider_specific_fields") or {}
+	if signature := provider_fields.get("signature"):
+		return signature
+
+	thinking_blocks = provider_fields.get("thinking_blocks")
+	if signature := _get_signature_from_thinking_blocks(thinking_blocks):
+		return signature
+
+	return None
+
+
+def _get_signature_from_thinking_blocks(blocks):
+	if not blocks or not isinstance(blocks, list):
 		return None
 
-	return thinking_blocks[0].get("signature") or None
+	block = blocks[0] or {}
+	if signature := block.get("signature"):
+		return signature
+
+	return None
 
 
 def _should_preserve_thinking(model: str):
 	# rn only Sonnet 3.7 requires reasoning to be preserved
 	# reference: https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking?q=thinking#preserving-thinking-blocks
-	return "sonnet" in model
+	return "sonnet" in model or "opus" in model
 
 
 def _get_thinking(thinking_effort: ReasoningEffort | None):

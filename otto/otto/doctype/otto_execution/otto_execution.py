@@ -250,6 +250,24 @@ class OttoExecution(Document):
 		exchange: Exchange = json.loads(self.execution)
 		return llm.get_stats(exchange)
 
+	@frappe.whitelist()
+	def retry(self):
+		if self.status != "Failure":
+			return "Retry available only for failed executions"
+		from otto.otto.doctype.otto_task.otto_task import get_timeout
+
+		self.set_status("Running")
+		self.save()
+
+		frappe.enqueue_doc(
+			doctype="Otto Execution",
+			name=self.name,
+			method="loop",
+			timeout=get_timeout(),
+		)
+
+		return "Execution enqueued"
+
 
 def get_tool_map(task: OttoTask) -> dict[str, str]:
 	"""returns dict[slug, name]"""

@@ -14,7 +14,11 @@ const show = ref(!props.isThinking);
 
 <template>
 	<div>
-		<ContentSectionHeader v-model="show" :index="index" label="Text" />
+		<ContentSectionHeader
+			v-model="show"
+			:index="index"
+			:label="isThinking ? 'Thinking' : 'Text'"
+		/>
 		<PreViewer v-if="show" class="content" :value="value" />
 	</div>
 </template>
