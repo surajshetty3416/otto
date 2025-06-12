@@ -85,6 +85,7 @@ const duration = computed(() => {
 				<!-- Thinking Block -->
 				<TextViewer
 					v-else-if="content.type === 'thinking'"
+					:title="`Thinking block, signature: ${content.signature}`"
 					:index="index"
 					:value="content.text"
 					:is-thinking="true"
@@ -92,6 +93,7 @@ const duration = computed(() => {
 
 				<ToolUseViewer
 					v-else-if="content.type === 'tool_use'"
+					title="Tool use block"
 					:index="index"
 					:content="content"
 				/>
@@ -141,6 +143,7 @@ const duration = computed(() => {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
+	z-index: 10;
 
 	font-size: var(--text-xs);
 	padding: var(--padding-sm);

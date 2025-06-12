@@ -56,10 +56,10 @@ if TYPE_CHECKING:
 	from litellm.types.utils import ModelResponseStream
 
 
-DEFAULT_LLM = "openai/gpt-4.1-mini"
+DEFAULT_LLM = "gemini/gemini-2.5-flash-preview-05-20"
 MAX_RETRIES = 6
 
-logger = otto.logger("otto_litellm", "INFO")
+logger = otto.logger("otto_litellm", "DEBUG")
 thinking_budget_map: dict[ReasoningEffort, int] = {
 	"low": 4096,
 	"medium": 8192,
@@ -199,12 +199,16 @@ def interact(
 	# Iterates over the completion stream and returns a list of ContentChunk
 	chunks, signature = _stream(completion, item, exchange_id)
 
-	logger.debug({"message": "waiting for callback", "id": item["id"]})
+	logger.debug(
+		{
+			"message": "waiting for callback",
+			"id": item["id"],
+			"signature": signature,
+			"chunks": len(chunks),
+		}
+	)
 	# Wait until the success callback is called
 	done.wait()
-
-	# Rest of the item updation is handled in litellm.success_callback
-	# Thinking signature is required by anthropic
 
 	logger.debug(
 		{
@@ -214,6 +218,9 @@ def interact(
 			"thinking_content": [c for c in item["content"] if c["type"] == "thinking"],
 		}
 	)
+
+	# Rest of the item updation is handled in litellm.success_callback
+	# Thinking signature is required by anthropic
 	if signature:
 		for c in item["content"]:
 			if c["type"] == "thinking":

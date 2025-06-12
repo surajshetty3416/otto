@@ -23,12 +23,13 @@ const icon = computed(() => {
 
 <style scoped>
 .section-header {
-	/* position: sticky;
+	position: sticky;
 	top: calc(
-		var(--navbar-height) + var(--page-head-height) + 3px + (var(--padding-xs) * 2) +
-			var(--text-sm)
+		var(--navbar-height) + var(--page-head-height) + ((var(--padding-xs) * 2) + var(--text-sm)) +
+			10px
 	);
-	background-color: var(--white); */
+	background-color: var(--white);
+	z-index: 0;
 
 	display: flex;
 	justify-content: space-between;

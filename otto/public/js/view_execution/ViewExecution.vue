@@ -263,7 +263,7 @@ onMounted(async () => await fetchData());
 	position: sticky;
 	top: calc(var(--navbar-height) + var(--page-head-height) + 1px);
 	background-color: var(--white);
-	/* z-index: 20; */
+	z-index: 1;
 
 	display: flex;
 	align-items: center;
