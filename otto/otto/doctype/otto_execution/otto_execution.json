@@ -68,11 +68,13 @@
   {
    "fieldname": "event",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Event"
   },
   {
    "fieldname": "target",
    "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
    "label": "Target",
    "options": "target_doctype",
    "reqd": 1
@@ -80,6 +82,8 @@
   {
    "fieldname": "target_doctype",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Target DocType",
    "options": "DocType",
    "reqd": 1
@@ -91,6 +95,8 @@
   {
    "fieldname": "llm",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "LLM",
    "options": "Otto LLM"
   },
@@ -120,7 +126,7 @@
    "link_fieldname": "execution"
   }
  ],
- "modified": "2025-06-11 13:28:54.216384",
+ "modified": "2025-06-12 14:17:44.028624",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Execution",

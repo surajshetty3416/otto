@@ -64,5 +64,6 @@ frappe.ui.form.on("Otto LLM", {
 		}
 
 		frm.add_custom_button(__("Ask"), ask);
+		frappe.ui.keys.add_shortcut({ shortcut: "shift+a", action: ask, page: frm.page });
 	},
 });

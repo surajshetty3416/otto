@@ -98,7 +98,7 @@ frappe.ui.form.on("Otto Tool", {
 		frm.add_custom_button("View Schema", view_schema);
 		frm.add_custom_button("Test Tool", test_tool);
 
-		frappe.ui.keys.add_shortcut({ shortcut: "shift+v", action: view_schema });
-		frappe.ui.keys.add_shortcut({ shortcut: "shift+t", action: test_tool });
+		frappe.ui.keys.add_shortcut({ shortcut: "shift+v", action: view_schema, page: frm.page });
+		frappe.ui.keys.add_shortcut({ shortcut: "shift+t", action: test_tool, page: frm.page });
 	},
 });

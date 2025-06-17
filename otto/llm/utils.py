@@ -167,13 +167,13 @@ def get_last_id(exchange: Exchange):
 
 
 def get_stats(exchange: Exchange):
-	import collections
 	import datetime
 
 	cost = 0
 	input_tokens = 0
 	output_tokens = 0
-	tools_called: dict[str, int] = collections.defaultdict(int)
+	llm_calls = 0
+	tools_called = {}
 
 	_start = exchange["items"][exchange["first"]]["meta"]["timestamp"]
 	_end = exchange["items"][get_last_id(exchange)]["meta"]["end_time"]
@@ -184,6 +184,7 @@ def get_stats(exchange: Exchange):
 	max_output_tokens = 0
 
 	for item in exchange["items"].values():
+		llm_calls += 1
 		cost += item["meta"]["cost"]
 		input_tokens += item["meta"]["input_tokens"]
 		output_tokens += item["meta"]["output_tokens"]
@@ -194,8 +195,28 @@ def get_stats(exchange: Exchange):
 			max_output_tokens = item["meta"]["output_tokens"]
 
 		for content_part in item["content"]:
-			if content_part["type"] == "tool_use":
-				tools_called[content_part["name"]] += 1
+			if content_part["type"] != "tool_use":
+				continue
+			name = content_part["name"]
+			result = content_part["result"]
+
+			if name not in tools_called:
+				tools_called[name] = {
+					"called_count": 0,
+					"empty_result_count": 0,
+					"error_count": 0,
+				}
+			tools_called[name]["called_count"] += 1
+
+			if result is None or result == "" or result == "null" or result == "[]" or result == "{}":
+				tools_called[name]["empty_result_count"] += 1
+
+			if (
+				content_part["status"] == "error"
+				or isinstance(result, str)
+				and ("Error" in result or "error" in result)
+			):
+				tools_called[name]["error_count"] += 1
 
 	return dict(
 		cost=cost,
@@ -207,6 +228,7 @@ def get_stats(exchange: Exchange):
 		tools=dict(tools_called),
 		max_input_tokens=max_input_tokens,
 		max_output_tokens=max_output_tokens,
+		llm_calls=llm_calls - 1,
 	)
 
 

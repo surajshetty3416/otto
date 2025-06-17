@@ -5,14 +5,8 @@ import ExchangeViewer from "./components/ExchangeViewer.vue";
 import PreViewer from "./components/PreViewer.vue";
 import ScrapbookViewer from "./components/ScrapbookViewer.vue";
 import SectionContainer from "./components/SectionContainer.vue";
-import {
-	format_date,
-	format_duration,
-	format_number,
-	get_link,
-	get_stats,
-	link_icon,
-} from "./utils";
+import StatsViewer from "./components/StatsViewer.vue";
+import { format_date, get_link, get_stats, link_icon } from "./utils";
 
 const props = defineProps({
 	executionName: {
@@ -167,6 +161,17 @@ onMounted(async () => await fetchData());
 			</div>
 		</SectionContainer>
 
+		<!-- Stats -->
+		<SectionContainer
+			v-if="stats"
+			title="Stats: metadata about the execution run"
+			label="Stats"
+			:isLoading="loading.execution"
+			:error="errors.execution"
+		>
+			<StatsViewer :stats="stats" :info="info" />
+		</SectionContainer>
+
 		<!-- Error -->
 		<SectionContainer
 			v-if="doc?.reason"
@@ -206,41 +211,6 @@ onMounted(async () => await fetchData());
 					:key="item.id"
 					:item="item"
 					:index="index"
-				/>
-			</div>
-		</SectionContainer>
-
-		<!-- Stats -->
-		<SectionContainer
-			v-if="stats"
-			title="Stats: metadata about the execution run"
-			label="Stats"
-			:isLoading="loading.execution"
-			:error="errors.execution"
-		>
-			<div class="detail-container">
-				<Detail label="Cost" :value="`$${stats.cost.toFixed(6)}`" />
-				<Detail
-					label="Duration"
-					:value="format_duration(stats.duration)"
-					:title="`${stats.duration} seconds`"
-				/>
-				<Detail label="LLM Calls" :value="format_number(stats.llm_calls)" />
-				<Detail
-					label="Max Input Tokens"
-					:value="format_number(stats.max_input_tokens) + ' tok'"
-				/>
-				<Detail
-					label="Max Output Tokens"
-					:value="format_number(stats.max_output_tokens) + ' tok'"
-				/>
-				<Detail
-					label="Total Input Tokens"
-					:value="format_number(stats.total_input_tokens) + ' tok'"
-				/>
-				<Detail
-					label="TotalOutput Tokens"
-					:value="format_number(stats.total_output_tokens) + ' tok'"
 				/>
 			</div>
 		</SectionContainer>

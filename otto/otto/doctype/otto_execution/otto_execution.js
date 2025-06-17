@@ -15,7 +15,7 @@ frappe.ui.form.on("Otto Execution", {
 				},
 			});
 		}
-		if (frm.doc.status === "Failure") {
+		if (frm.doc.status === "Failure" && frm.doc.execution) {
 			frm.add_custom_button(__("Retry"), () => {
 				frappe.call({
 					method: "retry",

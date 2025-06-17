@@ -12,6 +12,7 @@ export function get_stats(execution) {
 		end: new Date(0),
 		llm_calls: Object.values(execution.items).length - 1,
 		tool_calls: {},
+		tools: {},
 	};
 
 	for (const item of Object.values(execution.items)) {
@@ -39,7 +40,23 @@ export function get_stats(execution) {
 
 		for (const content of item.content) {
 			if (content.type != "tool_use") continue;
-			stats.tool_calls[content.name] = (stats.tool_calls[content.name] || 0) + 1;
+			const tool = (stats.tools[content.name] ??= {
+				called_count: 0,
+				empty_result_count: 0,
+				error_count: 0,
+			});
+			tool.called_count++;
+
+			const { result, status } = content;
+			if (result === null || result === "null" || result === "[]" || result === "{}")
+				tool.empty_result_count++;
+
+			if (
+				status === "error" ||
+				(typeof result === "string" &&
+					(result.includes("Error") || result.includes("error")))
+			)
+				tool.error_count++;
 		}
 	}
 

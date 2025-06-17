@@ -73,7 +73,6 @@ def interact(
 	*,
 	exchange: Exchange | None = None,
 	model: str | None = None,
-	exchange_id: str | None = None,
 	system: str | None = None,
 	tools: list[dict] | None = None,
 	reasoning_effort: ReasoningEffort | None = None,
@@ -103,8 +102,6 @@ def interact(
 			Required if `query` is not provided.
 		model: The specific LiteLLM model identifier (e.g., "openai/gpt-4o").
 			Overrides `model` if provided. If neither is provided, derived from `DEFAULT_LLM`.
-		exchange_id: An optional identifier for the exchange, potentially used for
-			real-time updates.
 		system: An optional system prompt to guide the LLM's behavior.
 		tools: An optional list of tools (functions) the LLM can use.
 
@@ -126,6 +123,7 @@ def interact(
 
 	# Creates a new exchange if exchange is None, else uses a copy
 	update = get_exchange(content, exchange)
+	exchange_id = update["id"]
 
 	if reason := _set_key(model):
 		return None, reason

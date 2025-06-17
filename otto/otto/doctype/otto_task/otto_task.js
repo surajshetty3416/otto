@@ -169,8 +169,8 @@ frappe.ui.form.on("Otto Task", {
 		frm.add_custom_button("List Tool Schemas", list_tools, "Utilities");
 		frm.add_custom_button("Export Task", export_task, "Utilities");
 
-		frappe.ui.keys.add_shortcut({ shortcut: "shift+e", action: execute_task });
-		frappe.ui.keys.add_shortcut({ shortcut: "shift+c", action: test_get_context });
-		frappe.ui.keys.add_shortcut({ shortcut: "shift+l", action: list_tools });
+		frappe.ui.keys.add_shortcut({ shortcut: "shift+e", action: execute_task, page: frm.page });
+		frappe.ui.keys.add_shortcut({ shortcut: "shift+c", action: test_get_context, page: frm.page });
+		frappe.ui.keys.add_shortcut({ shortcut: "shift+l", action: list_tools, page: frm.page });
 	},
 });
