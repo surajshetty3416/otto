@@ -18,6 +18,7 @@
   "trigger_section",
   "target_doctype",
   "event",
+  "no_target",
   "column_break_adfe",
   "condition"
  ],
@@ -34,6 +35,7 @@
    "label": "Trigger"
   },
   {
+   "default": "Manual",
    "description": "After which event of the selected DocType should the task be invoked.",
    "fieldname": "event",
    "fieldtype": "Select",
@@ -65,11 +67,12 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "def get_context(doc: \"Document\", event: str) -> str:\n\treturn doc.as_json()",
+   "default": "def get_context(doc, event):\n\treturn doc.as_json()",
    "description": "Function definition for <code>get_context(doc, event)</code> which should return\ncontext passed to the LLM to perform the task.\n<br><br>\n\n<strong>Context types:</strong>\n<ul>\n<li><code>str</code>: passed to model as is.</li>\n<li><code>list[str]</code>: individual strings can be plain strings or URLs to images or documents (pdf).</li>\n<li><code>Any</code>: converted to string using <code>json.dumps</code></li>\n</ul>",
    "fieldname": "get_context",
    "fieldtype": "Code",
    "label": "Get Context",
+   "mandatory_depends_on": "eval:doc.no_target",
    "options": "Python"
   },
   {
@@ -85,8 +88,8 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Target DocType",
-   "options": "DocType",
-   "reqd": 1
+   "mandatory_depends_on": "eval:!doc.no_target",
+   "options": "DocType"
   },
   {
    "default": "OpenAI GPT-4.1",
@@ -120,6 +123,13 @@
    "fieldtype": "Select",
    "label": "Reasoning Effort",
    "options": "None\nLow\nMedium\nHigh"
+  },
+  {
+   "default": "0",
+   "description": "Enable if the task is meant to be invoked Manually without any Target or Event.\n<br><br>\n<b>Note:</b> If set, <code>get_context</code> args fixed:\n<br>\n- <code>doc</code> arg will <code>None</code>\n<br>\n- <code>event</code> arg will be <code>\"Manual\"</code>",
+   "fieldname": "no_target",
+   "fieldtype": "Check",
+   "label": "No Target"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -133,7 +143,7 @@
    "link_fieldname": "task"
   }
  ],
- "modified": "2025-06-11 13:25:38.384545",
+ "modified": "2025-06-18 13:18:22.474629",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Task",
@@ -158,5 +168,6 @@
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
- "title_field": "title"
+ "title_field": "title",
+ "track_changes": 1
 }

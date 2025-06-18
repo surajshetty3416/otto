@@ -141,6 +141,7 @@ onMounted(async () => await fetchData());
 						:link="get_link('Otto Task', doc.task)"
 					/>
 					<Detail
+						v-if="doc.target_doctype"
 						label="Target"
 						:value="`${doc.target_doctype} - ${doc.target}`"
 						:link="get_link(doc.target_doctype, doc.target)"

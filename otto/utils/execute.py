@@ -67,13 +67,14 @@ def execute(
 
 def run_get_context(
 	get_context: str,
-	doc: Document,
+	doc: Document | None,
 	event: str,
 	globals: dict[str, Any] | None = None,
 ):
-	if not get_context:
+	if not get_context and doc:
 		return doc.as_json()
 
+	assert get_context, "sanity check, get_context should not be empty if no target"
 	script, _globals = get_script_and_globals(
 		get_context,
 		{"doc": doc, "event": event},

@@ -28,6 +28,7 @@
    "in_list_view": 1,
    "label": "Task",
    "options": "Otto Task",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -42,6 +43,7 @@
    "in_list_view": 1,
    "label": "Status",
    "options": "Pending\nRunning\nSuccess\nFailure",
+   "read_only_depends_on": "eval:doc.status !== \"Running\"",
    "reqd": 1
   },
   {
@@ -49,7 +51,8 @@
    "description": "Set only if status is failure",
    "fieldname": "reason",
    "fieldtype": "Small Text",
-   "label": "Reason"
+   "label": "Reason",
+   "read_only": 1
   },
   {
    "fieldname": "execution",
@@ -69,7 +72,8 @@
    "fieldname": "event",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Event"
+   "label": "Event",
+   "read_only": 1
   },
   {
    "fieldname": "target",
@@ -77,7 +81,7 @@
    "in_list_view": 1,
    "label": "Target",
    "options": "target_doctype",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fieldname": "target_doctype",
@@ -86,7 +90,7 @@
    "in_standard_filter": 1,
    "label": "Target DocType",
    "options": "DocType",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fieldname": "column_break_ivzi",
@@ -98,7 +102,8 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "LLM",
-   "options": "Otto LLM"
+   "options": "Otto LLM",
+   "read_only": 1
   },
   {
    "description": "Set from the Task definition, but may be different.",
@@ -109,14 +114,16 @@
   {
    "fieldname": "instruction",
    "fieldtype": "Code",
-   "label": "Instruction"
+   "label": "Instruction",
+   "read_only": 1
   },
   {
    "default": "None",
    "fieldname": "reasoning_effort",
    "fieldtype": "Select",
    "label": "Reasoning Effort",
-   "options": "None\nLow\nMedium\nHigh"
+   "options": "None\nLow\nMedium\nHigh",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
@@ -126,7 +133,7 @@
    "link_fieldname": "execution"
   }
  ],
- "modified": "2025-06-12 14:17:44.028624",
+ "modified": "2025-06-18 13:26:04.269227",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Execution",

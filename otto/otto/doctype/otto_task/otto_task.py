@@ -32,7 +32,6 @@ class OttoTask(Document):
 
 	if TYPE_CHECKING:
 		from frappe.types import DF
-
 		from otto.otto.doctype.otto_task_tool_ct.otto_task_tool_ct import OttoTaskToolCT
 
 		condition: DF.Code | None
@@ -41,8 +40,9 @@ class OttoTask(Document):
 		instruction: DF.Code | None
 		is_enabled: DF.Check
 		llm: DF.Link | None
+		no_target: DF.Check
 		reasoning_effort: DF.Literal["None", "Low", "Medium", "High"]
-		target_doctype: DF.Link
+		target_doctype: DF.Link | None
 		title: DF.Data | None
 		tools: DF.Table[OttoTaskToolCT]
 	# end: auto-generated types
@@ -97,7 +97,24 @@ class OttoTask(Document):
 		)
 
 	def before_save(self):
+		self.set_if_no_target()
+		self.set_reasoning()
+
+	def validate(self):
+		if self.no_target and not self.get_context:
+			raise frappe.ValidationError("get_context cannot be empty if No Target is set")
+
+	def set_if_no_target(self):
+		if self.target_doctype and not self.no_target:
+			return
+
+		assert self.no_target, "sanity check"
+		self.target_doctype = None
+		self.event = "Manual"
+
+	def set_reasoning(self):
 		if not self.llm or self.reasoning_effort == "None":
+			self.reasoning_effort = "None"
 			return
 
 		if not frappe.get_cached_value("Otto LLM", self.llm, "is_reasoning"):
@@ -106,7 +123,7 @@ class OttoTask(Document):
 	def trigger_execution(
 		self,
 		*,
-		target: str,
+		target: str | None,
 		event: str,
 		llm: str | None = None,
 		reasoning_effort: str | None = None,
@@ -150,9 +167,14 @@ class OttoTask(Document):
 	@frappe.whitelist()
 	def test_get_context(self, target: str, as_content: bool = False):
 		assert self.get_context is not None, "type check"
+		doc = None
+		if not self.no_target:
+			assert self.target_doctype is not None, "type check, sanity check"
+			doc = frappe.get_doc(self.target_doctype, target)
+
 		context = run_get_context(
 			get_context=self.get_context,
-			doc=frappe.get_doc(self.target_doctype, target),
+			doc=doc,
 			event="Manual",
 		)
 
@@ -392,7 +414,7 @@ def import_task(data: str):
 	return task.name
 
 
-def run_get_context(get_context: str, doc: Document, event: str):
+def run_get_context(get_context: str, doc: Document | None, event: str):
 	from otto.otto.doctype.otto_tool.lib import get_lib
 	from otto.utils import execute
 

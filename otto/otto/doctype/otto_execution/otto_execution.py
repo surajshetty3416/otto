@@ -39,8 +39,8 @@ class OttoExecution(Document):
 		reason: DF.SmallText | None
 		reasoning_effort: DF.Literal["None", "Low", "Medium", "High"]
 		status: DF.Literal["Pending", "Running", "Success", "Failure"]
-		target: DF.DynamicLink
-		target_doctype: DF.Link
+		target: DF.DynamicLink | None
+		target_doctype: DF.Link | None
 		task: DF.Link
 	# end: auto-generated types
 
@@ -48,8 +48,8 @@ class OttoExecution(Document):
 	def new(
 		task: str,
 		*,
-		target: str,
-		target_doctype: str,
+		target: str | None,
+		target_doctype: str | None,
 		event: str | None = None,
 		llm: str | None = None,
 		reasoning_effort: str | None = None,
@@ -57,10 +57,9 @@ class OttoExecution(Document):
 	):
 		doc = cast(OttoExecution, frappe.get_doc({"doctype": "Otto Execution", "task": task}))
 
-		if target and event:
-			doc.target_doctype = target_doctype
-			doc.target = target
-			doc.event = event
+		doc.target_doctype = target_doctype
+		doc.target = target
+		doc.event = event
 
 		doc.llm = llm or frappe.get_cached_value("Otto Task", task, "llm")
 		doc.instruction = instruction or frappe.get_cached_value("Otto Task", task, "instruction")
@@ -73,16 +72,24 @@ class OttoExecution(Document):
 		return doc
 
 	def execute(self):
-		doc = frappe.get_doc(self.target_doctype, self.target)
 		self.set_status("Running")
-		if not (context := self.get_context(doc, self.event or "Manual")):
-			return
+		doc = self.get_target()
+		context, reason = self.get_context(doc, self.event or "Manual")
+
+		if not context:
+			return self.set_status("Failure", reason)
 
 		try:
 			self.loop(context)
 		except Exception as e:
 			otto.log_error(title="execute error", doc=self)
 			self.set_status("Failure", f"Error in execution loop: {e}")
+
+	def get_target(self):
+		if not self.target_doctype or not self.target:
+			return None
+
+		return frappe.get_doc(self.target_doctype, self.target)
 
 	def validate(self):
 		tool_names = frappe.get_all("Otto Task Tool CT", filters={"parent": self.task}, pluck="tool")
@@ -186,21 +193,23 @@ class OttoExecution(Document):
 			self.set_execution(exchange)
 		return task_ended
 
-	def get_context(self, doc: Document, event: str):
+	def get_context(self, doc: Document | None, event: str) -> tuple[str | list, None] | tuple[None, str]:
 		from otto.otto.doctype.otto_task.otto_task import run_get_context
 
 		get_context = frappe.get_value("Otto Task", self.task, "get_context")
-		if not get_context or not isinstance(get_context, str):
-			return doc.as_json()
+		if (not get_context or not isinstance(get_context, str)) and doc:
+			return doc.as_json(), None
+
+		if not isinstance(get_context, str) or not get_context:
+			return (None, "get_context is not set on Task and no target Doc is provided")
 
 		try:
 			context = run_get_context(get_context, doc, event)
 		except Exception as e:
 			otto.log_error(title="get_context error", doc=self)
-			self.set_status("Failure", str(e))
-			return None
+			return None, str(e)
 
-		return context
+		return context, None
 
 	def set_execution(self, execution: Exchange):
 		self.execution = json.dumps(execution, indent=2)

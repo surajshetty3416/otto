@@ -32,7 +32,6 @@ class OttoTool(Document):
 
 	if TYPE_CHECKING:
 		from frappe.types import DF
-
 		from otto.otto.doctype.otto_tool_arg_ct.otto_tool_arg_ct import OttoToolArgCT
 
 		args: DF.Table[OttoToolArgCT]

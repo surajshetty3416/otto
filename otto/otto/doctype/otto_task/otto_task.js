@@ -3,7 +3,8 @@
 
 frappe.ui.form.on("Otto Task", {
 	refresh(frm) {
-		if (!frm.doc.target_doctype || !frm.doc.get_context) return;
+		const { no_target } = frm.doc;
+		const filter_cb = ({ fieldname }) => (no_target ? fieldname !== "target" : true);
 		function execute_task() {
 			const run_dialog = new frappe.ui.Dialog({
 				title: __("Execute Task"),
@@ -11,7 +12,7 @@ frappe.ui.form.on("Otto Task", {
 					{
 						fieldname: "message",
 						fieldtype: "HTML",
-						options: `<div>Manually enqueue task execution for the selected doc.</div>`,
+						options: `<div>Manually enqueue task execution with selected params.</div>`,
 					},
 					{
 						fieldname: "spacer",
@@ -42,14 +43,14 @@ frappe.ui.form.on("Otto Task", {
 						options: ["None", "Low", "Medium", "High"],
 						description: __("Valid only if model supports reasoning"),
 					},
-				],
+				].filter(filter_cb),
 				primary_action_label: __("Run"),
 				primary_action(values) {
 					frappe.call({
 						method: "execute_task",
 						doc: frm.doc,
 						args: {
-							target: values.target,
+							target: no_target ? null : values.target,
 							llm: values.llm || frm.doc.llm,
 							reasoning_effort: values.reasoning_effort,
 						},
@@ -74,6 +75,7 @@ frappe.ui.form.on("Otto Task", {
 			});
 			run_dialog.show();
 		}
+
 		function test_get_context() {
 			const dialog = new frappe.ui.Dialog({
 				title: __("Test Get Context"),
@@ -81,7 +83,7 @@ frappe.ui.form.on("Otto Task", {
 					{
 						fieldname: "message",
 						fieldtype: "HTML",
-						options: `<div>Execute <code>get_context</code> with selected doc (with event as Manual) and display output.</div>`,
+						options: `<div>Execute <code>get_context</code> with event as Manual and display output.</div>`,
 					},
 					{
 						fieldname: "spacer",
@@ -102,14 +104,14 @@ frappe.ui.form.on("Otto Task", {
 						fieldtype: "Check",
 						default: 0,
 					},
-				],
+				].filter(filter_cb),
 				primary_action_label: __("Test"),
 				primary_action(values) {
 					frappe.call({
 						method: "test_get_context",
 						doc: frm.doc,
 						args: {
-							target: values.target,
+							target: no_target ? null : values.target,
 							as_content: values.as_content,
 						},
 						callback: function (r) {
@@ -170,7 +172,11 @@ frappe.ui.form.on("Otto Task", {
 		frm.add_custom_button("Export Task", export_task, "Utilities");
 
 		frappe.ui.keys.add_shortcut({ shortcut: "shift+e", action: execute_task, page: frm.page });
-		frappe.ui.keys.add_shortcut({ shortcut: "shift+c", action: test_get_context, page: frm.page });
+		frappe.ui.keys.add_shortcut({
+			shortcut: "shift+c",
+			action: test_get_context,
+			page: frm.page,
+		});
 		frappe.ui.keys.add_shortcut({ shortcut: "shift+l", action: list_tools, page: frm.page });
 	},
 });
