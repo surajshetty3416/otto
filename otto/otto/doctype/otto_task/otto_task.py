@@ -7,7 +7,6 @@ from typing import Any, cast
 
 import frappe
 from frappe.model.document import Document
-from frappe.utils.safe_exec import get_safe_globals
 
 import otto
 from otto.otto.doctype.otto_task.tools import meta_tools
@@ -32,6 +31,7 @@ class OttoTask(Document):
 
 	if TYPE_CHECKING:
 		from frappe.types import DF
+
 		from otto.otto.doctype.otto_task_tool_ct.otto_task_tool_ct import OttoTaskToolCT
 
 		condition: DF.Code | None

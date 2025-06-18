@@ -1,12 +1,14 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "hash",
  "creation": "2025-04-30 12:59:09.968373",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "slug",
   "mock_tool",
+  "log_usage",
   "column_break_byai",
   "group",
   "mock_return_value",
@@ -113,7 +115,16 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Group",
-   "options": "Otto Tool Group"
+   "options": "Otto Tool Group",
+   "search_index": 1
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:!doc.mock_tool",
+   "description": "Log args and return value as a Scrapbook entry.",
+   "fieldname": "log_usage",
+   "fieldtype": "Check",
+   "label": "Log Usage"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -123,10 +134,11 @@
    "link_fieldname": "tool"
   }
  ],
- "modified": "2025-06-18 12:27:04.038400",
+ "modified": "2025-06-18 13:31:49.934101",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Tool",
+ "naming_rule": "Random",
  "owner": "Administrator",
  "permissions": [
   {

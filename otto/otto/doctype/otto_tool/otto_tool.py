@@ -39,6 +39,7 @@ class OttoTool(Document):
 		description: DF.LongText | None
 		group: DF.Link | None
 		is_valid: DF.Check
+		log_usage: DF.Check
 		mock_return_value: DF.Data | None
 		mock_tool: DF.Check
 		reason: DF.SmallText | None
@@ -221,13 +222,25 @@ class OttoTool(Document):
 			}
 		)
 		globals = dict(otto=lib.get_lib(env), refs=refs)
-
-		return execute.execute(
+		result = execute.execute(
 			self.code,
 			args=args,
 			arg_names=arg_names,
 			globals=globals,
 		)
+
+		if self.log_usage:
+			content = {**args, "RETURN_VALUE": result["result"]}
+
+			if result["stderr"]:
+				content["STDERR"] = result["stderr"]
+
+			if result["stdout"]:
+				content["STDOUT"] = result["stdout"]
+
+			lib.log(content, tool=self.name, task=task, execution=execution)
+
+		return result
 
 	@frappe.whitelist()
 	def test_tool(self, args: dict[str, Any]):
