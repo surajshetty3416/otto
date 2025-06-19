@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
+from urllib.parse import urlparse
 
 import frappe
 
 from otto.utils import json_dumps
-from urllib.parse import urlparse
 
 """
 Code in this is passed as library code to tool execution as globals.
@@ -101,6 +101,24 @@ def get_env(env: dict | None = None):
 	return frappe._dict(global_env)
 
 
+def to_html(content: str):
+	"""Converts provided markdown to HTML"""
+	from markdown2 import markdown
+
+	extras = {
+		"fenced-code-blocks": None,
+		"tables": None,
+		"strike": None,
+		"cuddled-lists": None,
+		"footnotes": None,
+		"header-ids": None,
+		"target-blank-links": None,
+		"html-classes": {"table": "table table-bordered", "img": "screenshot"},
+	}
+
+	return markdown(content, extras=extras)
+
+
 def get_lib(env: dict | None = None):
 	"""Returned object is available in scripts and code as otto.PROPERTY"""
 	return frappe._dict(
@@ -109,5 +127,6 @@ def get_lib(env: dict | None = None):
 			"log": log,
 			"get_file": get_file,
 			"interpolate_imgs": interpolate_imgs,
+			"to_html": to_html,
 		}
 	)

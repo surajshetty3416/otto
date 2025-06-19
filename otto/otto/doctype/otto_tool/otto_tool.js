@@ -58,7 +58,7 @@ frappe.ui.form.on("Otto Tool", {
 					callback: function (r) {
 						if (r.message)
 							frappe.msgprint(
-								`<pre>${r.message}</pre>`,
+								`<pre>${frappe.utils.escape_html(r.message)}</pre>`,
 								__("Tool Execution Result")
 							);
 						else frappe.msgprint(`No result`, __("Tool Execution Result"));
@@ -99,6 +99,6 @@ frappe.ui.form.on("Otto Tool", {
 		frm.add_custom_button("Test Tool", test_tool);
 
 		frappe.ui.keys.add_shortcut({ shortcut: "shift+v", action: view_schema, page: frm.page });
-		frappe.ui.keys.add_shortcut({ shortcut: "shift+t", action: test_tool, page: frm.page });
+		frappe.ui.keys.add_shortcut({ shortcut: "shift+o", action: test_tool, page: frm.page });
 	},
 });
