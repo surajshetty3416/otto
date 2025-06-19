@@ -5,6 +5,7 @@ import json
 import frappe
 
 from otto.utils import json_dumps
+from urllib.parse import urlparse
 
 """
 Code in this is passed as library code to tool execution as globals.
@@ -36,12 +37,15 @@ def get_file(url: str):
 	from otto.llm.utils import get_file_content
 
 	assert isinstance(url, str), "url must be a string"
+	parsed = urlparse(url)
 
-	if url.startswith("data:") or url.startswith("http"):
+	if parsed.scheme in ("http", "https", "data"):
 		return url
 
-	if not (files := frappe.get_all("File", filters={"file_url": url}, pluck="name", limit=1)):
-		return url
+	files = frappe.get_all("File", filters={"file_url": parsed.path}, pluck="name", limit=1)
+	if not files and parsed.query:
+		files = [q.split("=")[1].strip() for q in parsed.query.split("&") if q.startswith("fid=")]
+		files = [f for f in files if f]
 
 	try:
 		from frappe.core.doctype.file.file import File

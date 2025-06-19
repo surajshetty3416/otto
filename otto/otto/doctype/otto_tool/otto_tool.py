@@ -12,7 +12,7 @@ from frappe.exceptions import ValidationError
 from frappe.model.document import Document
 
 from otto.otto.doctype.otto_tool import lib
-from otto.utils import execute, json_dumps
+from otto.utils import execute
 
 arg_type_to_json_type = {
 	"str": "string",
@@ -32,6 +32,7 @@ class OttoTool(Document):
 
 	if TYPE_CHECKING:
 		from frappe.types import DF
+
 		from otto.otto.doctype.otto_tool_arg_ct.otto_tool_arg_ct import OttoToolArgCT
 
 		args: DF.Table[OttoToolArgCT]

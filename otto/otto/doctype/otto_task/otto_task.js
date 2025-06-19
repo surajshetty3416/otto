@@ -39,7 +39,7 @@ frappe.ui.form.on("Otto Task", {
 						fieldname: "reasoning_effort",
 						label: __("Reasoning Effort"),
 						fieldtype: "Select",
-						default: "None",
+						default: frm.doc.reasoning_effort,
 						options: ["None", "Low", "Medium", "High"],
 						description: __("Valid only if model supports reasoning"),
 					},
