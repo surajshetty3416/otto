@@ -26,6 +26,7 @@
    "fieldname": "task",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Task",
    "options": "Otto Task",
    "read_only": 1,
@@ -41,6 +42,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Status",
    "options": "Pending\nRunning\nSuccess\nFailure",
    "read_only_depends_on": "eval:doc.status !== \"Running\"",
@@ -133,7 +135,7 @@
    "link_fieldname": "execution"
   }
  ],
- "modified": "2025-06-18 13:26:04.269227",
+ "modified": "2025-06-20 10:59:21.242995",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Execution",

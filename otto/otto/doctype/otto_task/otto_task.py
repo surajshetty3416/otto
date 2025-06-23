@@ -11,7 +11,7 @@ from frappe.model.document import Document
 import otto
 from otto.otto.doctype.otto_task.tools import meta_tools
 
-logger = otto.logger("otto_task")
+logger = otto.logger("otto_task", "DEBUG")
 
 EVENT_MAP = {
 	"after_insert": "On Create",
@@ -265,6 +265,13 @@ class OttoTask(Document):
 
 
 def common_handler(doctype: Document, event: str | None = None):
+	try:
+		return _common_handler(doctype, event)
+	except Exception:
+		otto.log_error(title="Otto Common Handler Error", doc=doctype, event=event)
+
+
+def _common_handler(doctype: Document, event: str | None = None):
 	"""
 	Common handler function is used to enqueue tasks for a given doctype and
 	event. When an Otto Task is created or updated, the otto.hooks.doc_events is
@@ -286,6 +293,15 @@ def common_handler(doctype: Document, event: str | None = None):
 			task.condition,
 			doctype,
 		):
+			logger.debug(
+				{
+					"message": "test_condition false",
+					"task": task.name,
+					"name": doctype.name,
+					"doctype": doctype.doctype,
+					"event": event,
+				}
+			)
 			continue
 
 		logger.info(
