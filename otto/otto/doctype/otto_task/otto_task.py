@@ -316,6 +316,7 @@ def _common_handler(doctype: Document, event: str | None = None):
 		frappe.enqueue(
 			handler,
 			timeout=get_timeout(),
+			enqueue_after_commit=True,
 			# Args
 			task=task.name,
 			target_doc=doctype,

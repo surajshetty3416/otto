@@ -86,7 +86,7 @@ def interpolate_imgs(html: str):
 		content.append(html[last_idx:end_idx])
 
 		# get image
-		content.append(get_file(str(img.get("src"))))
+		content.append(get_file(str(img.get("src")))) # type: ignore
 		last_idx = end_idx
 
 	content.append(html[last_idx:])
