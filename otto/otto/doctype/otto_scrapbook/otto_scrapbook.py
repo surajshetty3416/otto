@@ -37,5 +37,5 @@ class OttoScrapbook(Document):
 				}
 			),
 		)
-		doc.save()
+		doc.save(ignore_permissions=True)
 		return doc
