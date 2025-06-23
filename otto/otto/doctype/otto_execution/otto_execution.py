@@ -68,7 +68,7 @@ class OttoExecution(Document):
 		else:
 			doc.reasoning_effort = frappe.get_cached_value("Otto Task", task, "reasoning_effort")
 
-		doc.save()
+		doc.save(ignore_permissions=True, ignore_version=True)
 		return doc
 
 	def execute(self):
