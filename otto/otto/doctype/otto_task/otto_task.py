@@ -285,7 +285,7 @@ def _common_handler(doctype: Document, event: str | None = None):
 	# TODO: Cache this get_all call, update only every 5 minutes or something
 	for task in frappe.db.get_all(
 		"Otto Task",
-		filters={"target_doctype": doctype.doctype, "event": event_label, "enabled": 1},
+		filters={"target_doctype": doctype.doctype, "event": event_label, "is_enabled": True},
 		fields=["name", "condition"],
 	):
 		if task.condition and not test_condition(
