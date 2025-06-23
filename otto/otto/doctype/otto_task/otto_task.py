@@ -268,7 +268,7 @@ def common_handler(doctype: Document, event: str | None = None):
 	try:
 		return _common_handler(doctype, event)
 	except Exception:
-		otto.log_error(title="Otto Common Handler Error", doc=doctype, event=event)
+		otto.log_error(title="Common Handler Error", doc=doctype, event=event)
 
 
 def _common_handler(doctype: Document, event: str | None = None):

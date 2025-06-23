@@ -241,13 +241,10 @@ class OttoExecution(Document):
 				env=env,
 			)["result"], False
 		except Exception as e:
-			logger.error(
-				{
-					"execution": self.name,
-					"message": "tool use error",
-					"tool": tool_name,
-					"error": e,
-				}
+			otto.log_error(
+				"Tool Use Error",
+				doc=self,
+				tool=tool_name,
 			)
 			return str(e), True
 
