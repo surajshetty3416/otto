@@ -1,0 +1,156 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-07-08 13:09:38.469374",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "uid",
+  "selected",
+  "column_break_mgws",
+  "next",
+  "meta_section",
+  "role",
+  "cost",
+  "input_tokens",
+  "start_time",
+  "end_reason",
+  "column_break_liws",
+  "timestamp",
+  "model",
+  "output_tokens",
+  "end_time",
+  "content_section",
+  "content"
+ ],
+ "fields": [
+  {
+   "description": "Unique item ID assigned by the model provider or Otto depending on Role.",
+   "fieldname": "uid",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "UID",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_mgws",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "JSON list of next UID strings.",
+   "fieldname": "next",
+   "fieldtype": "Data",
+   "label": "Next"
+  },
+  {
+   "default": "0",
+   "description": "Which of the Next items have been selected.",
+   "fieldname": "selected",
+   "fieldtype": "Int",
+   "label": "Selected",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "meta_section",
+   "fieldtype": "Section Break",
+   "label": "Meta"
+  },
+  {
+   "description": "Should be <code>\"user\"</code> or <code>\"agent\"</code>.",
+   "fieldname": "role",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Role",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval: doc.role == \"agent\"",
+   "description": "Number of tokens fed into the model for this response.",
+   "fieldname": "input_tokens",
+   "fieldtype": "Int",
+   "label": "Input Tokens"
+  },
+  {
+   "depends_on": "eval: doc.role == \"agent\"",
+   "description": "Time stamp before requesting provider API.",
+   "fieldname": "start_time",
+   "fieldtype": "Datetime",
+   "label": "Start Time"
+  },
+  {
+   "depends_on": "eval: doc.role == \"agent\"",
+   "description": "End reason given by provider for terminating generation.",
+   "fieldname": "end_reason",
+   "fieldtype": "Data",
+   "label": "End Reason"
+  },
+  {
+   "depends_on": "eval: doc.role == \"agent\"",
+   "description": "Cost of generating this response. <em>Might not be accurate</em>.",
+   "fieldname": "cost",
+   "fieldtype": "Float",
+   "label": "Cost"
+  },
+  {
+   "fieldname": "column_break_liws",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval: doc.role == \"agent\"",
+   "description": "Which model generated this response.",
+   "fieldname": "model",
+   "fieldtype": "Data",
+   "label": "Model"
+  },
+  {
+   "depends_on": "eval: doc.role == \"agent\"",
+   "description": "Number of tokens in the model response.",
+   "fieldname": "output_tokens",
+   "fieldtype": "Int",
+   "label": "Output Tokens"
+  },
+  {
+   "depends_on": "eval: doc.role == \"agent\"",
+   "description": "Time stamp after provider response is completely generated.",
+   "fieldname": "end_time",
+   "fieldtype": "Datetime",
+   "label": "End Time"
+  },
+  {
+   "description": "Time stamp of when the <code>ExecutionItem</code> was created.",
+   "fieldname": "timestamp",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Timestamp",
+   "reqd": 1
+  },
+  {
+   "fieldname": "content_section",
+   "fieldtype": "Section Break",
+   "label": "Content"
+  },
+  {
+   "description": "JSON dump of the <code>ExchangeItem</code> content list.",
+   "fieldname": "content",
+   "fieldtype": "JSON",
+   "in_list_view": 1,
+   "label": "Content",
+   "reqd": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-07-08 13:25:55.980061",
+ "modified_by": "Administrator",
+ "module": "Otto",
+ "name": "Otto Execution Item CT",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
