@@ -69,8 +69,8 @@ class TestLiteLLMIntegration(unittest.TestCase):
 
 		# Check response structure
 		self.assertIsInstance(response, dict)  # InteractResponse is a TypedDict
-		self.assertIsInstance(response["item"], dict)  # ExchangeItem is a TypedDict
-		self.assertIsInstance(response["update"], dict)  # Exchange is a TypedDict
+		self.assertIsInstance(response["item"], dict)  # SessionItem is a TypedDict
+		self.assertIsInstance(response["update"], dict)  # Session is a TypedDict
 		self.assertIsInstance(response["chunks"], list)
 
 		# Check agent item
@@ -101,16 +101,16 @@ class TestLiteLLMIntegration(unittest.TestCase):
 		self.assertIsNotNone(response["update"])
 		assert response["update"] is not None  # for type checker
 
-		exchange = response["update"]
-		print(get_stats(exchange))
+		session = response["update"]
+		print(get_stats(session))
 
-		self.assertIsInstance(exchange["items"], dict)
-		self.assertEqual(len(exchange["items"]), 2)  # User query + Agent response
+		self.assertIsInstance(session["items"], dict)
+		self.assertEqual(len(session["items"]), 2)  # User query + Agent response
 
-		first_key = exchange["first"]
-		second_key = exchange["items"][first_key]["next"][0]
-		first_item = exchange["items"][first_key]
-		second_item = exchange["items"][second_key]
+		first_key = session["first"]
+		second_key = session["items"][first_key]["next"][0]
+		first_item = session["items"][first_key]
+		second_item = session["items"][second_key]
 
 		self.assertEqual(first_item["meta"]["role"], "user")
 		self.assertEqual(second_item["meta"]["role"], "agent")
@@ -146,8 +146,8 @@ class TestLiteLLMIntegration(unittest.TestCase):
 		self.assertIsNone(error, f"Interaction failed with error: {error}")
 		self.assertIsNotNone(response)
 		assert response is not None  # for type checker
-		exchange = response["update"]
-		print(get_stats(exchange))
+		session = response["update"]
+		print(get_stats(session))
 
 		# Check response structure (similar to basic test)
 		self.assertIsInstance(response, dict)
@@ -186,15 +186,15 @@ class TestLiteLLMIntegration(unittest.TestCase):
 		assert response is not None  # for type checker
 		agent_item = response["item"]
 
-		exchange = response["update"]
+		session = response["update"]
 		tool_use = [c for c in agent_item["content"] if c["type"] == "tool_use"]
 		self.assertEqual(len(tool_use), 2)
 
 		assert len(tool_use) == 2, "Expected 2 tool calls"
-		update_with_tool_result(exchange=exchange, result="10 degrees celsius", id=tool_use[0]["id"])
-		update_with_tool_result(exchange=exchange, result="10 degrees celsius", id=tool_use[1]["id"])
+		update_with_tool_result(session=session, result="10 degrees celsius", id=tool_use[0]["id"])
+		update_with_tool_result(session=session, result="10 degrees celsius", id=tool_use[1]["id"])
 
-		response, error = interact(exchange=exchange, model=TEST_MODEL)
+		response, error = interact(session=session, model=TEST_MODEL)
 		self.assertIsNone(error, f"Interaction failed with error: {error}")
 		self.assertIsNotNone(response)
 		assert response is not None  # for type checker

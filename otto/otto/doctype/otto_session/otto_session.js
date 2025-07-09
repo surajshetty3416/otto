@@ -76,16 +76,16 @@ function validate_session(session, display_wrapper) {
 	return true;
 }
 
-function render_session_flow(exchange, container) {
+function render_session_flow(session, container) {
 	container.empty();
 
-	let currentItemId = exchange.first;
+	let currentItemId = session.first;
 	const visitedItems = new Set();
 	let iteration = 0;
-	const maxIterations = Object.keys(exchange.items).length + 10; // Safety break
+	const maxIterations = Object.keys(session.items).length + 10; // Safety break
 
 	while (currentItemId && !visitedItems.has(currentItemId) && iteration < maxIterations) {
-		const item = exchange.items[currentItemId];
+		const item = session.items[currentItemId];
 		if (!item) {
 			container.append(
 				`<p class="text-danger">Error: Referenced item ID <code>${currentItemId}</code> not found. Session flow may be incomplete.</p>`

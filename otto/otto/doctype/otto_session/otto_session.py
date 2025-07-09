@@ -17,7 +17,7 @@ from otto.otto.doctype.otto_task.otto_task import get_tools
 from otto.otto.doctype.otto_task.tools import has_task_ended, is_meta_tool
 
 if TYPE_CHECKING:
-	from otto.llm.types import Exchange, ExchangeItem
+	from otto.llm.types import Session, SessionItem
 	from otto.otto.doctype.otto_task.otto_task import OttoTask
 
 logger = otto.logger("otto_session")
@@ -32,9 +32,11 @@ class OttoSession(Document):
 	if TYPE_CHECKING:
 		from frappe.types import DF
 
+		from otto.otto.doctype.otto_session_item_ct.otto_session_item_ct import OttoSessionItemCT
+
 		event: DF.Data | None
-		session: DF.JSON | None
 		instruction: DF.Code | None
+		items: DF.Table[OttoSessionItemCT]
 		llm: DF.Link | None
 		reason: DF.SmallText | None
 		reasoning_effort: DF.Literal["None", "Low", "Medium", "High"]
@@ -115,11 +117,11 @@ class OttoSession(Document):
 	def loop(self, context: str | list[str] | None = None):
 		from otto.otto.doctype.otto_llm.otto_llm import get_reasoning_effort
 
-		exchange = json.loads(self.session) if self.session else None
+		session = json.loads(self.session) if self.session else None
 		try:
 			interaction, reason = llm.interact(
 				context,  # type: ignore needed cause not strong enough type system
-				exchange=exchange,
+				session=session,
 				tools=get_tools(self.task),
 				model=self.llm,
 				system=self.instruction,
@@ -129,7 +131,7 @@ class OttoSession(Document):
 				{
 					"message": "interact success",
 					"session": self.name,
-					"exchange_size": interaction and len(interaction["update"]),
+					"session_size": interaction and len(interaction["update"]),
 					"item": interaction and interaction["item"],
 				}
 			)
@@ -153,7 +155,7 @@ class OttoSession(Document):
 
 		self.loop(None)
 
-	def should_stop(self, item: ExchangeItem) -> bool:
+	def should_stop(self, item: SessionItem) -> bool:
 		"""
 		This has been added cause Gemini 2.5 Flash did not call end_task and
 		instead so for smaller models, this check should suffice until a better
@@ -164,7 +166,7 @@ class OttoSession(Document):
 
 		return item["meta"]["output_tokens"] == 0
 
-	def run_tools(self, item: ExchangeItem, exchange: Exchange):
+	def run_tools(self, item: SessionItem, session: Session):
 		"""Runs tools and checks if meta tool end_task is used"""
 		from otto.otto.doctype.otto_task.otto_task import OttoTask
 
@@ -189,8 +191,8 @@ class OttoSession(Document):
 				env_str = env_map.get(tool_name, None)
 				result, is_error = self.execute_tool(tool_name, content["args"], env_str)
 
-			llm.update_with_tool_result(exchange=exchange, result=result, id=content["id"], is_error=is_error)
-			self.set_session(exchange)
+			llm.update_with_tool_result(session=session, result=result, id=content["id"], is_error=is_error)
+			self.set_session(session)
 		return task_ended
 
 	def get_context(self, doc: Document | None, event: str) -> tuple[str | list, None] | tuple[None, str]:
@@ -211,7 +213,7 @@ class OttoSession(Document):
 
 		return context, None
 
-	def set_session(self, session: Exchange):
+	def set_session(self, session: Session):
 		self.session = json.dumps(session, indent=2)
 		self.save(ignore_permissions=True, ignore_version=True)
 		frappe.db.commit()
@@ -253,8 +255,8 @@ class OttoSession(Document):
 		if not self.session:
 			return "No Session"
 
-		exchange: Exchange = json.loads(self.session)
-		return llm.get_stats(exchange)
+		session: Session = json.loads(self.session)
+		return llm.get_stats(session)
 
 	@frappe.whitelist()
 	def retry(self):

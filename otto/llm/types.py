@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Literal, TypedDict
 
 ID = str
-ExchangeRole = Literal["user", "agent"]
+SessionRole = Literal["user", "agent"]
 ReasoningEffort = Literal["low", "medium", "high"]
 
 
@@ -44,8 +44,8 @@ UserContent = TextContent | ImageContent | FileContent
 Content = TextContent | ThinkingContent | ToolUseContent | ImageContent | FileContent
 
 
-class ExchangeMeta(TypedDict):
-	role: ExchangeRole
+class SessionMeta(TypedDict):
+	role: SessionRole
 	model: str | None  # If None then item is a human user
 
 	input_tokens: int
@@ -58,29 +58,29 @@ class ExchangeMeta(TypedDict):
 	end_reason: Literal["turn_end", "tool_use"] | None
 
 
-class ExchangeItem(TypedDict):
+class SessionItem(TypedDict):
 	id: ID
 	next: list[ID]
 	selected_next: int  # Used if multiple next items, default 0
 	content: list[Content]
-	meta: ExchangeMeta
+	meta: SessionMeta
 
 
-class Exchange(TypedDict):
+class Session(TypedDict):
 	"""
-	Exchange is modeled as a linked list, where there can be multiple next
+	Session is modeled as a linked list, where there can be multiple next
 	items. This is cause a user might want to handle an interaction from
-	any particular point in the exchange.
+	any particular point in the session.
 
-	The Exchange is used to maintain the state of a turn based interaction
+	The Session is used to maintain the state of a turn based interaction
 	between a user and an agent. Here the user can be a human or an LLM and the
 	agent is always an LLM. The identity and nature of the parties involved are
-	maintained by the code that makes use of an Exchange.
+	maintained by the code that makes use of an Session.
 	"""
 
 	id: ID
 	first: ID
-	items: dict[ID, ExchangeItem]
+	items: dict[ID, SessionItem]
 
 
 class ContentChunk(TypedDict):
@@ -91,12 +91,12 @@ class ContentChunk(TypedDict):
 	type: Literal["text", "thinking", "tool_use"]
 	content: str
 	item_id: str
-	exchange_id: str
+	session_id: str
 
 
 class InteractResponse(TypedDict):
-	item: ExchangeItem
-	update: Exchange
+	item: SessionItem
+	update: Session
 	chunks: list[ContentChunk]
 
 
@@ -107,6 +107,6 @@ All of the following inputs are converted into list[UserContent]:
 - list[UserContent]: input is list of UserContent
 
 If input is None, it is treated as an empty list. It should be None only if the
-exchange provided has some update such as a tool result.
+session provided has some update such as a tool result.
 """
 InteractInput = str | list[str | UserContent] | list[UserContent] | None

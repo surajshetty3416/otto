@@ -10,20 +10,20 @@ from typing import TYPE_CHECKING, Any, TypeGuard
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
-from otto.llm.types import Exchange
+from otto.llm.types import Session
 from otto.utils import json_dumps
 
 if TYPE_CHECKING:
-	from otto.llm.types import Exchange, ExchangeItem, ExchangeMeta, UserContent
+	from otto.llm.types import Session, SessionItem, SessionMeta, UserContent
 
 
-def get_exchange_list(exchange: Exchange) -> list[ExchangeItem]:
+def get_session_list(session: Session) -> list[SessionItem]:
 	"""
-	Exchange is defined as a linked list with multiple next nodes (i.e a tree but
+	Session is defined as a linked list with multiple next nodes (i.e a tree but
 	with only one 'active' branch sequence). This converts the linked list into a list
 	consisting of the active path.
 	"""
-	first = exchange["items"][exchange["first"]]
+	first = session["items"][session["first"]]
 	items = [first]
 
 	while True:
@@ -36,7 +36,7 @@ def get_exchange_list(exchange: Exchange) -> list[ExchangeItem]:
 			break
 
 		next_id = last["next"][selected_next]
-		next = exchange["items"][next_id]
+		next = session["items"][next_id]
 
 		items.append(next)
 
@@ -44,7 +44,7 @@ def get_exchange_list(exchange: Exchange) -> list[ExchangeItem]:
 
 
 def get_user_item(content: list[UserContent] | None = None):
-	meta: ExchangeMeta = {
+	meta: SessionMeta = {
 		"role": "user",
 		"model": None,
 		"input_tokens": 0,
@@ -56,7 +56,7 @@ def get_user_item(content: list[UserContent] | None = None):
 		"end_reason": None,
 	}
 
-	item: ExchangeItem = {
+	item: SessionItem = {
 		"id": uuid.uuid4().hex,
 		"next": [],
 		"selected_next": 0,
@@ -71,7 +71,7 @@ def get_user_item(content: list[UserContent] | None = None):
 
 
 def get_agent_item(model: str):
-	meta: ExchangeMeta = {
+	meta: SessionMeta = {
 		"role": "agent",
 		"model": model,
 		"timestamp": datetime.datetime.now().timestamp(),
@@ -83,7 +83,7 @@ def get_agent_item(model: str):
 		"cost": 0,
 	}
 
-	item: ExchangeItem = {
+	item: SessionItem = {
 		"id": uuid.uuid4().hex,
 		"next": [],
 		"selected_next": 0,
@@ -94,50 +94,50 @@ def get_agent_item(model: str):
 	return item
 
 
-def get_exchange(content: list[UserContent] | None, exchange: Exchange | None = None) -> Exchange:
+def get_session(content: list[UserContent] | None, session: Session | None = None) -> Session:
 	"""
-	Returns an Exchange with ExchangeItem containing the query. If exchange is
-	None, a new exchange is created. Else a copy of the provided exchange is
+	Returns an Session with SessionItem containing the query. If session is
+	None, a new session is created. Else a copy of the provided session is
 	updated and returned.
 	"""
 	if content is None:
-		assert exchange is not None, "exchange is required if query is None"
-		return json.loads(json.dumps(exchange))
+		assert session is not None, "session is required if query is None"
+		return json.loads(json.dumps(session))
 
 	item = get_user_item(content)
-	if not exchange:
-		exchange_: Exchange = {
+	if not session:
+		session_: Session = {
 			"id": uuid.uuid4().hex,
 			"items": {item["id"]: item},
 			"first": item["id"],
 		}
-		return exchange_
+		return session_
 
-	exchange_ = json.loads(json.dumps(exchange))
-	update_exchange(
-		exchange_,
-		get_last_id(exchange),
+	session_ = json.loads(json.dumps(session))
+	update_session(
+		session_,
+		get_last_id(session),
 		item,
 	)
-	return exchange_
+	return session_
 
 
-def update_exchange(exchange: Exchange, last_id: str, item: ExchangeItem) -> None:
+def update_session(session: Session, last_id: str, item: SessionItem) -> None:
 	"""
-	Updates the exchange with the new item.
+	Updates the session with the new item.
 	"""
-	last_item = exchange["items"][last_id]
+	last_item = session["items"][last_id]
 
 	assert item["id"] not in last_item["next"], "sanity check"
 	last_item["next"].append(item["id"])
 	last_item["selected_next"] = len(last_item["next"]) - 1
 
-	assert item["id"] not in exchange["items"], "sanity check"
-	exchange["items"][item["id"]] = item
+	assert item["id"] not in session["items"], "sanity check"
+	session["items"][item["id"]] = item
 
 
-def update_with_tool_result(*, exchange: Exchange, result: Any, id: str, is_error: bool = False) -> None:
-	for item in exchange["items"].values():
+def update_with_tool_result(*, session: Session, result: Any, id: str, is_error: bool = False) -> None:
+	for item in session["items"].values():
 		for part in item["content"]:
 			if part["type"] != "tool_use" or part["id"] != id:
 				continue
@@ -150,23 +150,23 @@ def update_with_tool_result(*, exchange: Exchange, result: Any, id: str, is_erro
 			return
 
 
-def get_last_id(exchange: Exchange):
+def get_last_id(session: Session):
 	"""
 	Walk selected path in item tree to get the last item id.
 	"""
-	last = exchange["items"][exchange["first"]]
+	last = session["items"][session["first"]]
 	while True:
 		selected = last["selected_next"]
 		if len(last["next"]) <= selected:
 			break
 
 		next_id = last["next"][selected]
-		last = exchange["items"][next_id]
+		last = session["items"][next_id]
 
 	return last["id"]
 
 
-def get_stats(exchange: Exchange):
+def get_stats(session: Session):
 	import datetime
 
 	cost = 0
@@ -175,15 +175,15 @@ def get_stats(exchange: Exchange):
 	llm_calls = 0
 	tools_called = {}
 
-	_start = exchange["items"][exchange["first"]]["meta"]["timestamp"]
-	_end = exchange["items"][get_last_id(exchange)]["meta"]["end_time"]
+	_start = session["items"][session["first"]]["meta"]["timestamp"]
+	_end = session["items"][get_last_id(session)]["meta"]["end_time"]
 	start = datetime.datetime.fromtimestamp(_start)
 	end = datetime.datetime.fromtimestamp(_end)
 
 	max_input_tokens = 0
 	max_output_tokens = 0
 
-	for item in exchange["items"].values():
+	for item in session["items"].values():
 		llm_calls += 1
 		cost += item["meta"]["cost"]
 		input_tokens += item["meta"]["input_tokens"]

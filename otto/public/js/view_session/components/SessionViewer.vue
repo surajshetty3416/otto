@@ -28,7 +28,7 @@ const duration = computed(() => {
 </script>
 
 <template>
-	<div class="exchange-item-container" :class="{ 'user-item': isSystem, 'llm-item': !isSystem }">
+	<div class="session-item-container" :class="{ 'user-item': isSystem, 'llm-item': !isSystem }">
 		<div class="header" :class="{ 'user-header': isSystem, 'llm-header': !isSystem }">
 			<div class="role" :class="{ 'role-system': isSystem, 'role-llm': !isSystem }">
 				{{ isSystem ? "system" : "llm" }}
@@ -120,14 +120,14 @@ const duration = computed(() => {
 </template>
 
 <style scoped>
-.exchange-item-container {
+.session-item-container {
 	border: 1px solid var(--gray-200);
 	margin-bottom: var(--padding-md);
 	background-color: var(--white);
 	overflow: hidden;
 }
 
-.exchange-item-container:last-child {
+.session-item-container:last-child {
 	margin-bottom: 0;
 }
 

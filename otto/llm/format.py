@@ -4,7 +4,7 @@ import json
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-	from otto.llm.types import ExchangeItem
+	from otto.llm.types import SessionItem
 
 
 class C:
@@ -56,12 +56,12 @@ class C:
 
 
 def get_messages(
-	items: list[ExchangeItem],
+	items: list[SessionItem],
 	system: str | None = None,
 	preserve_thinking: bool = False,
 ):
 	"""
-	Converts from Otto internal format, i.e. ExchangeItem, to OpenAI Chat
+		Converts from Otto internal format, i.e. SessionItem, to OpenAI Chat
 	Completion format. LiteLLM makes use of OpenAI Chat Completion format.
 
 	Reference: https://platform.openai.com/docs/api-reference/chat/create
@@ -93,7 +93,7 @@ def get_messages(
 	return messages, last_id
 
 
-def _get_content(item: ExchangeItem, preserve_thinking: bool):
+def _get_content(item: SessionItem, preserve_thinking: bool):
 	content: str | list[dict] = []
 	tool_calls: list[dict] = []
 	tool_responses: list[dict] = []
@@ -140,7 +140,7 @@ def _get_content(item: ExchangeItem, preserve_thinking: bool):
 	return content, tool_calls, tool_responses
 
 
-def _get_role(item: ExchangeItem):
+def _get_role(item: SessionItem):
 	if item["meta"]["role"] == "user":
 		return "user"
 

@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from "vue";
 import Detail from "./components/Detail.vue";
-import ExchangeViewer from "./components/SessionViewer.vue";
+import SessionViewer from "./components/SessionViewer.vue";
 import PreViewer from "./components/PreViewer.vue";
 import ScrapbookViewer from "./components/ScrapbookViewer.vue";
 import SectionContainer from "./components/SectionContainer.vue";
@@ -29,7 +29,7 @@ const errors = reactive({
 	scrapbook: null,
 });
 
-const exchange_sequence = computed(() => {
+const session_sequence = computed(() => {
 	if (!session.value) return [];
 	const items = [];
 	let current_id = session.value.first;
@@ -126,12 +126,7 @@ onMounted(async () => await fetchData());
 		<div v-else class="detail-header">Loading...</div>
 
 		<!-- 1. Session Details -->
-		<SectionContainer
-			title=""
-			label=""
-			:isLoading="loading.session"
-			:error="errors.session"
-		>
+		<SectionContainer title="" label="" :isLoading="loading.session" :error="errors.session">
 			<div>
 				<!-- Details -->
 				<div class="detail-container">
@@ -198,7 +193,7 @@ onMounted(async () => await fetchData());
 			</template>
 		</SectionContainer>
 
-		<!-- Exchange -->
+		<!-- Session -->
 		<SectionContainer
 			v-if="session"
 			title="Session: session sequence of the task"
@@ -207,8 +202,8 @@ onMounted(async () => await fetchData());
 			:error="errors.session"
 		>
 			<div v-if="session">
-				<ExchangeViewer
-					v-for="(item, index) in exchange_sequence"
+				<SessionViewer
+					v-for="(item, index) in session_sequence"
 					:key="item.id"
 					:item="item"
 					:index="index"

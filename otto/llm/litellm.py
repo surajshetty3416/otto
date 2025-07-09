@@ -32,10 +32,10 @@ from otto.llm.format import get_messages
 from otto.llm.types import (
 	Content,
 	ContentChunk,
-	Exchange,
-	ExchangeItem,
 	InteractResponse,
 	ReasoningEffort,
+	Session,
+	SessionItem,
 	TextContent,
 	ThinkingContent,
 	ToolUseContent,
@@ -43,10 +43,10 @@ from otto.llm.types import (
 )
 from otto.llm.utils import (
 	get_agent_item,
-	get_exchange,
-	get_exchange_list,
+	get_session,
+	get_session_list,
 	to_content,
-	update_exchange,
+	update_session,
 )
 
 if TYPE_CHECKING:
@@ -68,10 +68,10 @@ thinking_budget_map: dict[ReasoningEffort, int] = {
 
 
 def interact(
-	# query should be None only if exchange is provided with a call call update
+	# query should be None only if session is provided with a call call update
 	query: str | list[str | UserContent] | list[UserContent] | None = None,
 	*,
-	exchange: Exchange | None = None,
+	session: Session | None = None,
 	model: str | None = None,
 	system: str | None = None,
 	tools: list[dict] | None = None,
@@ -83,22 +83,22 @@ def interact(
 
 	Maintaining state:
 
-	1. The `interact` function maintains state using an Exchange object. If no exchange
+	1. The `interact` function maintains state using an Session object. If no session
 		object is provided, a new one is created.
-	2. The provided exchange object should not contain the query. An item for the query is
-		created and added to the exchange object.
-	3. The `interact` function returns an updated exchange object on success.
-	4. The returned exchange object will contain the user query and the agent response.
+	2. The provided session object should not contain the query. An item for the query is
+		created and added to the session object.
+	3. The `interact` function returns an updated session object on success.
+	4. The returned session object will contain the user query and the agent response.
 	5. To maintain history the returned object should be provided to the `interact` function
 		upon each call.
-	6. The returned Exchange object may be updated in the case of certain
+	6. The returned Session object may be updated in the case of certain
 		instances, such as if appending a tool use response.
 
 	Args:
 		query: The user's input query to start a new conversation or continue an
 			existing one.
-		exchange: The existing conversation history (Exchange object) WITHOUT the query.
-			Users query is added to the Exchange and an updated Exchange is returned.
+		session: The existing conversation history (Session object) WITHOUT the query.
+			Users query is added to the Session and an updated Session is returned.
 			Required if `query` is not provided.
 		model: The specific LiteLLM model identifier (e.g., "openai/gpt-4o").
 			Overrides `model` if provided. If neither is provided, derived from `DEFAULT_LLM`.
@@ -107,23 +107,23 @@ def interact(
 
 	Returns:
 		- On success: A tuple `(InteractResponse, None)`, where `InteractResponse`
-			contains the generated agent response item, the updated exchange, and
+			contains the generated agent response item, the updated session, and
 			a list of content chunks from the stream.
 		- On failure (e.g., API key issue): A tuple `(None, str)` containing
 			`None` and an error reason string.
 	"""
 	import litellm
 
-	assert query is not None or exchange is not None, (
-		"exchange (with tool result) is required if query is not provided"
+	assert query is not None or session is not None, (
+		"session (with tool result) is required if query is not provided"
 	)
 
 	content = None if query is None else to_content(query)
 	model = model or DEFAULT_LLM
 
-	# Creates a new exchange if exchange is None, else uses a copy
-	update = get_exchange(content, exchange)
-	exchange_id = update["id"]
+	# Creates a new session if session is None, else uses a copy
+	update = get_session(content, session)
+	session_id = update["id"]
 
 	if reason := _set_key(model):
 		return None, reason
@@ -166,7 +166,7 @@ def interact(
 
 	litellm.success_callback = [success_callback]
 
-	items = get_exchange_list(update)
+	items = get_session_list(update)
 	messages, last_id = get_messages(
 		items,
 		system,
@@ -195,7 +195,7 @@ def interact(
 	assert isinstance(completion, litellm.CustomStreamWrapper), "sanity check"
 
 	# Iterates over the completion stream and returns a list of ContentChunk
-	chunks, signature = _stream(completion, item, exchange_id)
+	chunks, signature = _stream(completion, item, session_id)
 
 	logger.debug(
 		{
@@ -224,9 +224,9 @@ def interact(
 			if c["type"] == "thinking":
 				c["signature"] = signature
 
-	logger.debug({"message": "updating exchange", "id": item["id"]})
-	# Update the update exchange with the item
-	update_exchange(update, last_id, item)
+	logger.debug({"message": "updating session", "id": item["id"]})
+	# Update the update session with the item
+	update_session(update, last_id, item)
 
 	item["meta"]["end_time"] = time.time()
 
@@ -295,7 +295,7 @@ def completions(**kwargs):
 			retries += 1
 
 
-def _stream(completion: CustomStreamWrapper, item: ExchangeItem, exchange_id: str | None):
+def _stream(completion: CustomStreamWrapper, item: SessionItem, session_id: str | None):
 	"""
 	Iterates over the completion stream iterable, publishes the chunks, collates
 	them into a list and if a signature is found, updates the item's content.
@@ -306,7 +306,7 @@ def _stream(completion: CustomStreamWrapper, item: ExchangeItem, exchange_id: st
 	chunks: list[ContentChunk] = []
 
 	for chunk in completion:
-		if cc := _stream_chunk(chunk, item["id"], exchange_id):
+		if cc := _stream_chunk(chunk, item["id"], session_id):
 			logger.debug({"id": item["id"], "content": cc["content"]})
 			chunks.append(cc)
 
@@ -314,16 +314,16 @@ def _stream(completion: CustomStreamWrapper, item: ExchangeItem, exchange_id: st
 	return chunks, signature
 
 
-def _stream_chunk(chunk: ModelResponseStream, item_id: str, exchange_id: str | None):
+def _stream_chunk(chunk: ModelResponseStream, item_id: str, session_id: str | None):
 	"""
-	publish using user, exchange_id, item_id
+	publish using user, session_id, item_id
 	"""
 	delta = chunk.choices[0].delta
 	logger.debug(
 		{
 			"message": "_stream_chunk",
 			"id": item_id,
-			"exchange_id": exchange_id,
+			"session_id": session_id,
 			"delta": delta.to_json(indent=None),
 		}
 	)
@@ -332,7 +332,7 @@ def _stream_chunk(chunk: ModelResponseStream, item_id: str, exchange_id: str | N
 		type="text",
 		content="",
 		item_id=item_id,
-		exchange_id=exchange_id or "",
+		session_id=session_id or "",
 	)
 
 	if hasattr(delta, "reasoning_content") and delta.reasoning_content:
@@ -354,7 +354,7 @@ def _stream_chunk(chunk: ModelResponseStream, item_id: str, exchange_id: str | N
 	else:
 		return None
 
-	if exchange_id and frappe.session.user:
+	if session_id and frappe.session.user:
 		frappe.realtime.publish_realtime(
 			event="otto_interaction",
 			user=frappe.session.user,

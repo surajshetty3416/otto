@@ -15,7 +15,7 @@
   "column_break_ivzi",
   "target_doctype",
   "section_break_excj",
-  "session",
+  "items",
   "task_section",
   "llm",
   "reasoning_effort",
@@ -55,11 +55,6 @@
    "fieldtype": "Small Text",
    "label": "Reason",
    "read_only": 1
-  },
-  {
-   "fieldname": "session",
-   "fieldtype": "JSON",
-   "label": "Session"
   },
   {
    "fieldname": "column_break_seuy",
@@ -126,6 +121,12 @@
    "label": "Reasoning Effort",
    "options": "None\nLow\nMedium\nHigh",
    "read_only": 1
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Otto Session Item CT"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -135,7 +136,7 @@
    "link_fieldname": "session"
   }
  ],
- "modified": "2025-07-09 12:36:27.169700",
+ "modified": "2025-07-09 13:31:41.137887",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Session",
