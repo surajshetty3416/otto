@@ -5,7 +5,7 @@
 from frappe.model.document import Document
 
 
-class OttoExecutionItemCT(Document):
+class OttoSessionItemCT(Document):
 	# begin: auto-generated types
 	# This code is auto-generated. Do not modify anything in this block.
 

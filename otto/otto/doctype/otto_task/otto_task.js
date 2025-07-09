@@ -12,7 +12,7 @@ frappe.ui.form.on("Otto Task", {
 					{
 						fieldname: "message",
 						fieldtype: "HTML",
-						options: `<div>Manually enqueue task execution with selected params.</div>`,
+						options: `<div>Manually enqueue task session with selected params.</div>`,
 					},
 					{
 						fieldname: "spacer",
@@ -57,16 +57,16 @@ frappe.ui.form.on("Otto Task", {
 						callback: function (r) {
 							if (r.message) {
 								const link = frappe.utils.get_form_link(
-									"Otto Execution",
+									"Otto Session",
 									r.message
 								);
 
 								frappe.msgprint(
-									`Execution <a href="${link}" target="_blank">${r.message}</a> created.`,
-									__("Execution Created")
+									`Session <a href="${link}" target="_blank">${r.message}</a> created.`,
+									__("Session Created")
 								);
 							} else {
-								frappe.msgprint(__("No execution was created."), __("Execution"));
+								frappe.msgprint(__("No session was created."), __("Session"));
 							}
 						},
 					});

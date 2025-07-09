@@ -1,6 +1,6 @@
 export const link_icon = frappe.utils.icon("es-line-arrow-up-right", "xs");
 
-export function get_stats(execution) {
+export function get_stats(session) {
 	const stats = {
 		cost: 0,
 		total_input_tokens: 0,
@@ -10,12 +10,12 @@ export function get_stats(execution) {
 		duration: 0,
 		start: new Date(99999999999999),
 		end: new Date(0),
-		llm_calls: Object.values(execution.items).length - 1,
+		llm_calls: Object.values(session.items).length - 1,
 		tool_calls: {},
 		tools: {},
 	};
 
-	for (const item of Object.values(execution.items)) {
+	for (const item of Object.values(session.items)) {
 		stats.cost += item.meta.cost || 0;
 		stats.total_input_tokens += item.meta.input_tokens || 0;
 		stats.total_output_tokens += item.meta.output_tokens || 0;

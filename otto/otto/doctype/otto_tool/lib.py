@@ -8,7 +8,7 @@ import frappe
 from otto.utils import json_dumps
 
 """
-Code in this is passed as library code to tool execution as globals.
+Code in this is passed as library code to tool session as globals.
 """
 
 from typing import Any
@@ -19,7 +19,7 @@ def log(
 	*,
 	tool: str | None = None,
 	task: str | None = None,
-	execution: str | None = None,
+	session: str | None = None,
 ):
 	"""Creates a new scrapbook entry"""
 
@@ -28,7 +28,7 @@ def log(
 	if not isinstance(content, str):
 		content = json_dumps(content)[0]
 
-	OttoScrapbook.new(content, tool=tool, task=task, execution=execution)
+	OttoScrapbook.new(content, tool=tool, task=task, session=session)
 
 
 def get_file(url: str):

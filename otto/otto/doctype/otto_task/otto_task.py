@@ -88,7 +88,7 @@ class OttoTask(Document):
 
 	@frappe.whitelist()
 	def execute_task(self, target: str, llm: str | None, reasoning_effort: str | None = None):
-		return self.trigger_execution(
+		return self.trigger_session(
 			target=target,
 			event="Manual",
 			llm=llm,
@@ -120,7 +120,7 @@ class OttoTask(Document):
 		if not frappe.get_cached_value("Otto LLM", self.llm, "is_reasoning"):
 			self.reasoning_effort = "None"
 
-	def trigger_execution(
+	def trigger_session(
 		self,
 		*,
 		target: str | None,
@@ -130,10 +130,10 @@ class OttoTask(Document):
 		instruction: str | None = None,
 		is_background: bool = True,
 	):
-		from otto.otto.doctype.otto_execution.otto_execution import OttoExecution
+		from otto.otto.doctype.otto_session.otto_session import OttoSession
 
 		assert self.name is not None, "type check"
-		execution = OttoExecution.new(
+		session = OttoSession.new(
 			self.name,
 			target=target,
 			target_doctype=self.target_doctype,
@@ -145,8 +145,8 @@ class OttoTask(Document):
 		frappe.db.commit()
 		logger.info(
 			{
-				"message": "starting execution",
-				"execution": execution.name,
+				"message": "starting session",
+				"session": session.name,
 				"task": self.name,
 				"doc": f"{self.target_doctype}, {target}",
 				"event": event,
@@ -155,14 +155,14 @@ class OttoTask(Document):
 
 		if is_background:
 			frappe.enqueue_doc(
-				doctype="Otto Execution",
-				name=execution.name,
+				doctype="Otto Session",
+				name=session.name,
 				method="execute",
 				timeout=get_timeout(),
 			)
-			return execution.name
+			return session.name
 
-		return execution.execute()
+		return session.execute()
 
 	@frappe.whitelist()
 	def test_get_context(self, target: str, as_content: bool = False):
@@ -328,7 +328,7 @@ def handler(task: str, target_doc: Document, target_event: str):
 	"""Handler function is used to handle the Otto Task."""
 	assert target_doc.name is not None, "typecheck"
 
-	return otto.get(OttoTask, task).trigger_execution(
+	return otto.get(OttoTask, task).trigger_session(
 		target=target_doc.name,
 		event=target_event,
 		is_background=False,
@@ -355,7 +355,7 @@ def get_tools(task: str):
 
 
 def get_timeout():
-	return frappe.get_cached_value("Otto Settings", "Otto Settings", "task_execution_timeout") * 60
+	return frappe.get_cached_value("Otto Settings", "Otto Settings", "task_session_timeout") * 60
 
 
 def test_condition(task: str, condition: str, doc: Document) -> bool:
@@ -445,7 +445,7 @@ def run_get_context(get_context: str, doc: Document | None, event: str):
 
 @frappe.whitelist()
 def get_exec_view_info(task_name: str, llm_name: str):
-	"""Return task relevant info for the execution view."""
+	"""Return task relevant info for the session view."""
 	task_tools = frappe.db.get_all(
 		"Otto Task Tool CT",
 		filters={"parent": task_name},

@@ -1,23 +1,23 @@
 import { createApp, ref } from "vue";
 import ContainerVue from "./Container.vue";
-import { show_execution_dialog } from "./selection";
+import { show_session_dialog } from "./selection";
 
-class ExecutionViewer {
+class SessionViewer {
 	constructor({ wrapper, page }) {
 		this.$wrapper = $(wrapper);
 		this.page = page;
-		// this.executions = JSON.parse(frappe.route_options.executions ?? "[]");
-		this.execution = frappe.get_route()[1];
+		// this.sessions = JSON.parse(frappe.route_options.sessions ?? "[]");
+		this.session = frappe.get_route()[1];
 		this.init();
 	}
 
 	init() {
-		this.page.set_title(__("Execution Viewer"));
+		this.page.set_title(__("Session Viewer"));
 		this.setup_page_actions();
-		if (this.execution) {
+		if (this.session) {
 			this.setup_app();
 		} else {
-			this.select_execution(this.$wrapper);
+			this.select_session(this.$wrapper);
 		}
 	}
 
@@ -26,39 +26,39 @@ class ExecutionViewer {
 		this.page.clear_menu();
 		this.page.clear_custom_actions();
 
-		this.page.add_button(__("Select"), () => this.select_execution(this.$wrapper));
+		this.page.add_button(__("Select"), () => this.select_session(this.$wrapper));
 		this.page.add_button(__("Help"), show_help);
 		frappe.ui.keys.add_shortcut({
 			shortcut: "shift+s",
-			action: this.select_execution,
+			action: this.select_session,
 			page: this.page,
 		});
-		if (!this.execution) return;
+		if (!this.session) return;
 
-		this.page.set_primary_action(__("Log Feedback"), () => feedback(this.execution));
+		this.page.set_primary_action(__("Log Feedback"), () => feedback(this.session));
 		frappe.ui.keys.add_shortcut({
 			shortcut: "shift+f",
-			action: () => feedback(this.execution),
+			action: () => feedback(this.session),
 			page: this.page,
 		});
 
-		const next_execution = () => this.get_adjacent_execution(true);
-		this.page.add_menu_item(__("Next"), next_execution, true, {
+		const next_session = () => this.get_adjacent_session(true);
+		this.page.add_menu_item(__("Next"), next_session, true, {
 			shortcut: "Shift+N",
 		});
 		frappe.ui.keys.add_shortcut({
 			shortcut: "shift+n",
-			action: next_execution,
+			action: next_session,
 			page: this.page,
 		});
 
-		const previous_execution = () => this.get_adjacent_execution(false);
-		this.page.add_menu_item(__("Previous"), previous_execution, true, {
+		const previous_session = () => this.get_adjacent_session(false);
+		this.page.add_menu_item(__("Previous"), previous_session, true, {
 			shortcut: "Shift+P",
 		});
 		frappe.ui.keys.add_shortcut({
 			shortcut: "shift+p",
-			action: previous_execution,
+			action: previous_session,
 			page: this.page,
 		});
 
@@ -71,24 +71,24 @@ class ExecutionViewer {
 		});
 	}
 
-	select_execution(wrapper) {
+	select_session(wrapper) {
 		frappe.call({
-			method: "otto.otto.doctype.otto_execution.otto_execution.get_recent_executions",
-			callback: (r) => show_execution_dialog(r.message),
+			method: "otto.otto.doctype.otto_session.otto_session.get_recent_sessions",
+			callback: (r) => show_session_dialog(r.message),
 		});
 	}
 
-	get_adjacent_execution(next) {
+	get_adjacent_session(next) {
 		frappe.call({
-			method: "otto.otto.doctype.otto_execution.otto_execution.get_adjacent_execution",
-			args: { name: this.execution, next },
+			method: "otto.otto.doctype.otto_session.otto_session.get_adjacent_session",
+			args: { name: this.session, next },
 			callback: (r) => {
 				if (r.message) {
 					this.app?.unmount();
-					frappe.set_route("view-otto-execution", r.message);
+					frappe.set_route("view-otto-session", r.message);
 				} else {
 					frappe.show_alert({
-						message: __("No adjacent execution found"),
+						message: __("No adjacent session found"),
 						indicator: "orange",
 					});
 				}
@@ -98,36 +98,36 @@ class ExecutionViewer {
 
 	setup_app() {
 		this.app = createApp(ContainerVue, {
-			execution: this.execution,
-			// executions: this.executions,
+			session: this.session,
+			// sessions: this.sessions,
 		});
 
 		window.app = this.app;
-		this.$view_execution = this.app.mount(this.$wrapper.get(0));
+		this.$view_session = this.app.mount(this.$wrapper.get(0));
 	}
 }
 
 frappe.provide("frappe.ui");
-frappe.ui.ExecutionViewer = ExecutionViewer;
-export default ExecutionViewer;
+frappe.ui.SessionViewer = SessionViewer;
+export default SessionViewer;
 
 function show_help() {
 	const shortcuts = [
 		{
 			name: __("Select"),
 			shortcut: "Shift+S",
-			description: __("Select an execution to view"),
+			description: __("Select an session to view"),
 		},
 		{
 			name: __("Log Feedback"),
 			shortcut: "Shift+F",
-			description: __("Log feedback for selected execution"),
+			description: __("Log feedback for selected session"),
 		},
-		{ name: __("Next"), shortcut: "Shift+N", description: __("Go to the next execution") },
+		{ name: __("Next"), shortcut: "Shift+N", description: __("Go to the next session") },
 		{
 			name: __("Previous"),
 			shortcut: "Shift+P",
-			description: __("Go to the previous execution"),
+			description: __("Go to the previous session"),
 		},
 		{ name: __("Help"), shortcut: "Shift+H", description: __("Show this help dialog") },
 	];
@@ -141,7 +141,7 @@ function show_help() {
 
 	const html = `
 			<p>
-				Use the Execution Viewer to view task executions and provide feedback.
+				Use the Session Viewer to view task sessions and provide feedback.
 			</p>
 			<table class="table" style="margin-bottom: 0;">
 				<thead>
@@ -164,10 +164,10 @@ function show_help() {
 	});
 }
 
-function feedback(execution) {
+function feedback(session) {
 	let value = 0;
 	const dialog = new frappe.ui.Dialog({
-		title: __("Provide Feedback for {0}", [execution]),
+		title: __("Provide Feedback for {0}", [session]),
 		fields: [
 			{ fieldname: "thumb_buttons", fieldtype: "HTML" },
 			{ fieldname: "spacer", fieldtype: "HTML", options: "<br>" },
@@ -189,14 +189,14 @@ function feedback(execution) {
 
 			frappe.db.insert({
 				doctype: "Otto Feedback",
-				execution,
+				session,
 				value,
 				comment,
 			});
 
 			dialog.hide();
 			frappe.show_alert({
-				message: __("Feedback logged for {0}", [execution]),
+				message: __("Feedback logged for {0}", [session]),
 				indicator: "green",
 			});
 		},

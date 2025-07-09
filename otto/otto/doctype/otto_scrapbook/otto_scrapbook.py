@@ -18,20 +18,20 @@ class OttoScrapbook(Document):
 		from frappe.types import DF
 
 		content: DF.Code | None
-		execution: DF.Link | None
+		session: DF.Link | None
 		task: DF.Link | None
 		tool: DF.Link | None
 	# end: auto-generated types
 
 	@staticmethod
-	def new(content: str, *, execution: str | None = None, task: str | None = None, tool: str | None = None):
+	def new(content: str, *, session: str | None = None, task: str | None = None, tool: str | None = None):
 		doc = cast(
 			OttoScrapbook,
 			frappe.get_doc(
 				{
 					"doctype": "Otto Scrapbook",
 					"content": content,
-					"execution": execution,
+					"session": session,
 					"task": task,
 					"tool": tool,
 				}

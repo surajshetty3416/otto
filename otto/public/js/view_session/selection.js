@@ -1,13 +1,13 @@
-export function show_execution_dialog(executions) {
-	const selected_executions = [];
+export function show_session_dialog(sessions) {
+	const selected_sessions = [];
 	const dialog = new frappe.ui.Dialog({
-		title: __("Select Execution"),
-		// title: __("Select up to 3 Executions"),
+		title: __("Select Session"),
+		// title: __("Select up to 3 Sessions"),
 		// primary_action_label: __("View"),
 		// primary_action: () => {
-		// 	if (selected_executions.length <= 0) return;
+		// 	if (selected_sessions.length <= 0) return;
 		// 	frappe.set_route(frappe.get_route()[0], {
-		// 		executions: JSON.stringify(selected_executions),
+		// 		sessions: JSON.stringify(selected_sessions),
 		// 	});
 		// 	dialog.hide();
 		// },
@@ -20,13 +20,13 @@ export function show_execution_dialog(executions) {
 
 	dialog.body.innerHTML = `
 			<div class="list-group" style="max-height: 400px; overflow-y: auto; border: none; border-radius: 0;">
-				${executions
+				${sessions
 					.map(
 						(ex) => `
-					<div class="list-group-item list-group-item-action px-0 border-0" data-execution-name="${
+					<div class="list-group-item list-group-item-action px-0 border-0" data-session-name="${
 						ex.name
 					}" style="cursor: pointer; ${
-							ex === executions[executions.length - 1]
+							ex === sessions[sessions.length - 1]
 								? ""
 								: "border-bottom: 1px solid var(--gray-200) !important;"
 						}">
@@ -56,26 +56,26 @@ export function show_execution_dialog(executions) {
 		.on("click", function (e) {
 			e.preventDefault();
 			const $this = $(this);
-			const executionName = $this.data("execution-name");
-			frappe.set_route("view-otto-execution", executionName);
+			const sessionName = $this.data("session-name");
+			frappe.set_route("view-otto-session", sessionName);
 			// const is_selected = $this.hasClass("active");
 
 			// if (is_selected) {
 			// 	$this.removeClass("active").css("background-color", "");
-			// 	selected_executions = selected_executions.filter((name) => name !== executionName);
+			// 	selected_sessions = selected_sessions.filter((name) => name !== sessionName);
 			// } else {
-			// 	if (selected_executions.length < 3) {
+			// 	if (selected_sessions.length < 3) {
 			// 		$this.addClass("active").css("background-color", "var(--gray-100)");
-			// 		selected_executions.push(executionName);
+			// 		selected_sessions.push(sessionName);
 			// 	} else {
 			// 		frappe.show_alert({
-			// 			message: __("You can only select up to 3 executions."),
+			// 			message: __("You can only select up to 3 sessions."),
 			// 			indicator: "orange",
 			// 		});
 			// 	}
 			// }
 
-			// primary_action_btn.prop("disabled", selected_executions.length === 0);
+			// primary_action_btn.prop("disabled", selected_sessions.length === 0);
 		});
 
 	dialog.show();

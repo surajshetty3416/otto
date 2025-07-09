@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from "vue";
 import Detail from "./components/Detail.vue";
-import ExchangeViewer from "./components/ExchangeViewer.vue";
+import ExchangeViewer from "./components/SessionViewer.vue";
 import PreViewer from "./components/PreViewer.vue";
 import ScrapbookViewer from "./components/ScrapbookViewer.vue";
 import SectionContainer from "./components/SectionContainer.vue";
@@ -9,32 +9,32 @@ import StatsViewer from "./components/StatsViewer.vue";
 import { format_date, get_link, get_stats, link_icon } from "./utils";
 
 const props = defineProps({
-	executionName: {
+	sessionName: {
 		type: String,
 		required: true,
 	},
 });
 
 const doc = ref(null);
-const execution = ref(null);
+const session = ref(null);
 const stats = ref(null);
 const scrapbooks = ref(null);
 const info = ref(null);
 const loading = reactive({
-	execution: true,
+	session: true,
 	scrapbook: true,
 });
 const errors = reactive({
-	execution: null,
+	session: null,
 	scrapbook: null,
 });
 
 const exchange_sequence = computed(() => {
-	if (!execution.value) return [];
+	if (!session.value) return [];
 	const items = [];
-	let current_id = execution.value.first;
+	let current_id = session.value.first;
 	while (current_id) {
-		const item = execution.value.items[current_id];
+		const item = session.value.items[current_id];
 		if (!item) break;
 		items.push(item);
 
@@ -55,14 +55,14 @@ const exchange_sequence = computed(() => {
 });
 
 async function fetchData() {
-	// Fetch Execution and Related Data
-	const executionPromise = frappe.db
-		.get_doc("Otto Execution", props.executionName)
+	// Fetch Session and Related Data
+	const sessionPromise = frappe.db
+		.get_doc("Otto Session", props.sessionName)
 		.then((_doc) => {
 			doc.value = _doc;
-			if (_doc.execution) {
-				execution.value = JSON.parse(_doc.execution);
-				stats.value = get_stats(execution.value);
+			if (_doc.session) {
+				session.value = JSON.parse(_doc.session);
+				stats.value = get_stats(session.value);
 			}
 
 			return frappe.call({
@@ -72,17 +72,17 @@ async function fetchData() {
 		})
 		.then((_info) => {
 			info.value = _info.message;
-			loading.execution = false;
+			loading.session = false;
 		})
 		.catch((e) => {
-			loading.execution = false;
-			errors.execution = e.message || "Failed to load execution.";
+			loading.session = false;
+			errors.session = e.message || "Failed to load session.";
 		});
 
 	// Fetch Scrapbook
 	const scrapbookPromise = frappe.db
 		.get_list("Otto Scrapbook", {
-			filters: { execution: props.executionName },
+			filters: { session: props.sessionName },
 			fields: ["name", "content", "tool", "creation"],
 		})
 		.then((_scrapbooks) => {
@@ -94,7 +94,7 @@ async function fetchData() {
 			errors.scrapbook = e.message || "Failed to load scrapbooks.";
 		});
 
-	await Promise.all([executionPromise, scrapbookPromise]);
+	await Promise.all([sessionPromise, scrapbookPromise]);
 	for (const book of scrapbooks.value) {
 		book.tool_slug = info.value.tool_map[book.tool].slug;
 	}
@@ -111,11 +111,11 @@ onMounted(async () => await fetchData());
 </script>
 
 <template>
-	<div class="execution-viewer">
+	<div class="session-viewer">
 		<!-- 0. Header -->
 		<div class="detail-header" v-if="doc">
-			<a class="name" :href="get_link('Otto Execution', doc.name)" target="_blank">
-				Execution <span>{{ doc.name }}</span> <span v-html="link_icon"></span
+			<a class="name" :href="get_link('Otto Session', doc.name)" target="_blank">
+				Session <span>{{ doc.name }}</span> <span v-html="link_icon"></span
 			></a>
 			<div class="date">{{ format_date(doc.creation) }}</div>
 			<span class="separator">·</span>
@@ -125,12 +125,12 @@ onMounted(async () => await fetchData());
 		</div>
 		<div v-else class="detail-header">Loading...</div>
 
-		<!-- 1. Execution Details -->
+		<!-- 1. Session Details -->
 		<SectionContainer
 			title=""
 			label=""
-			:isLoading="loading.execution"
-			:error="errors.execution"
+			:isLoading="loading.session"
+			:error="errors.session"
 		>
 			<div>
 				<!-- Details -->
@@ -165,10 +165,10 @@ onMounted(async () => await fetchData());
 		<!-- Stats -->
 		<SectionContainer
 			v-if="stats"
-			title="Stats: metadata about the execution run"
+			title="Stats: metadata about the session run"
 			label="Stats"
-			:isLoading="loading.execution"
-			:error="errors.execution"
+			:isLoading="loading.session"
+			:error="errors.session"
 		>
 			<StatsViewer :stats="stats" :info="info" />
 		</SectionContainer>
@@ -176,11 +176,11 @@ onMounted(async () => await fetchData());
 		<!-- Error -->
 		<SectionContainer
 			v-if="doc?.reason"
-			title="Error: reason for the execution failure"
+			title="Error: reason for the session failure"
 			label="Error"
 			:show="true"
-			:isLoading="loading.execution"
-			:error="errors.execution"
+			:isLoading="loading.session"
+			:error="errors.session"
 		>
 			<PreViewer :value="doc.reason" />
 		</SectionContainer>
@@ -200,13 +200,13 @@ onMounted(async () => await fetchData());
 
 		<!-- Exchange -->
 		<SectionContainer
-			v-if="execution"
-			title="Execution: execution sequence of the task"
-			label="Execution"
-			:isLoading="loading.execution"
-			:error="errors.execution"
+			v-if="session"
+			title="Session: session sequence of the task"
+			label="Session"
+			:isLoading="loading.session"
+			:error="errors.session"
 		>
-			<div v-if="execution">
+			<div v-if="session">
 				<ExchangeViewer
 					v-for="(item, index) in exchange_sequence"
 					:key="item.id"
@@ -222,8 +222,8 @@ onMounted(async () => await fetchData());
 			title="Instruction: system prompt used to instruct the LLM on how to execute the task"
 			label="Instruction"
 			:show="false"
-			:isLoading="loading.execution"
-			:error="errors.execution"
+			:isLoading="loading.session"
+			:error="errors.session"
 		>
 			<PreViewer :value="doc.instruction" />
 		</SectionContainer>

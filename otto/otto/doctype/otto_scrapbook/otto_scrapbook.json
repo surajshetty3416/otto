@@ -7,22 +7,13 @@
  "field_order": [
   "references_section",
   "tool",
-  "execution",
+  "session",
   "column_break_nqul",
   "task",
   "content_section",
   "content"
  ],
  "fields": [
-  {
-   "fieldname": "execution",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Execution",
-   "options": "Otto Execution",
-   "read_only": 1
-  },
   {
    "fieldname": "tool",
    "fieldtype": "Link",
@@ -61,12 +52,21 @@
    "in_list_view": 1,
    "label": "Content",
    "read_only": 1
+  },
+  {
+   "fieldname": "session",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Session",
+   "options": "Otto Session",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-05-26 10:48:35.789998",
+ "modified": "2025-07-09 12:52:59.079235",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Scrapbook",

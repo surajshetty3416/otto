@@ -5,7 +5,7 @@ frappe.ui.form.on("Otto LLM", {
 	refresh(frm) {
 		function ask() {
 			const run_dialog = new frappe.ui.Dialog({
-				title: __("Run Task Execution"),
+				title: __("Run Task Session"),
 				fields: [
 					{
 						fieldname: "message",

@@ -8,7 +8,7 @@
   "column_break_isov",
   "is_enabled",
   "column_break_bylk",
-  "task_execution_timeout",
+  "task_session_timeout",
   "api_keys_section",
   "anthropic_api_key",
   "openai_api_key",
@@ -34,10 +34,10 @@
   },
   {
    "default": "30",
-   "description": "Timeout duration in <b>minutes</b>. Beyond this task execution will be force stopped.",
-   "fieldname": "task_execution_timeout",
+   "description": "Timeout duration in <b>minutes</b>. Beyond this task session will be force stopped.",
+   "fieldname": "task_session_timeout",
    "fieldtype": "Int",
-   "label": "Task Execution Timeout"
+   "label": "Task Session Timeout"
   },
   {
    "default": "30",
@@ -46,7 +46,7 @@
   },
   {
    "default": "0",
-   "description": "Master switch that enables Otto, if unchecked all task handling will be disabled.\n<br>\nDoes not prevent manual execution.",
+   "description": "Master switch that enables Otto, if unchecked all task handling will be disabled.\n<br>\nDoes not prevent manual session.",
    "fieldname": "is_enabled",
    "fieldtype": "Check",
    "label": "Is Enabled"

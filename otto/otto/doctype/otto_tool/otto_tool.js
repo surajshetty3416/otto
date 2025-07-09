@@ -59,9 +59,9 @@ frappe.ui.form.on("Otto Tool", {
 						if (r.message)
 							frappe.msgprint(
 								`<pre>${frappe.utils.escape_html(r.message)}</pre>`,
-								__("Tool Execution Result")
+								__("Tool Session Result")
 							);
-						else frappe.msgprint(`No result`, __("Tool Execution Result"));
+						else frappe.msgprint(`No result`, __("Tool Session Result"));
 					},
 				});
 			}

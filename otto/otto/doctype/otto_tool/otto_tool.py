@@ -175,16 +175,16 @@ class OttoTool(Document):
 		args: dict[str, Any],
 		*,
 		task: str | None = None,
-		execution: str | None = None,
+		session: str | None = None,
 	):
 		lib.log(
 			args,
 			tool=self.name,
 			task=task,
-			execution=execution,
+			session=session,
 		)
 
-		return execute.ExecutionResult(
+		return execute.SessionResult(
 			result=json.loads(self.mock_return_value or "null"),
 			stdout="",
 			stderr="",
@@ -196,16 +196,16 @@ class OttoTool(Document):
 		*,
 		force: bool = False,
 		task: str | None = None,
-		execution: str | None = None,
+		session: str | None = None,
 		env: dict | None = None,
 	):
 		"""Execute tool with given args.
 		- force: bypass validation
 		- task: task document name (for logging if needed)
-		- execution: execution document name (for logging if needed)
+		- session: session document name (for logging if needed)
 		"""
 		if self.mock_tool:
-			return self.mock(args, task=task, execution=execution)
+			return self.mock(args, task=task, session=session)
 
 		if not self.is_valid and not force:
 			raise ValidationError("tool is invalid: " + (self.reason or ""))
@@ -219,7 +219,7 @@ class OttoTool(Document):
 			{
 				"tool": self.name,
 				"task": task,
-				"execution": execution,
+				"session": session,
 			}
 		)
 		globals = dict(otto=lib.get_lib(env), refs=refs)
@@ -239,7 +239,7 @@ class OttoTool(Document):
 			if result["stdout"]:
 				content["STDOUT"] = result["stdout"]
 
-			lib.log(content, tool=self.name, task=task, execution=execution)
+			lib.log(content, tool=self.name, task=task, session=session)
 
 		return result
 

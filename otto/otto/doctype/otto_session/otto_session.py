@@ -20,10 +20,10 @@ if TYPE_CHECKING:
 	from otto.llm.types import Exchange, ExchangeItem
 	from otto.otto.doctype.otto_task.otto_task import OttoTask
 
-logger = otto.logger("otto_execution")
+logger = otto.logger("otto_session")
 
 
-class OttoExecution(Document):
+class OttoSession(Document):
 	# begin: auto-generated types
 	# This code is auto-generated. Do not modify anything in this block.
 
@@ -33,7 +33,7 @@ class OttoExecution(Document):
 		from frappe.types import DF
 
 		event: DF.Data | None
-		execution: DF.JSON | None
+		session: DF.JSON | None
 		instruction: DF.Code | None
 		llm: DF.Link | None
 		reason: DF.SmallText | None
@@ -55,7 +55,7 @@ class OttoExecution(Document):
 		reasoning_effort: str | None = None,
 		instruction: str | None = None,
 	):
-		doc = cast(OttoExecution, frappe.get_doc({"doctype": "Otto Execution", "task": task}))
+		doc = cast(OttoSession, frappe.get_doc({"doctype": "Otto Session", "task": task}))
 
 		doc.target_doctype = target_doctype
 		doc.target = target
@@ -83,7 +83,7 @@ class OttoExecution(Document):
 			self.loop(context)
 		except Exception as e:
 			otto.log_error(title="execute error", doc=self)
-			self.set_status("Failure", f"Error in execution loop: {e}")
+			self.set_status("Failure", f"Error in session loop: {e}")
 
 	def get_target(self):
 		if not self.target_doctype or not self.target:
@@ -115,7 +115,7 @@ class OttoExecution(Document):
 	def loop(self, context: str | list[str] | None = None):
 		from otto.otto.doctype.otto_llm.otto_llm import get_reasoning_effort
 
-		exchange = json.loads(self.execution) if self.execution else None
+		exchange = json.loads(self.session) if self.session else None
 		try:
 			interaction, reason = llm.interact(
 				context,  # type: ignore needed cause not strong enough type system
@@ -128,7 +128,7 @@ class OttoExecution(Document):
 			logger.info(
 				{
 					"message": "interact success",
-					"execution": self.name,
+					"session": self.name,
 					"exchange_size": interaction and len(interaction["update"]),
 					"item": interaction and interaction["item"],
 				}
@@ -142,7 +142,7 @@ class OttoExecution(Document):
 			self.set_status("Failure", reason)
 			return
 
-		self.set_execution(interaction["update"])
+		self.set_session(interaction["update"])
 
 		item = interaction["item"]
 		if self.run_tools(item, interaction["update"]):
@@ -190,7 +190,7 @@ class OttoExecution(Document):
 				result, is_error = self.execute_tool(tool_name, content["args"], env_str)
 
 			llm.update_with_tool_result(exchange=exchange, result=result, id=content["id"], is_error=is_error)
-			self.set_execution(exchange)
+			self.set_session(exchange)
 		return task_ended
 
 	def get_context(self, doc: Document | None, event: str) -> tuple[str | list, None] | tuple[None, str]:
@@ -211,8 +211,8 @@ class OttoExecution(Document):
 
 		return context, None
 
-	def set_execution(self, execution: Exchange):
-		self.execution = json.dumps(execution, indent=2)
+	def set_session(self, session: Exchange):
+		self.session = json.dumps(session, indent=2)
 		self.save(ignore_permissions=True, ignore_version=True)
 		frappe.db.commit()
 
@@ -237,7 +237,7 @@ class OttoExecution(Document):
 			return tool_doc.execute(
 				args,
 				task=self.task,
-				execution=self.name,
+				session=self.name,
 				env=env,
 			)["result"], False
 		except Exception as e:
@@ -250,29 +250,29 @@ class OttoExecution(Document):
 
 	@frappe.whitelist()
 	def get_stats(self):
-		if not self.execution:
-			return "No Execution"
+		if not self.session:
+			return "No Session"
 
-		exchange: Exchange = json.loads(self.execution)
+		exchange: Exchange = json.loads(self.session)
 		return llm.get_stats(exchange)
 
 	@frappe.whitelist()
 	def retry(self):
 		if self.status != "Failure":
-			return "Retry available only for failed executions"
+			return "Retry available only for failed sessions"
 		from otto.otto.doctype.otto_task.otto_task import get_timeout
 
 		self.set_status("Running")
 		self.save()
 
 		frappe.enqueue_doc(
-			doctype="Otto Execution",
+			doctype="Otto Session",
 			name=self.name,
 			method="loop",
 			timeout=get_timeout(),
 		)
 
-		return "Execution enqueued"
+		return "Session enqueued"
 
 
 def get_tool_map(task: OttoTask) -> dict[str, str]:
@@ -294,45 +294,45 @@ def get_tool_map(task: OttoTask) -> dict[str, str]:
 
 
 @frappe.whitelist()
-def get_recent_executions(limit: int = 20) -> list[dict]:
-	executions = frappe.get_all(
-		"Otto Execution",
+def get_recent_sessions(limit: int = 20) -> list[dict]:
+	sessions = frappe.get_all(
+		"Otto Session",
 		fields=["name", "status", "creation", "task", "target", "target_doctype"],
 		limit=limit,
 		order_by="modified desc",
 	)
 	tasks = frappe.get_all(
-		"Otto Task", filters={"name": ("in", [e["task"] for e in executions])}, fields=["name", "title"]
+		"Otto Task", filters={"name": ("in", [e["task"] for e in sessions])}, fields=["name", "title"]
 	)
 	task_map = {t["name"]: t for t in tasks}
 
-	for execution in executions:
-		execution["task_name"] = task_map[execution["task"]]["title"]
+	for session in sessions:
+		session["task_name"] = task_map[session["task"]]["title"]
 
-	return executions
+	return sessions
 
 
 @frappe.whitelist()
-def get_adjacent_execution(name: str, next: str | bool):
+def get_adjacent_session(name: str, next: str | bool):
 	if isinstance(next, str):
 		"""frappe.call appears to be sending a string instead of a boolean, wt"""
 		next = next == "true"
 
-	"""Get the next or previous execution in chronological order"""
+	"""Get the next or previous session in chronological order"""
 	order = "asc" if next else "desc"
 	operator = ">" if next else "<"
 
-	execution = frappe.get_all(
-		"Otto Execution",
+	session = frappe.get_all(
+		"Otto Session",
 		filters={
-			"modified": (operator, frappe.get_value("Otto Execution", name, "modified")),
+			"modified": (operator, frappe.get_value("Otto Session", name, "modified")),
 		},
 		order_by=f"modified {order}",
 		limit=1,
 		pluck="name",
 	)
 
-	if execution:
-		return execution[0]
+	if session:
+		return session[0]
 
 	return None

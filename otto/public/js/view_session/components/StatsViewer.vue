@@ -70,7 +70,7 @@ const tools = computed(() => {
 				<div>Tool Name</div>
 				<div
 					class="text-right"
-					title="Number of times the tool was called in this execution"
+					title="Number of times the tool was called in this session"
 				>
 					Times Called
 				</div>

@@ -12,18 +12,18 @@ EXTRA_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 IGNORE_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 
 
-class UnitTestOttoExecution(UnitTestCase):
+class UnitTestOttoSession(UnitTestCase):
 	"""
-	Unit tests for OttoExecution.
+	Unit tests for OttoSession.
 	Use this class for testing individual functions and methods.
 	"""
 
 	pass
 
 
-class IntegrationTestOttoExecution(IntegrationTestCase):
+class IntegrationTestOttoSession(IntegrationTestCase):
 	"""
-	Integration tests for OttoExecution.
+	Integration tests for OttoSession.
 	Use this class for testing interactions between multiple components.
 	"""
 

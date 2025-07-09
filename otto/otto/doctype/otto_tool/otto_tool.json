@@ -73,7 +73,7 @@
   },
   {
    "default": "0",
-   "description": "If tool is invalid and is included in a task, task execution will fail.",
+   "description": "If tool is invalid and is included in a task, task session will fail.",
    "fieldname": "is_valid",
    "fieldtype": "Check",
    "in_list_view": 1,

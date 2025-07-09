@@ -93,7 +93,7 @@
   },
   {
    "default": "OpenAI GPT-4.1",
-   "description": "LLM used to handle the task.\n<br><br>\nNote: the appropriate API key should be set in <b>Otto Settings</b>, else execution will fail.",
+   "description": "LLM used to handle the task.\n<br><br>\nNote: the appropriate API key should be set in <b>Otto Settings</b>, else session will fail.",
    "fieldname": "llm",
    "fieldtype": "Link",
    "label": "LLM",
@@ -135,7 +135,7 @@
  "index_web_pages_for_search": 1,
  "links": [
   {
-   "link_doctype": "Otto Execution",
+   "link_doctype": "Otto Session",
    "link_fieldname": "task"
   },
   {

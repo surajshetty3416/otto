@@ -6,7 +6,7 @@ from otto.llm.types import Content
 Definitions for meta tools to be used by Otto to perform some task.
 
 Meta tools don't execute any code but might affect the control flow of task
-execution or will assist the LLM in performing the task.
+session or will assist the LLM in performing the task.
 """
 
 think_tool = {

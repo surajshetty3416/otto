@@ -7,7 +7,7 @@ from typing import Any
 def json_dumps(value: Any) -> tuple[str, bool]:
 	"""
 	Use for serializing any value that is to be passed for evaluation or
-	execution at a later time.
+	session at a later time.
 	"""
 	try:
 		return json.dumps(value, indent=2), True

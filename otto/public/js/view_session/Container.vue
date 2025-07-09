@@ -1,13 +1,13 @@
 <script setup>
-import ViewExecution from "./ViewExecution.vue";
+import ViewSession from "./ViewSession.vue";
 import { computed } from "vue";
 
 const props = defineProps({
-	execution: {
+	session: {
 		type: String,
 		required: true,
 	},
-	// executions: {
+	// sessions: {
 	// 	type: Array,
 	// 	required: true,
 	// },
@@ -15,10 +15,10 @@ const props = defineProps({
 </script>
 <template>
 	<div class="container">
-		<!-- <template v-for="execution in executions" :key="execution">
-			<ViewExecution :execution-name="execution" />
+		<!-- <template v-for="session in sessions" :key="session">
+			<ViewSession :session-name="session" />
 		</template> -->
-		<ViewExecution v-if="execution" :execution-name="execution" />
+		<ViewSession v-if="session" :session-name="session" />
 	</div>
 </template>
 
@@ -49,7 +49,7 @@ const props = defineProps({
 	}
 }
 
-.execution-viewer {
+.session-viewer {
 	width: 100%;
 	border-left: 1px solid var(--gray-200);
 	border-right: 1px solid var(--gray-200);

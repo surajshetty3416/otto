@@ -1,4 +1,4 @@
-# Most of this is cobbled from Frappe Flow server script execution code
+# Most of this is cobbled from Frappe Flow server script session code
 from __future__ import annotations
 
 import ast
@@ -17,7 +17,7 @@ from RestrictedPython import PrintCollector
 from otto.utils import json_dumps
 
 """
-Server Script execution task implies that Python code is executed in a Frappe
+Server Script session task implies that Python code is executed in a Frappe
 server script environment:
 
 https://docs.frappe.io/framework/user/en/desk/scripting/server-script
@@ -46,7 +46,7 @@ def execute(
 	arg_names: list[str],
 	args: Args,
 	globals: dict[str, Any] | None = None,
-) -> ExecutionResult:
+) -> SessionResult:
 	script, _globals = get_script_and_globals(script, args, arg_names)
 
 	if globals is not None:
@@ -58,7 +58,7 @@ def execute(
 		result = safe_exec(script, _globals)
 	result = result[0][OUT_VAR_NAME]
 
-	return ExecutionResult(
+	return SessionResult(
 		result=result,
 		stdout=stdout.getvalue(),
 		stderr=stderr.getvalue(),
@@ -201,7 +201,7 @@ def validate_main_function(main_function_node: ast.FunctionDef):
 
 class RegularPrint(PrintCollector):
 	"""
-	Used to restore `print` functionality in restricted execution.
+	Used to restore `print` functionality in restricted session.
 	"""
 
 	def _call_print(self, *args, **kwargs):
@@ -211,12 +211,12 @@ class RegularPrint(PrintCollector):
 NO_RESULT = object()
 
 
-class ExecutionResult(TypedDict):
+class SessionResult(TypedDict):
 	"""Result of executing a server script."""
 
 	result: Any  # return value from the main() function or result of control task
-	stdout: str  # standard output during execution
-	stderr: str  # standard error during execution
+	stdout: str  # standard output during session
+	stderr: str  # standard error during session
 
 
 AllowedArgTypes = Literal["str", "int", "float", "bool", "list", "dict", "unknown", "Document"]

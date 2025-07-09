@@ -82,7 +82,7 @@ const isMetaTool = computed(() => {
 			</div>
 
 			<p
-				:title="`Tool Execution Status: ${content.status}`"
+				:title="`Tool Session Status: ${content.status}`"
 				class="status"
 				:style="get_status_style(content.status)"
 			>

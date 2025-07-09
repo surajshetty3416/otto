@@ -15,7 +15,7 @@ class OttoFeedback(Document):
 		from frappe.types import DF
 
 		comment: DF.SmallText | None
-		execution: DF.Link | None
+		session: DF.Link | None
 		value: DF.Int
 	# end: auto-generated types
 

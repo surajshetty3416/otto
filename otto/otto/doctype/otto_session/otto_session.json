@@ -15,7 +15,7 @@
   "column_break_ivzi",
   "target_doctype",
   "section_break_excj",
-  "execution",
+  "session",
   "task_section",
   "llm",
   "reasoning_effort",
@@ -35,7 +35,7 @@
   {
    "fieldname": "section_break_excj",
    "fieldtype": "Section Break",
-   "label": "Execution"
+   "label": "Session"
   },
   {
    "default": "Pending",
@@ -57,9 +57,9 @@
    "read_only": 1
   },
   {
-   "fieldname": "execution",
+   "fieldname": "session",
    "fieldtype": "JSON",
-   "label": "Execution"
+   "label": "Session"
   },
   {
    "fieldname": "column_break_seuy",
@@ -132,13 +132,13 @@
  "links": [
   {
    "link_doctype": "Otto Scrapbook",
-   "link_fieldname": "execution"
+   "link_fieldname": "session"
   }
  ],
- "modified": "2025-06-20 10:59:21.242995",
+ "modified": "2025-07-09 12:36:27.169700",
  "modified_by": "Administrator",
  "module": "Otto",
- "name": "Otto Execution",
+ "name": "Otto Session",
  "naming_rule": "Random",
  "owner": "Administrator",
  "permissions": [

@@ -1,7 +1,7 @@
 // Copyright (c) 2025, Alan Tom and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Otto Execution", {
+frappe.ui.form.on("Otto Session", {
 	refresh(frm) {
 		function get_stats() {
 			frappe.call({
@@ -15,7 +15,7 @@ frappe.ui.form.on("Otto Execution", {
 				},
 			});
 		}
-		if (frm.doc.status === "Failure" && frm.doc.execution) {
+		if (frm.doc.status === "Failure" && frm.doc.session) {
 			frm.add_custom_button(__("Retry"), () => {
 				frappe.call({
 					method: "retry",
@@ -31,44 +31,44 @@ frappe.ui.form.on("Otto Execution", {
 
 		frm.add_custom_button(__("View Stats"), get_stats);
 
-		frm.add_custom_button(__("Open in Execution Viewer"), () => {
-			// frappe.set_route("view-otto-execution", {
-			// 	executions: JSON.stringify([frm.doc.name]),
+		frm.add_custom_button(__("Open in Session Viewer"), () => {
+			// frappe.set_route("view-otto-session", {
+			// 	sessions: JSON.stringify([frm.doc.name]),
 			// });
-			frappe.set_route("view-otto-execution", frm.doc.name);
+			frappe.set_route("view-otto-session", frm.doc.name);
 		});
 
-		if (frm.doc.execution) prettify_execution(frm);
+		if (frm.doc.session) prettify_session(frm);
 	},
 });
 
-function prettify_execution(frm) {
+function prettify_session(frm) {
 	const display_wrapper = get_display_wrapper(frm);
 
 	try {
-		const execution = JSON.parse(frm.doc.execution);
-		if (!validate_execution(execution, display_wrapper)) return;
+		const session = JSON.parse(frm.doc.session);
+		if (!validate_session(session, display_wrapper)) return;
 
-		const execution_area = $("<div>").appendTo(display_wrapper);
-		execution_area.html(frappe.render_template("otto_execution", {}));
-		render_execution_flow(execution, execution_area.find(".execution-items"));
+		const session_area = $("<div>").appendTo(display_wrapper);
+		session_area.html(frappe.render_template("otto_session", {}));
+		render_session_flow(session, session_area.find(".session-items"));
 	} catch (e) {
-		console.error("Error parsing or rendering Otto Execution data:", e);
+		console.error("Error parsing or rendering Otto Session data:", e);
 		display_wrapper.html(
-			'<p class="text-danger">Error displaying execution. Check console.</p>'
+			'<p class="text-danger">Error displaying session. Check console.</p>'
 		);
 	}
 }
 
-function validate_execution(execution, display_wrapper) {
-	if (!execution || !execution.items) {
-		display_wrapper.html('<p class="text-muted">No execution items to display.</p>');
+function validate_session(session, display_wrapper) {
+	if (!session || !session.items) {
+		display_wrapper.html('<p class="text-muted">No session items to display.</p>');
 		return false;
 	}
 
-	if (typeof execution.items !== "object" || execution.items === null || !execution.first) {
+	if (typeof session.items !== "object" || session.items === null || !session.first) {
 		display_wrapper.html(
-			'<p class="text-warning">Execution data is incomplete or malformed.</p>'
+			'<p class="text-warning">Session data is incomplete or malformed.</p>'
 		);
 		return false;
 	}
@@ -76,7 +76,7 @@ function validate_execution(execution, display_wrapper) {
 	return true;
 }
 
-function render_execution_flow(exchange, container) {
+function render_session_flow(exchange, container) {
 	container.empty();
 
 	let currentItemId = exchange.first;
@@ -88,7 +88,7 @@ function render_execution_flow(exchange, container) {
 		const item = exchange.items[currentItemId];
 		if (!item) {
 			container.append(
-				`<p class="text-danger">Error: Referenced item ID <code>${currentItemId}</code> not found. Execution flow may be incomplete.</p>`
+				`<p class="text-danger">Error: Referenced item ID <code>${currentItemId}</code> not found. Session flow may be incomplete.</p>`
 			);
 			return;
 		}
@@ -96,7 +96,7 @@ function render_execution_flow(exchange, container) {
 		visitedItems.add(currentItemId);
 		iteration++;
 
-		const itemElement = $('<div class="execution-item"></div>');
+		const itemElement = $('<div class="session-item"></div>');
 		itemElement.addClass(`role-${item.meta.role}`);
 
 		// Header
@@ -160,7 +160,7 @@ function render_execution_flow(exchange, container) {
 
 	if (iteration >= maxIterations && currentItemId) {
 		container.append(
-			'<p class="text-danger">Stopped rendering due to potential infinite loop or very long chain of execution items.</p>'
+			'<p class="text-danger">Stopped rendering due to potential infinite loop or very long chain of session items.</p>'
 		);
 	}
 }
@@ -258,26 +258,26 @@ function escapeHtml(unsafe) {
 }
 
 function get_display_wrapper(frm) {
-	const execution_field = frm.fields_dict.execution; // Use 'execution' field wrapper
-	if (!execution_field?.wrapper) {
-		console.error("Could not find a suitable wrapper to display formatted execution.");
+	const session_field = frm.fields_dict.session; // Use 'session' field wrapper
+	if (!session_field?.wrapper) {
+		console.error("Could not find a suitable wrapper to display formatted session.");
 		return null;
 	}
 
 	// Remove existing formatted display if it exists
-	$(".otto-execution-formatted-display").remove();
-	$(".execution-note").remove();
+	$(".otto-session-formatted-display").remove();
+	$(".session-note").remove();
 
 	// Create a new div for the formatted display
 	const display_wrapper = $("<div>")
-		.addClass("otto-execution-formatted-display")
-		.insertBefore(execution_field.wrapper);
+		.addClass("otto-session-formatted-display")
+		.insertBefore(session_field.wrapper);
 
 	// Add note about dedicated display field
 	const note = $(
-		'<p class="execution-note text-muted small">Formatted view of the Execution.</p>'
+		'<p class="session-note text-muted small">Formatted view of the Session.</p>'
 	);
-	display_wrapper.parent().prepend(note); // Prepend to the parent of the display_wrapper, which should be the same parent as execution_field.wrapper
+	display_wrapper.parent().prepend(note); // Prepend to the parent of the display_wrapper, which should be the same parent as session_field.wrapper
 
 	return display_wrapper;
 }

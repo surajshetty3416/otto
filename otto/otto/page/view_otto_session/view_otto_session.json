@@ -4,12 +4,12 @@
  "docstatus": 0,
  "doctype": "Page",
  "idx": 0,
- "modified": "2025-06-04 16:41:09.165781",
+ "modified": "2025-07-09 13:01:46.027879",
  "modified_by": "Administrator",
  "module": "Otto",
- "name": "view-otto-execution",
+ "name": "view-otto-session",
  "owner": "Administrator",
- "page_name": "view-otto-execution",
+ "page_name": "view-otto-session",
  "roles": [
   {
    "role": "System Manager"
@@ -19,5 +19,5 @@
  "standard": "Yes",
  "style": null,
  "system_page": 0,
- "title": "View Execution"
+ "title": "View Session"
 }

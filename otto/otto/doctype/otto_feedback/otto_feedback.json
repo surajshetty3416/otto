@@ -6,20 +6,11 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "execution",
+  "session",
   "value",
   "comment"
  ],
  "fields": [
-  {
-   "fieldname": "execution",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_preview": 1,
-   "in_standard_filter": 1,
-   "label": "Execution",
-   "options": "Otto Execution"
-  },
   {
    "fieldname": "comment",
    "fieldtype": "Small Text",
@@ -34,12 +25,21 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Value"
+  },
+  {
+   "fieldname": "session",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_preview": 1,
+   "in_standard_filter": 1,
+   "label": "Session",
+   "options": "Otto Session"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-06-09 14:48:50.992149",
+ "modified": "2025-07-09 12:52:30.779590",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Feedback",
