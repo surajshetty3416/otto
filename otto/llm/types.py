@@ -4,6 +4,7 @@ from typing import Literal, TypedDict
 
 ID = str
 SessionRole = Literal["user", "agent"]
+EndReason = Literal["turn_end", "tool_use"]
 ReasoningEffort = Literal["low", "medium", "high"]
 
 
@@ -55,7 +56,7 @@ class SessionMeta(TypedDict):
 	timestamp: float
 	start_time: float
 	end_time: float
-	end_reason: Literal["turn_end", "tool_use"] | None
+	end_reason: EndReason | None
 
 
 class SessionItem(TypedDict):

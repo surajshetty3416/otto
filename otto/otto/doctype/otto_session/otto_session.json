@@ -5,21 +5,25 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "section_break_excj",
+  "items",
+  "uid",
+  "first",
+  "task_section",
+  "llm",
+  "reasoning_effort",
+  "instruction",
+  "task_tab",
+  "section_break_vgpu",
   "task",
   "status",
+  "event",
   "column_break_seuy",
   "reason",
   "section_break_wljf",
   "target",
-  "event",
   "column_break_ivzi",
-  "target_doctype",
-  "section_break_excj",
-  "items",
-  "task_section",
-  "llm",
-  "reasoning_effort",
-  "instruction"
+  "target_doctype"
  ],
  "fields": [
   {
@@ -61,6 +65,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "description": "Set if associated Task has a target.",
    "fieldname": "section_break_wljf",
    "fieldtype": "Section Break",
    "label": "Target"
@@ -103,10 +108,10 @@
    "read_only": 1
   },
   {
-   "description": "Set from the Task definition, but may be different.",
+   "description": "Fetched from Task definition if not specified.",
    "fieldname": "task_section",
    "fieldtype": "Section Break",
-   "label": "Task"
+   "label": "Config"
   },
   {
    "fieldname": "instruction",
@@ -127,6 +132,26 @@
    "fieldtype": "Table",
    "label": "Items",
    "options": "Otto Session Item CT"
+  },
+  {
+   "fieldname": "uid",
+   "fieldtype": "Data",
+   "label": "UID"
+  },
+  {
+   "fieldname": "first",
+   "fieldtype": "Data",
+   "label": "First"
+  },
+  {
+   "fieldname": "task_tab",
+   "fieldtype": "Tab Break",
+   "label": "Task"
+  },
+  {
+   "description": "Set if this Session belongs to a Task.",
+   "fieldname": "section_break_vgpu",
+   "fieldtype": "Section Break"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -136,7 +161,7 @@
    "link_fieldname": "session"
   }
  ],
- "modified": "2025-07-09 13:31:41.137887",
+ "modified": "2025-07-10 11:47:04.793929",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Session",

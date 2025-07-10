@@ -8,8 +8,8 @@
  "field_order": [
   "uid",
   "column_break_mgws",
-  "next",
   "selected",
+  "next",
   "meta_section",
   "role",
   "input_tokens",
@@ -40,7 +40,7 @@
   {
    "description": "JSON list of next UID strings.",
    "fieldname": "next",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Next"
   },
   {
@@ -143,7 +143,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-07-09 15:25:19.786920",
+ "modified": "2025-07-10 11:45:41.786403",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Session Item CT",

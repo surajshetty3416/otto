@@ -1,8 +1,16 @@
 # Copyright (c) 2025, Alan Tom and contributors
 # For license information, please see license.txt
+from __future__ import annotations
 
-# import frappe
+import json
+from datetime import datetime
+from typing import cast
+
+import frappe
 from frappe.model.document import Document
+from frappe.types import DF
+
+from otto.llm.types import EndReason, SessionItem, SessionMeta, SessionRole
 
 
 class OttoSessionItemCT(Document):
@@ -20,7 +28,7 @@ class OttoSessionItemCT(Document):
 		end_time: DF.Datetime | None
 		input_tokens: DF.Int
 		model: DF.Data | None
-		next: DF.Data | None
+		next: DF.SmallText | None
 		output_tokens: DF.Int
 		parent: DF.Data
 		parentfield: DF.Data
@@ -32,4 +40,74 @@ class OttoSessionItemCT(Document):
 		uid: DF.Data
 	# end: auto-generated types
 
-	pass
+	@staticmethod
+	def from_session_item(item: SessionItem) -> OttoSessionItemCT:
+		osi = cast(OttoSessionItemCT, frappe.new_doc("Otto Session Item CT"))
+		osi.sync_with_session_item(item)
+		return osi
+
+	def sync_with_session_item(self, item: SessionItem):
+		# ID
+		self.uid = item["id"]
+		self.next = json.dumps(item["next"])
+		self.selected = item["selected_next"]
+
+		# Meta
+		self.role = item["meta"]["role"]
+		self.model = item["meta"]["model"]
+		self.input_tokens = item["meta"]["input_tokens"]
+		self.output_tokens = item["meta"]["output_tokens"]
+		self.cost = item["meta"]["cost"]
+
+		self.timestamp = datetime.fromtimestamp(item["meta"]["timestamp"])
+		self.start_time = datetime.fromtimestamp(item["meta"]["start_time"])
+		self.end_time = datetime.fromtimestamp(item["meta"]["end_time"])
+
+		self.end_reason = item["meta"]["end_reason"]
+
+		# Content
+		self.content = json.dumps(item["content"])
+
+	def to_session_item(self) -> SessionItem:
+		item = SessionItem(
+			id=self.uid,
+			next=json.loads(self.next or "[]"),
+			selected_next=self.selected,
+			meta=SessionMeta(
+				role=self._get_role(),
+				model=self.model,
+				input_tokens=self.input_tokens,
+				output_tokens=self.output_tokens,
+				cost=self.cost,
+				timestamp=get_timestamp(self.timestamp),
+				start_time=get_timestamp(self.start_time),
+				end_time=get_timestamp(self.end_time),
+				end_reason=self._get_end_reason(),
+			),
+			content=json.loads(self.content),
+		)
+
+		return item
+
+	def _get_role(self) -> SessionRole:
+		if self.role == "user" or self.role == "agent":
+			return self.role
+
+		# Bad default (but so is "user")
+		return "user"
+
+	def _get_end_reason(self) -> EndReason | None:
+		if self.end_reason == "turn_end" or self.end_reason == "tool_use":
+			return self.end_reason
+
+		return None
+
+
+def get_timestamp(dt: DF.Datetime | None) -> float:
+	if not dt:
+		return 0
+
+	if isinstance(dt, str):
+		dt = datetime.fromisoformat(dt)
+
+	return dt.timestamp()

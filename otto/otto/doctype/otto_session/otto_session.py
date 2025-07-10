@@ -12,7 +12,8 @@ from frappe.model.document import Document
 
 import otto
 from otto import llm
-from otto.llm.types import ToolUseContent
+from otto.llm.types import Session
+from otto.llm.utils import get_session_list
 from otto.otto.doctype.otto_task.otto_task import get_tools
 from otto.otto.doctype.otto_task.tools import has_task_ended, is_meta_tool
 
@@ -35,6 +36,7 @@ class OttoSession(Document):
 		from otto.otto.doctype.otto_session_item_ct.otto_session_item_ct import OttoSessionItemCT
 
 		event: DF.Data | None
+		first: DF.Data | None
 		instruction: DF.Code | None
 		items: DF.Table[OttoSessionItemCT]
 		llm: DF.Link | None
@@ -44,7 +46,10 @@ class OttoSession(Document):
 		target: DF.DynamicLink | None
 		target_doctype: DF.Link | None
 		task: DF.Link
+		uid: DF.Data | None
 	# end: auto-generated types
+
+	_osi_map: dict[str, OttoSessionItemCT]
 
 	@staticmethod
 	def new(
@@ -117,11 +122,10 @@ class OttoSession(Document):
 	def loop(self, context: str | list[str] | None = None):
 		from otto.otto.doctype.otto_llm.otto_llm import get_reasoning_effort
 
-		session = json.loads(self.session) if self.session else None
 		try:
 			interaction, reason = llm.interact(
 				context,  # type: ignore needed cause not strong enough type system
-				session=session,
+				session=self.get_session(),
 				tools=get_tools(self.task),
 				model=self.llm,
 				system=self.instruction,
@@ -213,8 +217,58 @@ class OttoSession(Document):
 
 		return context, None
 
-	def set_session(self, session: Session):
-		self.session = json.dumps(session, indent=2)
+	def get_session(self) -> None | Session:
+		if not self.uid or not self.first:
+			# no session yet, will be created on first interaction
+			return None
+
+		session = Session(
+			id=self.uid,
+			first=self.first,
+			items={},
+		)
+
+		self._set_osi_map()
+		for item in self.items:
+			self._osi_map[item.uid] = item
+			session["items"][item.uid] = item.to_session_item()
+
+		return session
+
+	def set_session(self, session: Session) -> None:
+		from otto.otto.doctype.otto_session_item_ct.otto_session_item_ct import OttoSessionItemCT
+
+		self.uid = session["id"]
+		self.first = session["first"]
+
+		# reset sequence incase active list has changed
+		self.items.clear()
+		added = set()
+		self._set_osi_map()
+
+		# Active sequence items first
+		for item in get_session_list(session):
+			osi = self._osi_map.get(item["id"])
+			if not osi:
+				osi = OttoSessionItemCT.from_session_item(item)
+			else:
+				osi.sync_with_session_item(item)
+			added.add(item["id"])
+			self.append("items", osi)
+
+		# Rest of the non-active items
+		for uid, item in session["items"].items():
+			if uid in added:
+				continue
+
+			osi = self._osi_map.get(uid)
+			if not osi:
+				osi = OttoSessionItemCT.from_session_item(item)
+			else:
+				osi.sync_with_session_item(item)
+
+			self.append("items", osi)
+
 		self.save(ignore_permissions=True, ignore_version=True)
 		frappe.db.commit()
 
@@ -252,10 +306,9 @@ class OttoSession(Document):
 
 	@frappe.whitelist()
 	def get_stats(self):
-		if not self.session:
+		if not (session := self.get_session()):
 			return "No Session"
 
-		session: Session = json.loads(self.session)
 		return llm.get_stats(session)
 
 	@frappe.whitelist()
@@ -275,6 +328,12 @@ class OttoSession(Document):
 		)
 
 		return "Session enqueued"
+
+	def _set_osi_map(self) -> None:
+		"""Sets _osi_map if not already set, should be used only in get_session and set_session"""
+		if hasattr(self, "_osi_map") and self._osi_map is not None:
+			return
+		self._osi_map = {}
 
 
 def get_tool_map(task: OttoTask) -> dict[str, str]:
