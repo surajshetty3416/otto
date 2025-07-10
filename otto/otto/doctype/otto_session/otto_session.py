@@ -23,6 +23,18 @@ logger = otto.logger("otto_session")
 
 
 class OttoSession(Document):
+	"""Represents a single session with an LLM.
+
+	An Otto Session can be a "Task" or a "Chat". It manages:
+	- interaction history (i.e. the session)
+	- tool availability (i.e. the tools)
+	- tool execution
+
+	This DocType acts as a persistent wrapper around the in-memory session
+	representation used by the `otto.llm` module. The invoker of an OttoSession
+	is responsible for managing the loop, invoking the tool calls.
+	"""
+
 	# begin: auto-generated types
 	# This code is auto-generated. Do not modify anything in this block.
 
@@ -72,10 +84,23 @@ class OttoSession(Document):
 		return doc
 
 	def interact(self, query: str | list[str] | None = None) -> tuple[SessionItem, None] | tuple[None, str]:
-		"""
-		Caller should be responsible for loop. Session will handle calling
-		the API, and running the tools. But should not do these automatically.
-		As user interaction and feedback may be needed.
+		"""Performs one turn of interaction with the LLM.
+
+		This method sends the user's query, along with the current session context (history and tools),
+		to the LLM. It then updates the session with the LLM's response.
+
+		The caller is responsible for creating an interaction loop. This method only represents a
+		single API call. After this, `run_tools` should be called if the LLM response includes
+		tool use requests.
+
+		Args:
+		    query: The user's input for this turn. Can be a string, a list of strings, or None
+		        to let the LLM continue its turn.
+
+		Returns:
+		    A tuple containing the latest session item and an error reason.
+		    - `(SessionItem, None)` on success.
+		    - `(None, str)` on failure, where the string is the error reason.
 		"""
 		from otto.otto.doctype.otto_llm.otto_llm import get_reasoning_effort
 
@@ -117,7 +142,16 @@ class OttoSession(Document):
 		return self._last_item, None
 
 	def run_tools(self):
-		"""Runs tools and checks if meta tool end_task is used"""
+		"""Executes tool use requests from the last LLM response.
+
+		This method inspects the last `SessionItem`. If it contains `tool_use` content,
+		it executes the requested tools and appends the results to the session. It also
+		handles special meta tools, like `end_task`.
+
+		Returns:
+		    bool: `True` if the `end_task` meta tool was found in the tool calls,
+		        signaling that the task is complete. `False` otherwise.
+		"""
 
 		item = self.get_last_item()
 		if item is None:
