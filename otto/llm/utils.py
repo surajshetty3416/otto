@@ -153,15 +153,21 @@ def update_with_tool_result(*, session: Session, result: Any, id: str, is_error:
 def get_last_id(session: Session):
 	"""
 	Walk selected path in item tree to get the last item id.
+	Should not be called on an empty sesion.
 	"""
-	last = session["items"][session["first"]]
+	items = session.get("items")
+	first = session.get("first")
+
+	assert items is not None and len(items) and first, "sanity check"
+
+	last = items[first]
 	while True:
 		selected = last["selected_next"]
 		if len(last["next"]) <= selected:
 			break
 
 		next_id = last["next"][selected]
-		last = session["items"][next_id]
+		last = items[next_id]
 
 	return last["id"]
 

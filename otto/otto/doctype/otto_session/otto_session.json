@@ -5,100 +5,32 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "uid",
+  "is_active",
+  "first",
+  "column_break_rygp",
+  "type",
+  "reason",
   "section_break_excj",
   "items",
-  "uid",
-  "first",
+  "config_tab",
   "task_section",
   "llm",
+  "column_break_rcey",
   "reasoning_effort",
-  "instruction",
-  "task_tab",
-  "section_break_vgpu",
-  "task",
-  "status",
-  "event",
-  "column_break_seuy",
-  "reason",
-  "section_break_wljf",
-  "target",
-  "column_break_ivzi",
-  "target_doctype"
+  "section_break_wtuc",
+  "tools",
+  "section_break_ohyi",
+  "instruction"
  ],
  "fields": [
-  {
-   "fieldname": "task",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Task",
-   "options": "Otto Task",
-   "read_only": 1,
-   "reqd": 1
-  },
   {
    "fieldname": "section_break_excj",
    "fieldtype": "Section Break",
    "label": "Session"
   },
   {
-   "default": "Pending",
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Status",
-   "options": "Pending\nRunning\nSuccess\nFailure",
-   "read_only_depends_on": "eval:doc.status !== \"Running\"",
-   "reqd": 1
-  },
-  {
-   "depends_on": "eval:doc.reason",
-   "description": "Set only if status is failure",
-   "fieldname": "reason",
-   "fieldtype": "Small Text",
-   "label": "Reason",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_seuy",
-   "fieldtype": "Column Break"
-  },
-  {
-   "description": "Set if associated Task has a target.",
-   "fieldname": "section_break_wljf",
-   "fieldtype": "Section Break",
-   "label": "Target"
-  },
-  {
-   "fieldname": "event",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Event",
-   "read_only": 1
-  },
-  {
-   "fieldname": "target",
-   "fieldtype": "Dynamic Link",
-   "in_list_view": 1,
-   "label": "Target",
-   "options": "target_doctype",
-   "read_only": 1
-  },
-  {
-   "fieldname": "target_doctype",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Target DocType",
-   "options": "DocType",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_ivzi",
-   "fieldtype": "Column Break"
-  },
-  {
+   "description": "Last LLM used for this session.",
    "fieldname": "llm",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -110,10 +42,10 @@
   {
    "description": "Fetched from Task definition if not specified.",
    "fieldname": "task_section",
-   "fieldtype": "Section Break",
-   "label": "Config"
+   "fieldtype": "Section Break"
   },
   {
+   "description": "Instruction used for this session.",
    "fieldname": "instruction",
    "fieldtype": "Code",
    "label": "Instruction",
@@ -121,6 +53,7 @@
   },
   {
    "default": "None",
+   "description": "Reasoning effort used, applicable only if a reasoning LLM was used.",
    "fieldname": "reasoning_effort",
    "fieldtype": "Select",
    "label": "Reasoning Effort",
@@ -128,30 +61,70 @@
    "read_only": 1
   },
   {
+   "description": "Sequence of items in the session. Not all items may be part of the active sequence. This might happen if a session was resumed from a non-last item.",
    "fieldname": "items",
    "fieldtype": "Table",
    "label": "Items",
    "options": "Otto Session Item CT"
   },
   {
+   "description": "Session UID, used internally may not be unique.",
    "fieldname": "uid",
    "fieldtype": "Data",
    "label": "UID"
   },
   {
+   "description": "ID of the first item in the session.",
    "fieldname": "first",
    "fieldtype": "Data",
    "label": "First"
   },
   {
-   "fieldname": "task_tab",
-   "fieldtype": "Tab Break",
-   "label": "Task"
+   "fieldname": "column_break_rygp",
+   "fieldtype": "Column Break"
   },
   {
-   "description": "Set if this Session belongs to a Task.",
-   "fieldname": "section_break_vgpu",
+   "default": "0",
+   "description": "Will be true if waiting on an LLM response, Tool result, etc. Not waiting for user input.",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  },
+  {
+   "depends_on": "eval: doc.reason",
+   "description": "Will be set if last request failed. Can still be resumed.",
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason"
+  },
+  {
+   "fieldname": "config_tab",
+   "fieldtype": "Tab Break",
+   "label": "Config"
+  },
+  {
+   "fieldname": "column_break_rcey",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_ohyi",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_wtuc",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "tools",
+   "fieldtype": "Table",
+   "label": "Tools",
+   "options": "Otto Session Tools CT"
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "label": "Type",
+   "options": "Task\nChat"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -161,7 +134,7 @@
    "link_fieldname": "session"
   }
  ],
- "modified": "2025-07-10 11:47:04.793929",
+ "modified": "2025-07-10 13:42:11.106420",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Session",

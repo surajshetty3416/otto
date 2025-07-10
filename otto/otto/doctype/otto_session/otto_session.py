@@ -13,13 +13,11 @@ from frappe.model.document import Document
 import otto
 from otto import llm
 from otto.llm.types import Session
-from otto.llm.utils import get_session_list
-from otto.otto.doctype.otto_task.otto_task import get_tools
+from otto.llm.utils import get_last_id, get_session_list
 from otto.otto.doctype.otto_task.tools import has_task_ended, is_meta_tool
 
 if TYPE_CHECKING:
 	from otto.llm.types import Session, SessionItem
-	from otto.otto.doctype.otto_task.otto_task import OttoTask
 
 logger = otto.logger("otto_session")
 
@@ -34,103 +32,65 @@ class OttoSession(Document):
 		from frappe.types import DF
 
 		from otto.otto.doctype.otto_session_item_ct.otto_session_item_ct import OttoSessionItemCT
+		from otto.otto.doctype.otto_session_tools_ct.otto_session_tools_ct import OttoSessionToolsCT
 
-		event: DF.Data | None
 		first: DF.Data | None
 		instruction: DF.Code | None
+		is_active: DF.Check
 		items: DF.Table[OttoSessionItemCT]
 		llm: DF.Link | None
 		reason: DF.SmallText | None
 		reasoning_effort: DF.Literal["None", "Low", "Medium", "High"]
-		status: DF.Literal["Pending", "Running", "Success", "Failure"]
-		target: DF.DynamicLink | None
-		target_doctype: DF.Link | None
-		task: DF.Link
+		tools: DF.Table[OttoSessionToolsCT]
+		type: DF.Literal["Task", "Chat"]
 		uid: DF.Data | None
 	# end: auto-generated types
 
-	_osi_map: dict[str, OttoSessionItemCT]
+	_osi_map: dict[str, OttoSessionItemCT] | None = None
+	_last_item: SessionItem | None = None
+	_session: Session | None = None
 
 	@staticmethod
 	def new(
-		task: str,
 		*,
-		target: str | None,
-		target_doctype: str | None,
-		event: str | None = None,
-		llm: str | None = None,
-		reasoning_effort: str | None = None,
-		instruction: str | None = None,
+		llm: str,
+		instruction: str,
+		reasoning_effort: str | None,
+		session_type: Literal["Task", "Chat"],
 	):
-		doc = cast(OttoSession, frappe.get_doc({"doctype": "Otto Session", "task": task}))
+		doc = cast(OttoSession, frappe.get_doc({"doctype": "Otto Session"}))
 
-		doc.target_doctype = target_doctype
-		doc.target = target
-		doc.event = event
-
-		doc.llm = llm or frappe.get_cached_value("Otto Task", task, "llm")
-		doc.instruction = instruction or frappe.get_cached_value("Otto Task", task, "instruction")
+		doc.llm = llm
+		doc.instruction = instruction
+		doc.type = session_type
 		if reasoning_effort and reasoning_effort in ["None", "Low", "Medium", "High"]:
 			doc.reasoning_effort = reasoning_effort  # type: ignore
 		else:
-			doc.reasoning_effort = frappe.get_cached_value("Otto Task", task, "reasoning_effort")
+			doc.reasoning_effort = "None"
 
 		doc.save(ignore_permissions=True, ignore_version=True)
 		return doc
 
-	def execute(self):
-		self.set_status("Running")
-		doc = self.get_target()
-		context, reason = self.get_context(doc, self.event or "Manual")
-
-		if not context:
-			return self.set_status("Failure", reason)
-
-		try:
-			self.loop(context)
-		except Exception as e:
-			otto.log_error(title="execute error", doc=self)
-			self.set_status("Failure", f"Error in session loop: {e}")
-
-	def get_target(self):
-		if not self.target_doctype or not self.target:
-			return None
-
-		return frappe.get_doc(self.target_doctype, self.target)
-
-	def validate(self):
-		tool_names = frappe.get_all("Otto Task Tool CT", filters={"parent": self.task}, pluck="tool")
-		tools = frappe.get_all("Otto Tool", filters={"name": ("in", tool_names)}, fields=["slug", "is_valid"])
-
-		reasons = []
-
-		for tool in tools:
-			if not tool.is_valid:
-				reasons.append(f"Tool {tool.slug} is not valid")
-
-			if not tool.env:
-				continue
-
-			try:
-				json.loads(tool.env)
-			except Exception as e:
-				reasons.append(f"Tool {tool.slug} env is not valid JSON: {e}")
-
-		if reasons:
-			self.set_status("Failure", "\n".join(reasons))
-
-	def loop(self, context: str | list[str] | None = None):
+	def interact(self, query: str | list[str] | None = None) -> tuple[SessionItem, None] | tuple[None, str]:
+		"""
+		Caller should be responsible for loop. Session will handle calling
+		the API, and running the tools. But should not do these automatically.
+		As user interaction and feedback may be needed.
+		"""
 		from otto.otto.doctype.otto_llm.otto_llm import get_reasoning_effort
+
+		self._set_status(is_active=True)
 
 		try:
 			interaction, reason = llm.interact(
-				context,  # type: ignore needed cause not strong enough type system
-				session=self.get_session(),
-				tools=get_tools(self.task),
+				query,  # type: ignore needed cause not strong enough type system
+				session=self._get_session(),
+				tools=self._get_tools(),
 				model=self.llm,
 				system=self.instruction,
 				reasoning_effort=get_reasoning_effort(self.reasoning_effort),
 			)
+
 			logger.info(
 				{
 					"message": "interact success",
@@ -139,44 +99,36 @@ class OttoSession(Document):
 					"item": interaction and interaction["item"],
 				}
 			)
+
 		except Exception as e:
 			otto.log_error(title="interact error", doc=self)
-			self.set_status("Failure", f"Interaction errored out: {e}")
-			return
+			reason = f"Interaction errored out: {e}"
+			self._set_status(is_active=False, reason=reason)
+			return None, reason
 
 		if interaction is None:
-			self.set_status("Failure", reason)
-			return
+			reason = reason or "No interaction returned"
+			self._set_status(is_active=False, reason=reason)
+			return None, reason
 
-		self.set_session(interaction["update"])
+		self._set_status(is_active=False, session=interaction["update"])
 
-		item = interaction["item"]
-		if self.run_tools(item, interaction["update"]):
-			return self.set_status("Success")
+		self._last_item = interaction["item"]
+		return self._last_item, None
 
-		if self.should_stop(item):
-			return self.set_status("Success")
+	def run_tools(self):
+		"""Runs tools and checks if meta tool end_task is used"""
 
-		self.loop(None)
-
-	def should_stop(self, item: SessionItem) -> bool:
-		"""
-		This has been added cause Gemini 2.5 Flash did not call end_task and
-		instead so for smaller models, this check should suffice until a better
-		solution is found.
-		"""
-		if item["meta"]["end_reason"] != "turn_end":
+		item = self.get_last_item()
+		if item is None:
 			return False
 
-		return item["meta"]["output_tokens"] == 0
+		session = self._get_session()
+		if session is None:
+			return False
 
-	def run_tools(self, item: SessionItem, session: Session):
-		"""Runs tools and checks if meta tool end_task is used"""
-		from otto.otto.doctype.otto_task.otto_task import OttoTask
-
-		task = otto.get(OttoTask, self.task)
-		env_map = {t.name: t.env for t in task.tools}
-		tool_map = get_tool_map(task)
+		env_map = {t.name: t.env for t in self.tools}
+		tool_map = self._get_tool_map()
 
 		# Move meta tools to the end of the list
 		content = sorted(item["content"], key=lambda x: is_meta_tool(x))
@@ -193,34 +145,45 @@ class OttoSession(Document):
 			else:
 				tool_name = tool_map[content["name"]]
 				env_str = env_map.get(tool_name, None)
-				result, is_error = self.execute_tool(tool_name, content["args"], env_str)
+				result, is_error = self._execute_tool(tool_name, content["args"], env_str)
 
 			llm.update_with_tool_result(session=session, result=result, id=content["id"], is_error=is_error)
-			self.set_session(session)
+			self._set_session(session)
 		return task_ended
 
-	def get_context(self, doc: Document | None, event: str) -> tuple[str | list, None] | tuple[None, str]:
-		from otto.otto.doctype.otto_task.otto_task import run_get_context
+	def get_last_item(self) -> SessionItem | None:
+		if self._last_item:
+			return self._last_item
 
-		get_context = frappe.get_value("Otto Task", self.task, "get_context")
-		if (not get_context or not isinstance(get_context, str)) and doc:
-			return doc.as_json(), None
+		session = self._get_session()
+		if session is None:
+			return None
 
-		if not isinstance(get_context, str) or not get_context:
-			return (None, "get_context is not set on Task and no target Doc is provided")
+		id = get_last_id(session)
+		return session["items"].get(id)
 
-		try:
-			context = run_get_context(get_context, doc, event)
-		except Exception as e:
-			otto.log_error(title="get_context error", doc=self)
-			return None, str(e)
+	def _set_status(
+		self,
+		is_active: bool,
+		*,
+		reason: str | None = None,
+		session: Session | None = None,
+	):
+		self.is_active = is_active
+		self.reason = reason
+		if session is not None:
+			self._set_session(session)
 
-		return context, None
+		self.save(ignore_permissions=True, ignore_version=True)
+		frappe.db.commit()
 
-	def get_session(self) -> None | Session:
+	def _get_session(self) -> None | Session:
 		if not self.uid or not self.first:
 			# no session yet, will be created on first interaction
 			return None
+
+		if self._session is not None:
+			return self._session
 
 		session = Session(
 			id=self.uid,
@@ -229,22 +192,26 @@ class OttoSession(Document):
 		)
 
 		self._set_osi_map()
+		assert self._osi_map is not None, "type check"
 		for item in self.items:
 			self._osi_map[item.uid] = item
 			session["items"][item.uid] = item.to_session_item()
+		self._session = session
 
 		return session
 
-	def set_session(self, session: Session) -> None:
+	def _set_session(self, session: Session) -> None:
 		from otto.otto.doctype.otto_session_item_ct.otto_session_item_ct import OttoSessionItemCT
 
 		self.uid = session["id"]
 		self.first = session["first"]
+		self._session = session
 
 		# reset sequence incase active list has changed
 		self.items.clear()
 		added = set()
 		self._set_osi_map()
+		assert self._osi_map is not None, "type check"
 
 		# Active sequence items first
 		for item in get_session_list(session):
@@ -272,17 +239,7 @@ class OttoSession(Document):
 		self.save(ignore_permissions=True, ignore_version=True)
 		frappe.db.commit()
 
-	def set_status(
-		self,
-		status: Literal["Pending", "Running", "Success", "Failure"],
-		reason: str | None = None,
-	):
-		self.status = status
-		self.reason = reason
-		self.save(ignore_permissions=True, ignore_version=True)
-		frappe.db.commit()
-
-	def execute_tool(self, tool_name: str, args: dict, env_str: str | None) -> tuple[Any, bool]:
+	def _execute_tool(self, tool_name: str, args: dict, env_str: str | None) -> tuple[Any, bool]:
 		"""Executes tool and returns tuple of (result, is_error)"""
 		from otto.otto.doctype.otto_tool.otto_tool import OttoTool
 
@@ -292,7 +249,7 @@ class OttoSession(Document):
 			env = json.loads(env_str) if env_str else None
 			return tool_doc.execute(
 				args,
-				task=self.task,
+				task=self._get_task_name(),
 				session=self.name,
 				env=env,
 			)["result"], False
@@ -304,30 +261,22 @@ class OttoSession(Document):
 			)
 			return str(e), True
 
+	def _get_task_name(self) -> str | None:
+		if self.type != "Task":
+			return None
+
+		exec_tasks = frappe.get_all("Otto Execution", filters={"session": self.name}, pluck="task", limit=1)
+		if not exec_tasks or not isinstance(exec_tasks[0], str):
+			return None
+
+		return exec_tasks[0]
+
 	@frappe.whitelist()
 	def get_stats(self):
-		if not (session := self.get_session()):
+		if not (session := self._get_session()):
 			return "No Session"
 
 		return llm.get_stats(session)
-
-	@frappe.whitelist()
-	def retry(self):
-		if self.status != "Failure":
-			return "Retry available only for failed sessions"
-		from otto.otto.doctype.otto_task.otto_task import get_timeout
-
-		self.set_status("Running")
-		self.save()
-
-		frappe.enqueue_doc(
-			doctype="Otto Session",
-			name=self.name,
-			method="loop",
-			timeout=get_timeout(),
-		)
-
-		return "Session enqueued"
 
 	def _set_osi_map(self) -> None:
 		"""Sets _osi_map if not already set, should be used only in get_session and set_session"""
@@ -335,65 +284,34 @@ class OttoSession(Document):
 			return
 		self._osi_map = {}
 
+	def _get_tools(self):
+		from otto.otto.doctype.otto_task.tools import meta_tools
+		from otto.otto.doctype.otto_tool.otto_tool import OttoTool
 
-def get_tool_map(task: OttoTask) -> dict[str, str]:
-	"""returns dict[slug, name]"""
-	names = [t.tool for t in task.tools if not t.slug and t.is_enabled]
-	_tool_map = {
-		t.name: t.slug
-		for t in frappe.get_all("Otto Tool", filters={"name": ("in", names)}, fields=["slug", "name"])
-	}
+		tools = []
+		for tool in self.tools:
+			tool_doc = otto.get(OttoTool, tool.tool)
+			if not tool_doc.is_valid:
+				continue
 
-	tool_map = {}
-	for t in task.tools:
-		if not t.is_enabled:
-			continue
+			tools.append(tool_doc.get_function_schema(tool.slug))
 
-		slug = t.slug or _tool_map[t.tool]
-		tool_map[slug] = t.tool
-	return tool_map
+		tools.extend(meta_tools)
+		return tools
 
+	def _get_tool_map(self) -> dict[str, str]:
+		"""returns dict[slug, name]"""
+		names = [t.tool for t in self.tools if not t.slug and t.is_enabled]
+		_tool_map = {
+			t.name: t.slug
+			for t in frappe.get_all("Otto Tool", filters={"name": ("in", names)}, fields=["slug", "name"])
+		}
 
-@frappe.whitelist()
-def get_recent_sessions(limit: int = 20) -> list[dict]:
-	sessions = frappe.get_all(
-		"Otto Session",
-		fields=["name", "status", "creation", "task", "target", "target_doctype"],
-		limit=limit,
-		order_by="modified desc",
-	)
-	tasks = frappe.get_all(
-		"Otto Task", filters={"name": ("in", [e["task"] for e in sessions])}, fields=["name", "title"]
-	)
-	task_map = {t["name"]: t for t in tasks}
+		tool_map = {}
+		for t in self.tools:
+			if not t.is_enabled:
+				continue
 
-	for session in sessions:
-		session["task_name"] = task_map[session["task"]]["title"]
-
-	return sessions
-
-
-@frappe.whitelist()
-def get_adjacent_session(name: str, next: str | bool):
-	if isinstance(next, str):
-		"""frappe.call appears to be sending a string instead of a boolean, wt"""
-		next = next == "true"
-
-	"""Get the next or previous session in chronological order"""
-	order = "asc" if next else "desc"
-	operator = ">" if next else "<"
-
-	session = frappe.get_all(
-		"Otto Session",
-		filters={
-			"modified": (operator, frappe.get_value("Otto Session", name, "modified")),
-		},
-		order_by=f"modified {order}",
-		limit=1,
-		pluck="name",
-	)
-
-	if session:
-		return session[0]
-
-	return None
+			slug = t.slug or _tool_map[t.tool]
+			tool_map[slug] = t.tool
+		return tool_map
