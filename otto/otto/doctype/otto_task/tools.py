@@ -55,6 +55,3 @@ def is_meta_tool(tool: Content) -> bool:
 
 	return tool["name"] in [t["function"]["name"] for t in meta_tools]
 
-
-def has_task_ended(tool: Content) -> bool:
-	return tool["type"] == "tool_use" and tool["name"] == "end_task"

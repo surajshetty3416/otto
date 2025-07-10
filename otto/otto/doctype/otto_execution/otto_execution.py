@@ -9,6 +9,7 @@ import frappe
 from frappe.model.document import Document
 
 import otto
+from otto.llm.types import Content
 
 if TYPE_CHECKING:
 	from otto.llm.types import SessionItem
@@ -131,8 +132,12 @@ class OttoExecution(Document):
 			self.set_status("Failure", reason)
 			return
 
-		if session.run_tools():
-			return self.set_status("Success")
+		try:
+			session.run_tools()
+		except Exception as e:
+			otto.log_error(title="run_tools error", doc=self)
+			self.set_status("Failure", f"Error in run_tools: {e}")
+			return
 
 		if self.should_stop(item):
 			return self.set_status("Success")
@@ -146,14 +151,18 @@ class OttoExecution(Document):
 		return self._session
 
 	def should_stop(self, item: SessionItem) -> bool:
+		"""Check if end_task has been called or if session is looping indefinitely."""
+		if item["meta"]["end_reason"] == "tool_use":
+			return has_task_ended(item["content"])
+
+		if item["meta"]["end_reason"] != "turn_end":
+			return False
+
 		"""
 		This has been added cause Gemini 2.5 Flash did not call end_task and
 		instead so for smaller models, this check should suffice until a better
 		solution is found.
 		"""
-		if item["meta"]["end_reason"] != "turn_end":
-			return False
-
 		return item["meta"]["output_tokens"] == 0
 
 	def get_context(self, doc: Document | None, event: str) -> tuple[str | list, None] | tuple[None, str]:
@@ -259,3 +268,10 @@ def set_session_tools(session: OttoSession, task: str):
 
 	session.save(ignore_permissions=True, ignore_version=True)
 	frappe.db.commit()
+
+
+def has_task_ended(content: list[Content]) -> bool:
+	for c in content:
+		if c["type"] == "tool_use" and c["name"] == "end_task":
+			return True
+	return False

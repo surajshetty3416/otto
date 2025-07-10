@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 # import frappe
-import functools
 import json
 from typing import TYPE_CHECKING, Any, Literal, cast
 
@@ -14,7 +13,7 @@ import otto
 from otto import llm
 from otto.llm.types import Session
 from otto.llm.utils import get_last_id, get_session_list
-from otto.otto.doctype.otto_task.tools import has_task_ended, is_meta_tool
+from otto.otto.doctype.otto_task.tools import is_meta_tool
 
 if TYPE_CHECKING:
 	from otto.llm.types import Session, SessionItem
@@ -147,19 +146,15 @@ class OttoSession(Document):
 		This method inspects the last `SessionItem`. If it contains `tool_use` content,
 		it executes the requested tools and appends the results to the session. It also
 		handles special meta tools, like `end_task`.
-
-		Returns:
-		    bool: `True` if the `end_task` meta tool was found in the tool calls,
-		        signaling that the task is complete. `False` otherwise.
 		"""
 
 		item = self.get_last_item()
 		if item is None:
-			return False
+			return
 
 		session = self._get_session()
 		if session is None:
-			return False
+			return
 
 		env_map = {t.name: t.env for t in self.tools}
 		tool_map = self._get_tool_map()
@@ -167,7 +162,6 @@ class OttoSession(Document):
 		# Move meta tools to the end of the list
 		content = sorted(item["content"], key=lambda x: is_meta_tool(x))
 
-		task_ended = False
 		for content in item["content"]:
 			if content["type"] != "tool_use":
 				continue
@@ -175,15 +169,14 @@ class OttoSession(Document):
 			result = None
 			is_error = False
 			if is_meta_tool(content):
-				task_ended = task_ended or has_task_ended(content)
-			else:
-				tool_name = tool_map[content["name"]]
-				env_str = env_map.get(tool_name, None)
-				result, is_error = self._execute_tool(tool_name, content["args"], env_str)
+				continue
+
+			tool_name = tool_map[content["name"]]
+			env_str = env_map.get(tool_name, None)
+			result, is_error = self._execute_tool(tool_name, content["args"], env_str)
 
 			llm.update_with_tool_result(session=session, result=result, id=content["id"], is_error=is_error)
 			self._set_session(session)
-		return task_ended
 
 	def get_last_item(self) -> SessionItem | None:
 		if self._last_item:

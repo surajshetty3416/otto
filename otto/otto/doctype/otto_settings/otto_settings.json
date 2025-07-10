@@ -6,9 +6,9 @@
  "engine": "InnoDB",
  "field_order": [
   "column_break_isov",
-  "is_enabled",
+  "task_execution_timeout",
   "column_break_bylk",
-  "task_session_timeout",
+  "is_enabled",
   "api_keys_section",
   "anthropic_api_key",
   "openai_api_key",
@@ -31,13 +31,6 @@
    "fieldname": "openai_api_key",
    "fieldtype": "Password",
    "label": "OpenAI API Key"
-  },
-  {
-   "default": "30",
-   "description": "Timeout duration in <b>minutes</b>. Beyond this task session will be force stopped.",
-   "fieldname": "task_session_timeout",
-   "fieldtype": "Int",
-   "label": "Task Session Timeout"
   },
   {
    "default": "30",
@@ -70,12 +63,19 @@
    "fieldname": "gemini_api_key",
    "fieldtype": "Password",
    "label": "Gemini API Key (Google)"
+  },
+  {
+   "default": "30",
+   "description": "Timeout duration in <b>minutes</b>. Beyond this task execution will be force stopped.",
+   "fieldname": "task_execution_timeout",
+   "fieldtype": "Int",
+   "label": "Task Execution Timeout"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-07-10 11:28:58.753501",
+ "modified": "2025-07-10 14:14:08.935101",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Settings",

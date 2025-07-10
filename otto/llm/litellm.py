@@ -285,7 +285,7 @@ def completions(**kwargs):
 				"request would exceed the rate limit" not in str(e) and "Overloaded" not in str(e)
 			):
 				e.add_note("number of retries: " + str(retries))
-				otto.log_error("LiteLLM Completion Error", model=kwargs.get("model"))
+				otto.log_error("litellm_completion error", model=kwargs.get("model"))
 				raise e
 
 			# Anthropic rate limit is set on a per minute basis
