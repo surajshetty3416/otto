@@ -55,8 +55,13 @@
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2025-06-11 13:11:16.979608",
+ "links": [
+  {
+   "link_doctype": "Otto Session",
+   "link_fieldname": "llm"
+  }
+ ],
+ "modified": "2025-07-11 12:18:38.892983",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto LLM",

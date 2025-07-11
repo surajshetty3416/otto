@@ -23,6 +23,9 @@ def get_session_list(session: Session) -> list[SessionItem]:
 	with only one 'active' branch sequence). This converts the linked list into a list
 	consisting of the active path.
 	"""
+	if not session["items"] or not session["first"] or session["first"] not in session["items"]:
+		return []
+
 	first = session["items"][session["first"]]
 	items = [first]
 
@@ -184,6 +187,9 @@ def get_stats(session: Session):
 	llm_calls = 0
 	tools_called = {}
 
+	if not session["items"] or not session["first"] or session["first"] not in session["items"]:
+		return
+
 	_start = session["items"][session["first"]]["meta"]["timestamp"]
 	_end = session["items"][get_last_id(session)]["meta"]["end_time"]
 	start = datetime.datetime.fromtimestamp(_start)
@@ -193,7 +199,9 @@ def get_stats(session: Session):
 	max_output_tokens = 0
 
 	for item in session["items"].values():
-		llm_calls += 1
+		if item["meta"]["role"] == "agent":
+			llm_calls += 1
+
 		cost += item["meta"]["cost"]
 		input_tokens += item["meta"]["input_tokens"]
 		output_tokens += item["meta"]["output_tokens"]
@@ -233,11 +241,11 @@ def get_stats(session: Session):
 		total_output_tokens=output_tokens,
 		start=start.isoformat(),
 		end=end.isoformat(),
-		duration=end - start,
+		duration=(end - start).total_seconds(),
 		tools=dict(tools_called),
 		max_input_tokens=max_input_tokens,
 		max_output_tokens=max_output_tokens,
-		llm_calls=llm_calls - 1,
+		llm_calls=llm_calls,
 	)
 
 

@@ -1,0 +1,64 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-07-11 13:53:50.218220",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "tool",
+  "is_enabled",
+  "column_break_dwdm",
+  "slug",
+  "env"
+ ],
+ "fields": [
+  {
+   "fieldname": "tool",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Tool",
+   "options": "Otto Tool",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "Used to enable or disable tool availability mid session.",
+   "fieldname": "is_enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Enabled"
+  },
+  {
+   "fieldname": "column_break_dwdm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "slug",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Slug (Override)"
+  },
+  {
+   "description": "JSON object used to pass env values to tools. Fetched from associated <b>Otto Task</b> if applicable.\n<br><br>\nFor example the value of <code>message</code> below: <pre><code>    { \"message\": \"Hello, World\" }</code></pre> can be accessed in a tool like so:\n<pre><code>    def main():\n        print(otto.env.message)\n</code></pre>\n<br>\n<strong>Note:</strong> this overrides env values set in <b>Otto Settings &gt; Global Env</b>",
+   "fieldname": "env",
+   "fieldtype": "JSON",
+   "in_list_view": 1,
+   "label": "Env"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-07-11 13:55:01.373606",
+ "modified_by": "Administrator",
+ "module": "Otto",
+ "name": "Otto Session Tool CT",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

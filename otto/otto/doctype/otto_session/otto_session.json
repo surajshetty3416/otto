@@ -71,13 +71,15 @@
    "description": "Session UID, used internally may not be unique.",
    "fieldname": "uid",
    "fieldtype": "Data",
-   "label": "UID"
+   "label": "UID",
+   "read_only": 1
   },
   {
    "description": "ID of the first item in the session.",
    "fieldname": "first",
    "fieldtype": "Data",
-   "label": "First"
+   "label": "First",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_rygp",
@@ -88,6 +90,8 @@
    "description": "Will be true if waiting on an LLM response, Tool result, etc. Not waiting for user input.",
    "fieldname": "is_active",
    "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Is Active"
   },
   {
@@ -95,7 +99,9 @@
    "description": "Will be set if last request failed. Can still be resumed.",
    "fieldname": "reason",
    "fieldtype": "Small Text",
-   "label": "Reason"
+   "in_list_view": 1,
+   "label": "Reason",
+   "read_only": 1
   },
   {
    "fieldname": "config_tab",
@@ -118,13 +124,15 @@
    "fieldname": "tools",
    "fieldtype": "Table",
    "label": "Tools",
-   "options": "Otto Session Tools CT"
+   "options": "Otto Session Tool CT"
   },
   {
    "fieldname": "type",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Type",
-   "options": "Task\nChat"
+   "options": "Task\nChat",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
@@ -134,7 +142,7 @@
    "link_fieldname": "session"
   }
  ],
- "modified": "2025-07-10 13:42:11.106420",
+ "modified": "2025-07-11 13:56:27.557652",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Session",

@@ -6,7 +6,7 @@ import PreViewer from "./components/PreViewer.vue";
 import ScrapbookViewer from "./components/ScrapbookViewer.vue";
 import SectionContainer from "./components/SectionContainer.vue";
 import StatsViewer from "./components/StatsViewer.vue";
-import { format_date, get_link, get_stats, link_icon } from "./utils";
+import { format_date, get_link, link_icon } from "./utils";
 
 const props = defineProps({
 	sessionName: {
@@ -15,89 +15,29 @@ const props = defineProps({
 	},
 });
 
-const doc = ref(null);
-const session = ref(null);
-const stats = ref(null);
-const scrapbooks = ref(null);
 const info = ref(null);
-const loading = reactive({
-	session: true,
-	scrapbook: true,
-});
-const errors = reactive({
-	session: null,
-	scrapbook: null,
-});
-
-const session_sequence = computed(() => {
-	if (!session.value) return [];
-	const items = [];
-	let current_id = session.value.first;
-	while (current_id) {
-		const item = session.value.items[current_id];
-		if (!item) break;
-		items.push(item);
-
-		for (const content of item.content) {
-			if (content.type !== "tool_use") continue;
-			const tool_name = info.value.slug_map[content.name];
-			content.tool = info.value.tool_map[tool_name];
-		}
-
-		if (item.next && item.next.length > 0) {
-			const next_index = item.selected_next || 0;
-			current_id = item.next[next_index];
-		} else {
-			current_id = null;
-		}
-	}
-	return items;
-});
+const error = ref(null);
+const loading = ref(true);
 
 async function fetchData() {
-	// Fetch Session and Related Data
-	const sessionPromise = frappe.db
-		.get_doc("Otto Session", props.sessionName)
-		.then((_doc) => {
-			doc.value = _doc;
-			if (_doc.session) {
-				session.value = JSON.parse(_doc.session);
-				stats.value = get_stats(session.value);
-			}
+	let res = {};
 
-			return frappe.call({
-				method: "otto.otto.doctype.otto_task.otto_task.get_exec_view_info",
-				args: { task_name: _doc.task, llm_name: _doc.llm },
-			});
-		})
-		.then((_info) => {
-			info.value = _info.message;
-			loading.session = false;
-		})
-		.catch((e) => {
-			loading.session = false;
-			errors.session = e.message || "Failed to load session.";
+	try {
+		res = await frappe.call({
+			method: "otto.otto.page.view_otto_session.session_view.get_session_view",
+			args: { name: props.sessionName },
 		});
-
-	// Fetch Scrapbook
-	const scrapbookPromise = frappe.db
-		.get_list("Otto Scrapbook", {
-			filters: { session: props.sessionName },
-			fields: ["name", "content", "tool", "creation"],
-		})
-		.then((_scrapbooks) => {
-			scrapbooks.value = _scrapbooks;
-			loading.scrapbook = false;
-		})
-		.catch((e) => {
-			loading.scrapbook = false;
-			errors.scrapbook = e.message || "Failed to load scrapbooks.";
-		});
-
-	await Promise.all([sessionPromise, scrapbookPromise]);
-	for (const book of scrapbooks.value) {
-		book.tool_slug = info.value.tool_map[book.tool].slug;
+	} catch (e) {
+		error.value = e.message || "Failed to load session.";
+		loading.value = false;
+		return;
 	}
+
+	console.log(res);
+	info.value = res.message;
+
+	error.value = null;
+	loading.value = false;
 }
 
 function get_status_style(status) {
@@ -113,45 +53,59 @@ onMounted(async () => await fetchData());
 <template>
 	<div class="session-viewer">
 		<!-- 0. Header -->
-		<div class="detail-header" v-if="doc">
-			<a class="name" :href="get_link('Otto Session', doc.name)" target="_blank">
-				Session <span>{{ doc.name }}</span> <span v-html="link_icon"></span
+		<div class="detail-header" v-if="info">
+			<a class="name" :href="get_link('Otto Session', info.name)" target="_blank">
+				Session <span>{{ info.name }}</span> <span v-html="link_icon"></span
 			></a>
-			<div class="date">{{ format_date(doc.creation) }}</div>
-			<span class="separator">·</span>
-			<div class="status" :style="get_status_style(doc.status)">
-				{{ doc.status }}
+
+			<div class="date">{{ format_date(info.session.creation) }}</div>
+			<span v-if="info.execution" class="separator">·</span>
+			<div
+				v-if="info.execution"
+				class="status"
+				:style="get_status_style(info.execution.status)"
+			>
+				{{ info.execution.status }}
 			</div>
 		</div>
-		<div v-else class="detail-header">Loading...</div>
+		<div v-else-if="loading" class="detail-header">Loading...</div>
 
 		<!-- 1. Session Details -->
-		<SectionContainer title="" label="" :isLoading="loading.session" :error="errors.session">
+		<SectionContainer title="" label="" :isLoading="loading" :error="error">
 			<div>
 				<!-- Details -->
 				<div class="detail-container">
 					<Detail
+						v-if="info.execution"
+						label="Execution"
+						:value="info.execution.name"
+						:link="get_link('Otto Execution', info.execution.name)"
+					/>
+					<Detail
+						v-if="info.execution?.task"
 						label="Task"
 						:value="info.task_title"
-						:link="get_link('Otto Task', doc.task)"
+						:link="get_link('Otto Task', info.task)"
 					/>
 					<Detail
-						v-if="doc.target_doctype"
+						v-if="info.execution?.target_doctype"
 						label="Target"
-						:value="`${doc.target_doctype} - ${doc.target}`"
-						:link="get_link(doc.target_doctype, doc.target)"
+						:value="`${info.execution.target_doctype} - ${info.execution.target}`"
+						:link="get_link(info.execution.target_doctype, info.execution.target)"
 					/>
-					<Detail label="Event" :value="doc.event" />
+					<Detail v-if="info.execution" label="Event" :value="info.execution.event" />
 					<Detail
+						v-if="info.llm"
 						title="LLM used to handle this task"
 						label="LLM"
-						:value="info.llm_title"
-						:link="get_link('Otto LLM', doc.llm)"
+						:value="info.llm.title"
+						:link="get_link('Otto LLM', info.llm.name)"
 					/>
 					<Detail
+						v-if="info.session.reasoning_effort !== 'None'"
 						title="Reasoning effort used to handle task"
 						label="Reasoning"
-						:value="doc.reasoning_effort"
+						:value="info.session.reasoning_effort"
 					/>
 				</div>
 			</div>
@@ -159,68 +113,66 @@ onMounted(async () => await fetchData());
 
 		<!-- Stats -->
 		<SectionContainer
-			v-if="stats"
+			v-if="info?.stats"
 			title="Stats: metadata about the session run"
 			label="Stats"
-			:isLoading="loading.session"
-			:error="errors.session"
+			:isLoading="loading"
+			:error="error"
 		>
-			<StatsViewer :stats="stats" :info="info" />
+			<StatsViewer :stats="info.stats" :slug_map="info.slug_map" />
 		</SectionContainer>
 
 		<!-- Error -->
 		<SectionContainer
-			v-if="doc?.reason"
+			v-if="info?.session?.reason"
 			title="Error: reason for the session failure"
 			label="Error"
 			:show="true"
-			:isLoading="loading.session"
-			:error="errors.session"
+			:isLoading="loading"
+			:error="error"
 		>
-			<PreViewer :value="doc.reason" />
+			<PreViewer :value="info.session.reason" />
 		</SectionContainer>
 
 		<!-- Scrapbook -->
 		<SectionContainer
-			v-if="scrapbooks && scrapbooks.length > 0"
+			v-if="info?.scrapbooks && info.scrapbooks.length > 0"
 			title="Scrapbook: mocked tool args or other logs recorded in Otto Scrapbook"
 			label="Scrapbook"
-			:isLoading="loading.scrapbook"
-			:error="errors.scrapbook"
+			:isLoading="loading"
+			:error="error"
 		>
-			<template v-for="(book, index) in scrapbooks" :key="book.name">
+			<template v-for="(book, index) in info.scrapbooks" :key="book.name">
 				<ScrapbookViewer v-if="book" :scrapbook="book" :index="index" />
 			</template>
 		</SectionContainer>
 
 		<!-- Session -->
 		<SectionContainer
-			v-if="session"
+			v-if="info?.sequence && info.sequence.length > 0"
 			title="Session: session sequence of the task"
 			label="Session"
-			:isLoading="loading.session"
-			:error="errors.session"
+			:isLoading="loading"
+			:error="error"
 		>
-			<div v-if="session">
-				<SessionViewer
-					v-for="(item, index) in session_sequence"
-					:key="item.id"
-					:item="item"
-					:index="index"
-				/>
-			</div>
+			<SessionViewer
+				v-for="(item, index) in info.sequence"
+				:key="item.id"
+				:item="item"
+				:index="index"
+			/>
 		</SectionContainer>
 
 		<!-- Instruction -->
 		<SectionContainer
-			v-if="doc?.instruction"
+			v-if="info?.session?.instruction"
 			title="Instruction: system prompt used to instruct the LLM on how to execute the task"
 			label="Instruction"
 			:show="false"
-			:isLoading="loading.session"
-			:error="errors.session"
+			:isLoading="loading"
+			:error="error"
 		>
-			<PreViewer :value="doc.instruction" />
+			<PreViewer :value="info.session.instruction" />
 		</SectionContainer>
 	</div>
 </template>
@@ -280,5 +232,9 @@ onMounted(async () => await fetchData());
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 	gap: var(--padding-md);
+}
+
+.session-viewer:last-child {
+	margin-bottom: 25vh;
 }
 </style>

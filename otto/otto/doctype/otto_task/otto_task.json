@@ -141,9 +141,13 @@
   {
    "link_doctype": "Otto Scrapbook",
    "link_fieldname": "task"
+  },
+  {
+   "link_doctype": "Otto Execution",
+   "link_fieldname": "task"
   }
  ],
- "modified": "2025-06-18 13:18:22.474629",
+ "modified": "2025-07-11 12:18:02.717719",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Task",

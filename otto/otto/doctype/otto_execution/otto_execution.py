@@ -247,31 +247,6 @@ def get_recent_execution(limit: int = 20) -> list[dict]:
 	return sessions
 
 
-@frappe.whitelist()
-def get_adjacent_execution(name: str, next: str | bool):
-	if isinstance(next, str):
-		"""frappe.call appears to be sending a string instead of a boolean, wt"""
-		next = next == "true"
-
-	"""Get the next or previous session in chronological order"""
-	order = "asc" if next else "desc"
-	operator = ">" if next else "<"
-
-	session = frappe.get_all(
-		"Otto Execution",
-		filters={
-			"modified": (operator, frappe.get_value("Otto Execution", name, "modified")),
-		},
-		order_by=f"modified {order}",
-		limit=1,
-		pluck="name",
-	)
-
-	if session:
-		return session[0]
-
-	return None
-
 
 def set_session_tools(session: OttoSession, task: str):
 	tools = frappe.get_all(

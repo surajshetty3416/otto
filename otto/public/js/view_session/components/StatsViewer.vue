@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted } from "vue";
+import { computed } from "vue";
 import { format_duration, format_number, get_link } from "../utils";
 import Detail from "./Detail.vue";
 import Link from "./Link.vue";
@@ -9,7 +9,7 @@ const props = defineProps({
 		type: Object,
 		required: true,
 	},
-	info: {
+	slug_map: {
 		type: Object,
 		required: true,
 	},
@@ -23,7 +23,7 @@ const tools = computed(() => {
 	for (const tool in props.stats.tools) {
 		tools.push({
 			name: tool,
-			url: get_link("Otto Tool", props.info.slug_map[tool]),
+			url: get_link("Otto Tool", props.slug_map[tool]),
 			called_count: props.stats.tools[tool].called_count,
 			empty_result_count: props.stats.tools[tool].empty_result_count,
 			error_count: props.stats.tools[tool].error_count,
@@ -44,6 +44,14 @@ const tools = computed(() => {
 	<div class="stats-container">
 		<Detail label="Cost" :value="`$${stats.cost.toFixed(6)}`" />
 		<Detail
+			label="Total Input Tokens"
+			:value="format_number(stats.total_input_tokens) + ' tok'"
+		/>
+		<Detail
+			label="TotalOutput Tokens"
+			:value="format_number(stats.total_output_tokens) + ' tok'"
+		/>
+		<Detail
 			label="Duration"
 			:value="format_duration(stats.duration)"
 			:title="`${stats.duration} seconds`"
@@ -53,14 +61,6 @@ const tools = computed(() => {
 		<Detail
 			label="Max Output Tokens"
 			:value="format_number(stats.max_output_tokens) + ' tok'"
-		/>
-		<Detail
-			label="Total Input Tokens"
-			:value="format_number(stats.total_input_tokens) + ' tok'"
-		/>
-		<Detail
-			label="TotalOutput Tokens"
-			:value="format_number(stats.total_output_tokens) + ' tok'"
 		/>
 	</div>
 	<!-- Tool Use -->

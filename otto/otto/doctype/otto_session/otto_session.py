@@ -43,7 +43,7 @@ class OttoSession(Document):
 		from frappe.types import DF
 
 		from otto.otto.doctype.otto_session_item_ct.otto_session_item_ct import OttoSessionItemCT
-		from otto.otto.doctype.otto_session_tools_ct.otto_session_tools_ct import OttoSessionToolsCT
+		from otto.otto.doctype.otto_session_tool_ct.otto_session_tool_ct import OttoSessionToolCT
 
 		first: DF.Data | None
 		instruction: DF.Code | None
@@ -52,7 +52,7 @@ class OttoSession(Document):
 		llm: DF.Link | None
 		reason: DF.SmallText | None
 		reasoning_effort: DF.Literal["None", "Low", "Medium", "High"]
-		tools: DF.Table[OttoSessionToolsCT]
+		tools: DF.Table[OttoSessionToolCT]
 		type: DF.Literal["Task", "Chat"]
 		uid: DF.Data | None
 	# end: auto-generated types
@@ -315,7 +315,7 @@ class OttoSession(Document):
 	@frappe.whitelist()
 	def get_stats(self):
 		if not (session := self._get_session()):
-			return "No Session"
+			return None
 
 		return llm.get_stats(session)
 
