@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "uid",
+  "is_selected",
   "column_break_mgws",
   "selected",
   "next",
@@ -137,13 +138,20 @@
    "in_list_view": 1,
    "label": "Content",
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "Whether this Item has been selected as a next Item. This may be unchecked if execution resumes from an earlier point with a different item.",
+   "fieldname": "is_selected",
+   "fieldtype": "Check",
+   "label": "Is Selected"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-07-10 11:45:41.786403",
+ "modified": "2025-07-11 12:00:16.893047",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Session Item CT",

@@ -16,12 +16,12 @@ if TYPE_CHECKING:
 	from otto.otto.doctype.otto_session.otto_session import OttoSession
 
 logger = otto.logger("otto_execution")
+DEFAULT_MAX_LLM_CALLS = 10
 
 
 class OttoExecution(Document):
 	# begin: auto-generated types
 	# This code is auto-generated. Do not modify anything in this block.
-
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
@@ -35,6 +35,7 @@ class OttoExecution(Document):
 		target_doctype: DF.Link | None
 		task: DF.Link
 	# end: auto-generated types
+	_session: OttoSession | None = None
 
 	@staticmethod
 	def new(
@@ -115,55 +116,70 @@ class OttoExecution(Document):
 			self.set_status("Failure", "\n".join(reasons))
 
 	def loop(self, context: str | list[str] | None = None):
-		from otto.otto.doctype.otto_llm.otto_llm import get_reasoning_effort
-
 		try:
 			session = self.get_session()
 			item, reason = session.interact(context)
 		except Exception as e:
 			otto.log_error(title="interact error", doc=self)
-			self.set_status("Failure", f"Interaction errored out: {e}")
-			return
+			return self.set_status("Failure", f"Interaction errored out: {e}")
 
 		if reason:
 			return self.set_status("Failure", reason)
 
 		if item is None:
-			self.set_status("Failure", reason)
-			return
+			return self.set_status("Failure", reason)
 
 		try:
 			session.run_tools()
 		except Exception as e:
 			otto.log_error(title="run_tools error", doc=self)
-			self.set_status("Failure", f"Error in run_tools: {e}")
-			return
+			return self.set_status("Failure", f"Error in run_tools: {e}")
 
-		if self.should_stop(item):
+		if self.should_stop(session):
 			return self.set_status("Success")
 
 		self.loop(None)
 
-	def get_session(self) -> OttoSession:
-		if self._session is not None:
-			return self._session
-		self._session = otto.get(OttoSession, self.session)
-		return self._session
-
-	def should_stop(self, item: SessionItem) -> bool:
-		"""Check if end_task has been called or if session is looping indefinitely."""
-		if item["meta"]["end_reason"] == "tool_use":
-			return has_task_ended(item["content"])
-
-		if item["meta"]["end_reason"] != "turn_end":
+	def should_stop(self, session: OttoSession) -> bool:
+		item = session.get_last_item()
+		if item is None:
 			return False
 
-		"""
-		This has been added cause Gemini 2.5 Flash did not call end_task and
-		instead so for smaller models, this check should suffice until a better
-		solution is found.
-		"""
-		return item["meta"]["output_tokens"] == 0
+		"""Check if end_task has been called or if session is looping indefinitely."""
+		for c in item["content"]:
+			if c["type"] == "tool_use" and c["name"] == "end_task":
+				self.set_status("Success")
+				return True
+
+		max_llm_calls = frappe.get_cached_value(
+			"Otto Settings",
+			"Otto Settings",
+			"max_llm_calls",
+		)
+		if max_llm_calls is None:
+			max_llm_calls = DEFAULT_MAX_LLM_CALLS
+
+		if max_llm_calls > 0 and session.get_count_of_llm_calls() >= max_llm_calls:
+			self.set_status("Failure", "Max LLM calls reached")
+			return True
+
+		# This has been added cause Gemini 2.5 Flash did not call end_task and
+		# instead so for smaller models, this check should suffice until a better
+		# solution is found.
+		if item["meta"]["output_tokens"] == 0:
+			self.set_status("Failure", "No output tokens")
+			return True
+
+		return False
+
+	def get_session(self) -> OttoSession:
+		from otto.otto.doctype.otto_session.otto_session import OttoSession
+
+		if self._session is not None:
+			return self._session
+
+		self._session = otto.get(OttoSession, self.session)
+		return self._session
 
 	def get_context(self, doc: Document | None, event: str) -> tuple[str | list, None] | tuple[None, str]:
 		from otto.otto.doctype.otto_task.otto_task import run_get_context
@@ -268,10 +284,3 @@ def set_session_tools(session: OttoSession, task: str):
 
 	session.save(ignore_permissions=True, ignore_version=True)
 	frappe.db.commit()
-
-
-def has_task_ended(content: list[Content]) -> bool:
-	for c in content:
-		if c["type"] == "tool_use" and c["name"] == "end_task":
-			return True
-	return False

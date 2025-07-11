@@ -5,10 +5,11 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "column_break_isov",
-  "task_execution_timeout",
-  "column_break_bylk",
   "is_enabled",
+  "hard_stops_section",
+  "task_execution_timeout",
+  "column_break_dbcw",
+  "max_llm_calls",
   "api_keys_section",
   "anthropic_api_key",
   "openai_api_key",
@@ -33,20 +34,11 @@
    "label": "OpenAI API Key"
   },
   {
-   "default": "30",
-   "fieldname": "column_break_isov",
-   "fieldtype": "Column Break"
-  },
-  {
    "default": "0",
-   "description": "Master switch that enables Otto, if unchecked all task handling will be disabled.\n<br>\nDoes not prevent manual session.",
+   "description": "Master switch that enables Otto, if unchecked all automated task handling will be disabled.\n<br>\nDoes not prevent manual session.",
    "fieldname": "is_enabled",
    "fieldtype": "Check",
    "label": "Is Enabled"
-  },
-  {
-   "fieldname": "column_break_bylk",
-   "fieldtype": "Column Break"
   },
   {
    "fieldname": "env_section",
@@ -70,12 +62,28 @@
    "fieldname": "task_execution_timeout",
    "fieldtype": "Int",
    "label": "Task Execution Timeout"
+  },
+  {
+   "fieldname": "hard_stops_section",
+   "fieldtype": "Section Break",
+   "label": "Hard Stops"
+  },
+  {
+   "fieldname": "column_break_dbcw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "20",
+   "description": "Max number of LLM calls allowed in a task's execution before stopping. If set to zero then no limit is placed.\n<br>\nThis is required because as context grows long, an LLM can get stuck in a loop without terminating the task.",
+   "fieldname": "max_llm_calls",
+   "fieldtype": "Int",
+   "label": "Max LLM Calls (in Execution)"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-07-10 14:14:08.935101",
+ "modified": "2025-07-11 11:53:06.810090",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Settings",

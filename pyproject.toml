@@ -7,7 +7,7 @@ readme = "README.md"
 dynamic = ["version"]
 dependencies = [
     # "frappe~=15.0.0" # Installed and managed by bench.
-    "litellm>=1.72.4",
+    "litellm>=1.74.0",
 ]
 
 [build-system]

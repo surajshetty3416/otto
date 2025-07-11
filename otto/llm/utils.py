@@ -145,6 +145,9 @@ def update_with_tool_result(*, session: Session, result: Any, id: str, is_error:
 			if not isinstance(result, str):
 				result = json.dumps(result)
 
+			if part["status"] != "pending":
+				continue
+
 			part["result"] = result
 			part["status"] = "success" if not is_error else "error"
 			return

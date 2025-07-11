@@ -13,6 +13,7 @@ from otto.otto.doctype.otto_task.tools import meta_tools
 
 logger = otto.logger("otto_task", "DEBUG")
 
+DEFAULT_TIMEOUT = 30
 EVENT_MAP = {
 	"after_insert": "On Create",
 	"on_update": "On Update",
@@ -354,8 +355,15 @@ def get_tools(task: str):
 	return tools
 
 
-def get_timeout():
-	return frappe.get_cached_value("Otto Settings", "Otto Settings", "task_execution_timeout") * 60
+def get_timeout() -> int:
+	timeout = frappe.get_cached_value("Otto Settings", "Otto Settings", "task_execution_timeout")
+	if timeout is None:
+		return DEFAULT_TIMEOUT * 60
+
+	if not isinstance(timeout, int):
+		timeout = int(timeout)
+
+	return timeout * 60
 
 
 def test_condition(task: str, condition: str, doc: Document) -> bool:

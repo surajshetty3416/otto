@@ -168,12 +168,11 @@ class OttoSession(Document):
 
 			result = None
 			is_error = False
-			if is_meta_tool(content):
-				continue
 
-			tool_name = tool_map[content["name"]]
-			env_str = env_map.get(tool_name, None)
-			result, is_error = self._execute_tool(tool_name, content["args"], env_str)
+			if not is_meta_tool(content):
+				tool_name = tool_map[content["name"]]
+				env_str = env_map.get(tool_name, None)
+				result, is_error = self._execute_tool(tool_name, content["args"], env_str)
 
 			llm.update_with_tool_result(session=session, result=result, id=content["id"], is_error=is_error)
 			self._set_session(session)
@@ -247,6 +246,7 @@ class OttoSession(Document):
 				osi = OttoSessionItemCT.from_session_item(item)
 			else:
 				osi.sync_with_session_item(item)
+			osi.is_selected = True
 			added.add(item["id"])
 			self.append("items", osi)
 
@@ -261,10 +261,24 @@ class OttoSession(Document):
 			else:
 				osi.sync_with_session_item(item)
 
+			osi.is_selected = False
 			self.append("items", osi)
 
 		self.save(ignore_permissions=True, ignore_version=True)
 		frappe.db.commit()
+
+	def get_count_of_llm_calls(self, selected: bool = False):
+		"""
+		If selected is True, returns the number of LLM calls in the selected items.
+		If selected is False returns total count including selected and non-selected items.
+		"""
+		count = 0
+		for item in self.items:
+			if (selected and not item.is_selected) or item.role != "agent":
+				continue
+
+			count += 1
+		return count
 
 	def _execute_tool(self, tool_name: str, args: dict, env_str: str | None) -> tuple[Any, bool]:
 		"""Executes tool and returns tuple of (result, is_error)"""

@@ -27,6 +27,7 @@ class OttoSessionItemCT(Document):
 		end_reason: DF.Data | None
 		end_time: DF.Datetime | None
 		input_tokens: DF.Int
+		is_selected: DF.Check
 		model: DF.Data | None
 		next: DF.SmallText | None
 		output_tokens: DF.Int
@@ -66,7 +67,7 @@ class OttoSessionItemCT(Document):
 		self.end_reason = item["meta"]["end_reason"]
 
 		# Content
-		self.content = json.dumps(item["content"])
+		self.content = json.dumps(item["content"], indent=2)
 
 	def to_session_item(self) -> SessionItem:
 		item = SessionItem(
