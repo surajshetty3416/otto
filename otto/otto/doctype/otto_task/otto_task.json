@@ -135,10 +135,6 @@
  "index_web_pages_for_search": 1,
  "links": [
   {
-   "link_doctype": "Otto Session",
-   "link_fieldname": "task"
-  },
-  {
    "link_doctype": "Otto Scrapbook",
    "link_fieldname": "task"
   },
@@ -147,7 +143,7 @@
    "link_fieldname": "task"
   }
  ],
- "modified": "2025-07-11 12:18:02.717719",
+ "modified": "2025-07-15 14:31:15.708603",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Task",

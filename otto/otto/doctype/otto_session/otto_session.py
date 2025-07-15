@@ -41,7 +41,6 @@ class OttoSession(Document):
 
 	if TYPE_CHECKING:
 		from frappe.types import DF
-
 		from otto.otto.doctype.otto_session_item_ct.otto_session_item_ct import OttoSessionItemCT
 		from otto.otto.doctype.otto_session_tool_ct.otto_session_tool_ct import OttoSessionToolCT
 

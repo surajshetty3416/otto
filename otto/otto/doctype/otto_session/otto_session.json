@@ -140,9 +140,13 @@
   {
    "link_doctype": "Otto Scrapbook",
    "link_fieldname": "session"
+  },
+  {
+   "link_doctype": "Otto Execution",
+   "link_fieldname": "session"
   }
  ],
- "modified": "2025-07-11 13:56:27.557652",
+ "modified": "2025-07-15 14:31:52.138932",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Session",
