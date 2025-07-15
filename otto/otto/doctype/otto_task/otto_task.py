@@ -193,6 +193,7 @@ class OttoTask(Document):
 
 	@frappe.whitelist()
 	def export_task(self):
+		# TODO: update this to match refactor
 		llm = frappe.get_all(
 			"Otto LLM",
 			filters={"name": self.llm},
@@ -391,6 +392,7 @@ def test_condition(task: str, condition: str, doc: Document) -> bool:
 
 @frappe.whitelist()
 def import_task(data: str):
+	# TODO: update this to match refactor
 	_data = json.loads(data)
 
 	from otto.otto.doctype.otto_tool.otto_tool import OttoTool

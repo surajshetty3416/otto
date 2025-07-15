@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 	from otto.otto.doctype.otto_session.otto_session import OttoSession
 
 logger = otto.logger("otto_execution")
-DEFAULT_MAX_LLM_CALLS = 10
+DEFAULT_MAX_LLM_CALLS = 30
 
 
 class OttoExecution(Document):
@@ -94,7 +94,7 @@ class OttoExecution(Document):
 
 		return frappe.get_doc(self.target_doctype, self.target)
 
-	def validate(self):
+	def before_save(self):
 		tool_names = frappe.get_all("Otto Task Tool CT", filters={"parent": self.task}, pluck="tool")
 		tools = frappe.get_all("Otto Tool", filters={"name": ("in", tool_names)}, fields=["slug", "is_valid"])
 
@@ -113,7 +113,7 @@ class OttoExecution(Document):
 				reasons.append(f"Tool {tool.slug} env is not valid JSON: {e}")
 
 		if reasons:
-			self.set_status("Failure", "\n".join(reasons))
+			self.set_status("Failure", "\n".join(reasons), skip_save=True)
 
 	def loop(self, context: str | list[str] | None = None):
 		try:
@@ -203,9 +203,14 @@ class OttoExecution(Document):
 		self,
 		status: Literal["Pending", "Running", "Success", "Failure"],
 		reason: str | None = None,
+		skip_save: bool = False,  # used in before save to prevent recursion
 	):
 		self.status = status
 		self.reason = reason
+
+		if skip_save:
+			return
+
 		self.save(ignore_permissions=True, ignore_version=True)
 		frappe.db.commit()
 
@@ -219,7 +224,7 @@ class OttoExecution(Document):
 		self.save()
 
 		frappe.enqueue_doc(
-			doctype="Otto Session",
+			doctype="Otto Execution",
 			name=self.name,
 			method="loop",
 			timeout=get_timeout(),
@@ -245,7 +250,6 @@ def get_recent_execution(limit: int = 20) -> list[dict]:
 		session["task_name"] = task_map[session["task"]]["title"]
 
 	return sessions
-
 
 
 def set_session_tools(session: OttoSession, task: str):

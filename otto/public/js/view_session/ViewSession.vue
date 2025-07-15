@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, reactive, ref } from "vue";
+import { onMounted, ref } from "vue";
 import Detail from "./components/Detail.vue";
 import SessionViewer from "./components/SessionViewer.vue";
 import PreViewer from "./components/PreViewer.vue";

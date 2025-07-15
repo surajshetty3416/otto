@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import json
 from typing import Any
 
@@ -16,8 +17,8 @@ def json_dumps(value: Any) -> tuple[str, bool]:
 
 
 def _safe_dumps_default(value: Any):
-	# if isinstance(value, Document):
-	# 	return f"{value.doctype}#{value.name}"
+	if isinstance(value, datetime.datetime):
+		return value.isoformat()
 	try:
 		return str(value)
 	except ValueError:

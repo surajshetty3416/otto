@@ -1,6 +1,6 @@
 frappe.listview_settings["Otto Task"] = {
 	onload(listview) {
-		listview.page.add_inner_button("Import Task", import_task);
+		// listview.page.add_inner_button("Import Task", import_task);
 	},
 };
 
