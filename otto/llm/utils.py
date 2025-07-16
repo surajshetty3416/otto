@@ -6,9 +6,12 @@ import json
 import mimetypes
 import os
 import uuid
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, TypeGuard
 from urllib.parse import urlparse
 from urllib.request import urlopen
+
+import frappe
 
 from otto.llm.types import Session
 from otto.utils import json_dumps
@@ -359,3 +362,16 @@ def to_content(query: str | list[Any]) -> list[UserContent]:
 
 		content.append(c)
 	return content
+
+
+@contextmanager
+def reset_user(force: bool = False):
+	user = frappe.local.session.user
+	try:
+		# Set user may be called somewhere in the callstack of the function that
+		# is decorated with this context manager.
+		yield
+	finally:
+		if frappe.local.session.user != user or force:
+			assert isinstance(user, str), "sanity check"
+			frappe.set_user(user)

@@ -11,6 +11,7 @@ import frappe
 from frappe.exceptions import ValidationError
 from frappe.model.document import Document
 
+from otto.llm.utils import reset_user
 from otto.otto.doctype.otto_tool import lib
 from otto.utils import execute
 
@@ -190,6 +191,7 @@ class OttoTool(Document):
 			stderr="",
 		)
 
+	@reset_user()
 	def execute(
 		self,
 		args: dict[str, Any],

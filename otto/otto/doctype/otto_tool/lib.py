@@ -118,6 +118,9 @@ def to_html(content: str):
 
 	return markdown(content, extras=extras)
 
+def set_user(user: str):
+	"""Sets the current user for the session"""
+	frappe.set_user(user)
 
 def get_lib(env: dict | None = None):
 	"""Returned object is available in scripts and code as otto.PROPERTY"""
@@ -128,5 +131,6 @@ def get_lib(env: dict | None = None):
 			"get_file": get_file,
 			"interpolate_imgs": interpolate_imgs,
 			"to_html": to_html,
+			"set_user": set_user,
 		}
 	)

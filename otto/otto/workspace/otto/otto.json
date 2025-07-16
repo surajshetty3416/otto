@@ -18,35 +18,6 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Executions",
-   "link_count": 2,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Otto Execution",
-   "link_count": 0,
-   "link_to": "Otto Session",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Otto Scrapbook",
-   "link_count": 0,
-   "link_to": "Otto Scrapbook",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
    "label": "Definitions",
    "link_count": 2,
    "link_type": "DocType",
@@ -111,9 +82,48 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Executions",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Otto Session",
+   "link_count": 0,
+   "link_to": "Otto Session",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Otto Scrapbook",
+   "link_count": 0,
+   "link_to": "Otto Scrapbook",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Otto Execution",
+   "link_count": 0,
+   "link_to": "Otto Execution",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2025-07-09 13:02:43.120245",
+ "modified": "2025-07-15 14:36:49.425209",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto",
