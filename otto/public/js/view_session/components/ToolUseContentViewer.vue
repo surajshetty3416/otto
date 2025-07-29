@@ -1,6 +1,12 @@
 <script setup>
 import { ref } from "vue";
-import { format_date, format_duration, get_status_background, get_status_color } from "../utils";
+import {
+	copy_to_clipboard,
+	format_date,
+	format_duration,
+	get_status_background,
+	get_status_color,
+} from "../utils";
 import ContentViewer from "./ContentViewer.vue";
 
 const props = defineProps({
@@ -65,24 +71,46 @@ const show = ref(true);
 		<!-- Row Body -->
 		<div class="row-body" v-if="show">
 			<div class="row-body-item">
-				<div class="label" title="Args passed to the tool by the LLM">Args</div>
+				<div
+					class="label"
+					title="Args passed to the tool by the LLM. Click to copy."
+					@click="copy_to_clipboard(call.args)"
+				>
+					Args
+				</div>
 				<ContentViewer :value="call.args" class="content-viewer" />
 			</div>
 
 			<div class="row-body-item">
-				<div class="label" title="Result returned by the tool given to the LLM">
+				<div
+					class="label"
+					title="Result returned by the tool given to the LLM. Click to copy."
+					@click="copy_to_clipboard(call.result)"
+				>
 					Result
 				</div>
 				<ContentViewer :value="call.result" class="content-viewer" />
 			</div>
 
 			<div class="row-body-item" v-if="call.stdout">
-				<div class="label" title="Output printed to stdout by the tool">Stdout</div>
+				<div
+					class="label"
+					title="Output printed to stdout by the tool. Click to copy."
+					@click="copy_to_clipboard(call.stdout)"
+				>
+					Stdout
+				</div>
 				<ContentViewer :value="call.stdout" class="content-viewer" />
 			</div>
 
 			<div class="row-body-item" v-if="call.stderr">
-				<div class="label" title="Output printed to stderr by the tool">Stderr</div>
+				<div
+					class="label"
+					title="Output printed to stderr by the tool. Click to copy."
+					@click="copy_to_clipboard(call.stderr)"
+				>
+					Stderr
+				</div>
 				<ContentViewer :value="call.stderr" class="content-viewer" />
 			</div>
 		</div>
@@ -150,6 +178,7 @@ const show = ref(true);
 	}
 
 	.label {
+		cursor: pointer;
 		font-size: var(--text-xs);
 		font-family: monospace;
 		color: var(--gray-600);

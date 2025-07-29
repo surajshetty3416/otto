@@ -1,4 +1,5 @@
 <script setup>
+import { copy_to_clipboard } from "../utils";
 import PreViewer from "./PreViewer.vue";
 const props = defineProps({
 	object: { type: Object, required: true },
@@ -21,7 +22,13 @@ function format(value) {
 	<div class="container">
 		<template v-for="(value, key) in object" :key="key">
 			<div class="item">
-				<div class="key">{{ key }}</div>
+				<div
+					class="key"
+					:title="`Click to copy value of ${key}`"
+					@click="copy_to_clipboard(value)"
+				>
+					{{ key }}
+				</div>
 				<PreViewer :value="format(value)" />
 			</div>
 		</template>
@@ -41,6 +48,7 @@ function format(value) {
 	font-family: monospace;
 	margin: 0;
 	padding: 0;
+	cursor: pointer;
 }
 
 .item {

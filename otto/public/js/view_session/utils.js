@@ -75,3 +75,29 @@ export function get_status_style(status) {
 
 	return `color: ${color}; background-color: ${background}`;
 }
+
+export async function copy_to_clipboard(value) {
+	if (typeof value !== "string") {
+		if (typeof value === "object" || Array.isArray(value)) {
+			text = JSON.stringify(value);
+		} else {
+			text = String(value);
+		}
+	} else {
+		text = value;
+	}
+
+	try {
+		await navigator.clipboard.writeText(text);
+		frappe.show_alert({
+			message: __("Copied to clipboard"),
+			indicator: "green",
+		});
+	} catch (err) {
+		console.error("Failed to copy text: ", err);
+		frappe.show_alert({
+			message: __("Failed to copy to clipboard"),
+			indicator: "red",
+		});
+	}
+}
