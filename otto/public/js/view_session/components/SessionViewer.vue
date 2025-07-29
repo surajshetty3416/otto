@@ -236,6 +236,6 @@ const duration = computed(() => {
 }
 
 .separator {
-	color: var(--gray-400);
+	color: var(--gray-300);
 }
 </style>

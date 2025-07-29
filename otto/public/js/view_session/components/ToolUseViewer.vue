@@ -1,6 +1,6 @@
 <script setup>
 import { computed, reactive, ref } from "vue";
-import { get_link, get_chevron, safe_stringify } from "../utils";
+import { get_link, get_chevron, safe_stringify, get_status_style } from "../utils";
 import ContentViewer from "./ContentViewer.vue";
 import Link from "./Link.vue";
 
@@ -31,13 +31,6 @@ function showDefault(key) {
 	if (keys.length === 0) return false;
 
 	return lengths[key] < 2000;
-}
-
-function get_status_style(status) {
-	if (status === "pending") return "color: var(--gray-600); background-color: var(--gray-100);";
-	if (status === "success")
-		return "color: var(--green-600); background-color: var(--green-100);";
-	if (status === "error") return "color: var(--red-600); background-color: var(--red-100);";
 }
 
 const isMetaTool = computed(() => {

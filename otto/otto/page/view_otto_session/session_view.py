@@ -218,9 +218,11 @@ def set_tool_use_info(doc: OttoSession, info: dict[str, Any]):
 					"description": tool.get("description", ""),
 					"calls": [],
 					"is_meta": is_meta_tool(c),
+					"total_duration": 0,
 				}
 
 			tool_use[slug]["call_count"] += 1
+			tool_use[slug]["total_duration"] += c.get("end_time", 0) - c.get("start_time", 0)
 
 			if result is None or result == "" or result == "null" or result == "[]" or result == "{}":
 				tool_use[slug]["empty_result_count"] += 1

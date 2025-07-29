@@ -13,9 +13,13 @@ export function format_date(timestamp) {
 	return new Date(timestamp).toLocaleString();
 }
 
-export function format_duration(duration) {
+export function format_duration(duration, fixed = 2) {
+	if (duration < 1) {
+		return `${(duration * 1000).toFixed(fixed)}ms`;
+	}
+
 	if (duration < 60) {
-		return `${duration.toFixed(2)}s`;
+		return `${duration.toFixed(fixed)}s`;
 	}
 
 	return frappe.utils.get_formatted_duration(duration);
@@ -51,4 +55,23 @@ export function safe_stringify(obj) {
 	} catch {
 		return String(obj);
 	}
+}
+
+export function get_status_color(status) {
+	if (status === "pending") return "var(--gray-600)";
+	if (status === "success") return "var(--green-600)";
+	if (status === "error") return "var(--red-600)";
+}
+
+export function get_status_background(status, value = 100) {
+	if (status === "pending") return `var(--gray-${value})`;
+	if (status === "success") return `var(--green-${value})`;
+	if (status === "error") return `var(--red-${value})`;
+}
+
+export function get_status_style(status) {
+	const color = get_status_color(status);
+	const background = get_status_background(status);
+
+	return `color: ${color}; background-color: ${background}`;
 }

@@ -7,6 +7,7 @@ import ScrapbookViewer from "./components/ScrapbookViewer.vue";
 import SectionContainer from "./components/SectionContainer.vue";
 import StatsViewer from "./components/StatsViewer.vue";
 import { format_date, get_link, link_icon } from "./utils";
+import AllToolUseViewer from "./components/AllToolUseViewer.vue";
 
 const props = defineProps({
 	sessionName: {
@@ -161,6 +162,17 @@ onMounted(async () => await fetchData());
 				:item="item"
 				:index="index"
 			/>
+		</SectionContainer>
+
+		<!-- Tool Use -->
+		<SectionContainer
+			v-if="info?.tool_use && Object.keys(info.tool_use).length > 0"
+			title="Tools: tool calls made by the LLM"
+			label="Tools"
+			:isLoading="loading"
+			:error="error"
+		>
+			<AllToolUseViewer :tool_use="info.tool_use" />
 		</SectionContainer>
 
 		<!-- Instruction -->

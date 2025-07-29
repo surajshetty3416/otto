@@ -1,8 +1,6 @@
 <script setup>
-import { computed } from "vue";
-import { format_duration, format_number, get_link } from "../utils";
+import { format_duration, format_number } from "../utils";
 import Detail from "./Detail.vue";
-import Link from "./Link.vue";
 
 const props = defineProps({
 	stats: {
@@ -13,31 +11,6 @@ const props = defineProps({
 		type: Object,
 		required: true,
 	},
-});
-
-const tools = computed(() => {
-	if (!props.stats?.tools || Object.keys(props.stats.tools).length === 0) return null;
-
-	const tools = [];
-
-	for (const tool in props.stats.tools) {
-		tools.push({
-			name: tool,
-			url: get_link("Otto Tool", props.slug_map[tool]),
-			called_count: props.stats.tools[tool].called_count,
-			empty_result_count: props.stats.tools[tool].empty_result_count,
-			error_count: props.stats.tools[tool].error_count,
-			is_meta: tool === "end_task" || tool === "think",
-		});
-	}
-
-	return tools
-		.sort((a, b) => {
-			return b.called_count - a.called_count;
-		})
-		.sort((a, b) => {
-			return a.is_meta - b.is_meta;
-		});
 });
 </script>
 <template>
@@ -62,44 +35,6 @@ const tools = computed(() => {
 			label="Max Output Tokens"
 			:value="format_number(stats.max_output_tokens) + ' tok'"
 		/>
-	</div>
-	<!-- Tool Use -->
-	<div v-if="tools" class="tool-stats-wrapper">
-		<div class="tool-stats-container">
-			<div class="tool-stats-grid header">
-				<div>Tool Name</div>
-				<div
-					class="text-right"
-					title="Number of times the tool was called in this session"
-				>
-					Times Called
-				</div>
-				<div class="text-right" title="Number of times the tool returned an empty result">
-					Empty Results
-				</div>
-				<div
-					class="text-right"
-					title="Number of times the tool errored out or returned an error"
-				>
-					Errors
-				</div>
-			</div>
-			<div v-for="tool in tools" :key="tool.name" class="tool-stats-grid">
-				<Link class="tool-name" :link="tool.url || 'test.com'"
-					>{{ tool.name }}
-					<span v-if="tool.is_meta" :title="`${tool.name} is a meta tool`">*</span>
-				</Link>
-				<!-- <div class="tool-name">
-					{{ tool.name }}
-					<span v-if="tool.is_meta" :title="`${tool.name} is a meta tool`">*</span>
-				</div> -->
-				<div class="text-right">{{ format_number(tool.called_count) }}</div>
-				<div class="text-right">
-					{{ format_number(tool.empty_result_count) }}
-				</div>
-				<div class="text-right">{{ format_number(tool.error_count) }}</div>
-			</div>
-		</div>
 	</div>
 </template>
 <style scoped>
