@@ -13,11 +13,11 @@ from urllib.request import urlopen
 
 import frappe
 
-from otto.llm.types import Session
+from otto.llm.types import Session, ToolUseContent
 from otto.utils import json_dumps
 
 if TYPE_CHECKING:
-	from otto.llm.types import Session, SessionItem, SessionMeta, UserContent
+	from otto.llm.types import SessionItem, SessionMeta, ToolUseUpdate, UserContent
 
 
 def get_session_list(session: Session) -> list[SessionItem]:
@@ -142,21 +142,30 @@ def update_session(session: Session, last_id: str, item: SessionItem) -> None:
 	session["items"][item["id"]] = item
 
 
-def update_with_tool_result(*, session: Session, result: Any, id: str, is_error: bool = False) -> None:
+def update_with_tool_result(*, session: Session, id: str, update: ToolUseUpdate) -> None:
+	content: None | ToolUseContent = None
+
 	for item in session["items"].values():
 		for part in item["content"]:
 			if part["type"] != "tool_use" or part["id"] != id:
 				continue
 
-			if not isinstance(result, str):
-				result = json.dumps(result)
+			content = part
+			break
 
-			if part["status"] != "pending":
-				continue
+	if content is None or content["status"] != "pending":
+		return
 
-			part["result"] = result
-			part["status"] = "success" if not is_error else "error"
-			return
+	result = update["result"]
+	if not isinstance(result, str):
+		result = json.dumps(result)
+
+	content["status"] = "success" if not update["is_error"] else "error"
+	content["result"] = result
+	content["stdout"] = update["stdout"]
+	content["stderr"] = update["stderr"]
+	content["start_time"] = update["start_time"]
+	content["end_time"] = update["end_time"]
 
 
 def get_last_id(session: Session):

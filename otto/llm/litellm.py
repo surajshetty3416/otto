@@ -12,10 +12,6 @@ appreciated, LiteLLM's code and docs quality, at the time of writing, are not up
 to the mark.
 """
 
-# TODO:
-# - handle refusals
-# - handle error outs
-
 from __future__ import annotations
 
 import json
@@ -266,6 +262,10 @@ def _get_content(completion_response: dict):
 					args=json.loads(func.get("arguments")),
 					status="pending",
 					result=None,
+					start_time=0,
+					end_time=0,
+					stdout=None,
+					stderr=None,
 				)
 			)
 

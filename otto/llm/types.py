@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, TypedDict
+from typing import Any, Literal, TypedDict
 
 ID = str
 SessionRole = Literal["user", "agent"]
@@ -26,6 +26,12 @@ class ToolUseContent(TypedDict):
 	args: dict
 	status: Literal["pending", "success", "error"]
 	result: str | None  # set only after tool is invoked
+
+	# Execution Log
+	start_time: float
+	end_time: float
+	stdout: str | None
+	stderr: str | None
 
 
 class ImageContent(TypedDict):
@@ -111,3 +117,12 @@ If input is None, it is treated as an empty list. It should be None only if the
 session provided has some update such as a tool result.
 """
 InteractInput = str | list[str | UserContent] | list[UserContent] | None
+
+
+class ToolUseUpdate(TypedDict):
+	result: Any
+	stdout: str | None
+	stderr: str | None
+	start_time: float
+	end_time: float
+	is_error: bool

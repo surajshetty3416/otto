@@ -4,6 +4,7 @@ from __future__ import annotations
 
 # import frappe
 import json
+import time
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 import frappe
@@ -11,7 +12,7 @@ from frappe.model.document import Document
 
 import otto
 from otto import llm
-from otto.llm.types import Session
+from otto.llm.types import Session, ToolUseUpdate
 from otto.llm.utils import get_last_id, get_session_list
 from otto.otto.doctype.otto_task.tools import is_meta_tool
 
@@ -166,15 +167,22 @@ class OttoSession(Document):
 			if content["type"] != "tool_use":
 				continue
 
-			result = None
-			is_error = False
+			# Used if meta tool
+			update = ToolUseUpdate(
+				start_time=time.time(),
+				end_time=time.time(),
+				is_error=False,
+				result="",
+				stdout=None,
+				stderr=None,
+			)
 
 			if not is_meta_tool(content):
 				tool_name = tool_map[content["name"]]
 				env_str = env_map.get(tool_name, None)
-				result, is_error = self._execute_tool(tool_name, content["args"], env_str)
+				update = self._execute_tool(tool_name, content["args"], env_str)
 
-			llm.update_with_tool_result(session=session, result=result, id=content["id"], is_error=is_error)
+			llm.update_with_tool_result(session=session, id=content["id"], update=update)
 			self._set_session(session)
 
 	def get_last_item(self) -> SessionItem | None:
@@ -280,27 +288,43 @@ class OttoSession(Document):
 			count += 1
 		return count
 
-	def _execute_tool(self, tool_name: str, args: dict, env_str: str | None) -> tuple[Any, bool]:
+	def _execute_tool(self, tool_name: str, args: dict, env_str: str | None) -> ToolUseUpdate:
 		"""Executes tool and returns tuple of (result, is_error)"""
 		from otto.otto.doctype.otto_tool.otto_tool import OttoTool
 
 		tool_doc = otto.get(OttoTool, tool_name)
+		update = ToolUseUpdate(
+			start_time=time.time(),
+			end_time=time.time(),
+			is_error=False,
+			result="",
+			stdout=None,
+			stderr=None,
+		)
 
 		try:
 			env = json.loads(env_str) if env_str else None
-			return tool_doc.execute(
+			result = tool_doc.execute(
 				args,
 				task=self._get_task_name(),
 				session=self.name,
 				env=env,
-			)["result"], False
+			)
+			update["is_error"] = False
+			update["result"] = result["result"]
+			update["stdout"] = result["stdout"]
+			update["stderr"] = result["stderr"]
+			update["end_time"] = time.time()
 		except Exception as e:
 			otto.log_error(
 				"Tool Use Error",
 				doc=self,
 				tool=tool_name,
 			)
-			return str(e), True
+			update["is_error"] = True
+			update["result"] = str(e)
+			update["end_time"] = time.time()
+		return update
 
 	def _get_task_name(self) -> str | None:
 		if self.type != "Task":
