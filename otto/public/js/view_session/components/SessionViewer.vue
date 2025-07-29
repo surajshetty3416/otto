@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { format_date, format_duration, format_number } from "../utils";
 import ToolUseViewer from "./ToolUseViewer.vue";
 import TextViewer from "./TextViewer.vue";
@@ -16,6 +16,7 @@ const props = defineProps({
 	},
 });
 
+const show = ref(true);
 const isSystem = computed(() => props.item.meta.role === "user");
 const cost = computed(() => (props.item.meta.cost ? `$${props.item.meta.cost.toFixed(6)}` : null));
 const duration = computed(() => {
@@ -29,7 +30,11 @@ const duration = computed(() => {
 
 <template>
 	<div class="session-item-container" :class="{ 'user-item': isSystem, 'llm-item': !isSystem }">
-		<div class="header" :class="{ 'user-header': isSystem, 'llm-header': !isSystem }">
+		<div
+			class="header"
+			:class="{ 'user-header': isSystem && show, 'llm-header': !isSystem && show }"
+			@click="show = !show"
+		>
 			<div class="role" :class="{ 'role-system': isSystem, 'role-llm': !isSystem }">
 				{{ isSystem ? "system" : "llm" }}
 			</div>
@@ -45,7 +50,7 @@ const duration = computed(() => {
 		</div>
 
 		<!-- Meta Data -->
-		<div class="meta" v-if="!isSystem">
+		<div class="meta" v-if="!isSystem && show">
 			<p
 				class="meta-item"
 				:title="`Input Tokens: ${item.meta.input_tokens}, Output Tokens:
@@ -72,7 +77,7 @@ const duration = computed(() => {
 		</div>
 
 		<!-- Content List -->
-		<div class="content-wrapper">
+		<div class="content-wrapper" v-if="show">
 			<div v-for="(content, index) in item.content" :key="index" class="content-block">
 				<!-- Text Block -->
 				<TextViewer
@@ -148,6 +153,11 @@ const duration = computed(() => {
 	font-size: var(--text-xs);
 	padding: var(--padding-sm);
 	font-family: monospace;
+	cursor: pointer;
+
+	&:hover {
+		background-color: var(--gray-50);
+	}
 
 	.header-meta {
 		color: var(--gray-500);
