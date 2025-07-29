@@ -57,20 +57,18 @@ export function safe_stringify(obj) {
 	}
 }
 
-export function get_status_color(status) {
-	if (status === "pending") return "var(--gray-600)";
-	if (status === "success") return "var(--green-600)";
-	if (status === "error") return "var(--red-600)";
-}
-
-export function get_status_background(status, value = 100) {
+export function get_status_color(status, value = 600) {
 	if (status === "pending") return `var(--gray-${value})`;
 	if (status === "success") return `var(--green-${value})`;
 	if (status === "error") return `var(--red-${value})`;
 }
 
+export function get_status_background(status) {
+	return get_status_color(status, 100);
+}
+
 export function get_status_style(status) {
-	const color = get_status_color(status);
+	const color = get_status_color(status, 600);
 	const background = get_status_background(status);
 
 	return `color: ${color}; background-color: ${background}`;

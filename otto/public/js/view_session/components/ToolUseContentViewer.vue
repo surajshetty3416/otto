@@ -4,8 +4,8 @@ import {
 	copy_to_clipboard,
 	format_date,
 	format_duration,
-	get_status_background,
 	get_status_color,
+	get_status_style,
 } from "../utils";
 import ContentViewer from "./ContentViewer.vue";
 
@@ -17,16 +17,18 @@ const props = defineProps({
 const show = ref(true);
 </script>
 <template>
-	<div>
-		<div
-			@click="show = !show"
-			class="call-row-header"
-			:style="{
-				backgroundColor: get_status_background(call.status, 50),
-			}"
-		>
+	<div class="container" :style="{ borderLeftColor: get_status_color(call.status, 200) }">
+		<div @click="show = !show" class="call-row-header">
 			<!-- Slug Index, Timestamp -->
 			<div class="left">
+				<div
+					:style="get_status_style(call.status)"
+					class="status"
+					:title="`Status: ${call.status}`"
+				>
+					{{ call.status }}
+				</div>
+
 				<p class="index">{{ tool.slug }} #{{ index + 1 }}</p>
 				<span class="separator">·</span>
 
@@ -54,17 +56,6 @@ const show = ref(true);
 				>
 					{{ format_duration(call.end_time - call.start_time, 3) }}
 				</p>
-				<span class="separator">·</span>
-
-				<div
-					:style="{
-						color: get_status_color(call.status),
-					}"
-					class="status"
-					:title="`Status: ${call.status}`"
-				>
-					{{ call.status }}
-				</div>
 			</div>
 		</div>
 
@@ -118,6 +109,11 @@ const show = ref(true);
 </template>
 
 <style scoped>
+.container {
+	border: 1px solid var(--gray-200);
+	border-left: 3px solid;
+}
+
 .call-row-header {
 	cursor: pointer;
 	display: flex;
@@ -141,10 +137,6 @@ const show = ref(true);
 			gap: var(--padding-lg);
 		}
 
-		.index {
-			font-style: italic;
-		}
-
 		p {
 			margin: 0;
 			padding: 0;
@@ -159,8 +151,7 @@ const show = ref(true);
 
 	.status {
 		font-size: var(--text-xs);
-		font-weight: 600;
-		background-color: transparent !important;
+		padding: 0 var(--padding-xs);
 		text-transform: capitalize;
 		margin: 0;
 	}
@@ -185,7 +176,8 @@ const show = ref(true);
 	}
 
 	.content-viewer {
-		background-color: var(--gray-50);
+		/* --gray-50 is f8f8f8 */
+		background-color: #fbfbfb;
 	}
 }
 </style>

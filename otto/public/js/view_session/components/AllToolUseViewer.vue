@@ -176,7 +176,6 @@ function get_title(tool) {
 }
 
 .call-row {
-	border: 1px solid var(--gray-200);
 	margin-bottom: var(--padding-md);
 
 	&:last-of-type {
