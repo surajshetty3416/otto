@@ -11,6 +11,7 @@ import frappe
 from frappe.exceptions import ValidationError
 from frappe.model.document import Document
 
+from otto.llm.types import ToolSchema
 from otto.llm.utils import reset_user
 from otto.otto.doctype.otto_tool import lib
 from otto.utils import execute
@@ -143,14 +144,14 @@ class OttoTool(Document):
 		self.is_valid = False
 
 	@frappe.whitelist()
-	def get_function_schema(self, slug: str | None = None):
+	def get_function_schema(self, slug: str | None = None) -> ToolSchema:
 		"""Returns function schema for the tool, add meta properties that might aid in usage reasoning."""
 		properties = {
 			arg.arg_name: {"type": arg.type, "description": arg.description or ""} for arg in self.args
 		}
 
 		"""Returns tool as a JSON Schema function"""
-		schema = {
+		schema: ToolSchema = {
 			"name": slug or self.slug,
 			"description": self.description or "",
 			"parameters": {
@@ -166,10 +167,7 @@ class OttoTool(Document):
 			},
 		}
 
-		return {
-			"type": "function",
-			"function": schema,
-		}
+		return schema
 
 	def mock(
 		self,

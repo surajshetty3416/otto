@@ -356,6 +356,37 @@ def get_tools(task: str):
 	return tools
 
 
+def get_tool_map(task: str) -> dict[str, tuple[str | None, str | None]]:
+	"""
+	returns dict[slug, (tool_name, env_str)]
+
+	returned map does not contain meta tools
+
+	slug: slug name given to the session (i.e. overriden name or actual if present)
+	tool_name: name of the Otto Tool doc
+	env_str: env string on the Task Tool CT item used during execution
+	"""
+	task_tools = frappe.get_all(
+		"Otto Task Tool CT",
+		filters={"parent": task},
+		fields=["tool", "slug", "env"],
+	)
+	tool_slugs = frappe.get_all(
+		"Otto Tool", filters={"name": ("in", [t.tool for t in task_tools])}, fields=["name", "slug"]
+	)
+	tool_slug_map = {t.name: t.slug for t in tool_slugs}
+
+	tool_map = {}
+	for tool in task_tools:
+		# slug = override slug or primary slug
+		slug = tool.get("slug") or tool_slug_map.get(tool.tool)
+		if not slug:
+			continue
+
+		tool_map[slug] = (tool.get("tool"), tool.get("env"))
+	return tool_map
+
+
 def get_timeout() -> int:
 	timeout = frappe.get_cached_value("Otto Settings", "Otto Settings", "task_execution_timeout")
 	if timeout is None:

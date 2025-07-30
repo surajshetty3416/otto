@@ -126,3 +126,15 @@ class ToolUseUpdate(TypedDict):
 	start_time: float
 	end_time: float
 	is_error: bool
+
+
+class ToolSchema(TypedDict):
+	name: str
+	description: str
+	parameters: ToolSchemaParameters
+
+
+class ToolSchemaParameters(TypedDict):
+	type: Literal["object"]
+	properties: dict[str, Any]
+	required: list[str]

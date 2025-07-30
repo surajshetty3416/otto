@@ -6,10 +6,9 @@
  "engine": "InnoDB",
  "field_order": [
   "uid",
-  "is_active",
   "first",
   "column_break_rygp",
-  "type",
+  "is_active",
   "reason",
   "section_break_excj",
   "items",
@@ -121,18 +120,11 @@
    "fieldtype": "Section Break"
   },
   {
+   "description": "Schemas of tools that are available to this session. Can be updated mid session.",
    "fieldname": "tools",
    "fieldtype": "Table",
    "label": "Tools",
    "options": "Otto Session Tool CT"
-  },
-  {
-   "fieldname": "type",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Type",
-   "options": "Task\nChat",
-   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
@@ -146,7 +138,7 @@
    "link_fieldname": "session"
   }
  ],
- "modified": "2025-07-15 14:31:52.138932",
+ "modified": "2025-07-30 11:50:55.401838",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Session",

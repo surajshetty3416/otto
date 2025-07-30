@@ -74,33 +74,29 @@ def get_adjacent_session(name: str, next: str | bool):
 def get_recent_sessions(limit: int = 20, page: int = 0) -> list[dict]:
 	sessions = frappe.get_all(
 		"Otto Session",
-		fields=["name", "type", "creation"],
+		fields=["name", "creation"],
 		limit=limit,
 		order_by="modified desc",
 		limit_start=page * limit,
 	)
 
-	executions = []
-	tasks = []
+	executions = frappe.get_all(
+		"Otto Execution",
+		filters={"session": ("in", [s["name"] for s in sessions])},
+		fields=["name", "status", "task", "target", "target_doctype", "session"],
+		limit=limit,
+		order_by="modified desc",
+	)
 
-	if any(s["type"] == "Task" for s in sessions):
-		executions = frappe.get_all(
-			"Otto Execution",
-			filters={"session": ("in", [s["name"] for s in sessions if s["type"] == "Task"])},
-			fields=["name", "status", "task", "target", "target_doctype", "session"],
-			limit=limit,
-			order_by="modified desc",
-		)
-
-		tasks = frappe.get_all(
-			"Otto Task", filters={"name": ("in", [e["task"] for e in executions])}, fields=["name", "title"]
-		)
+	tasks = frappe.get_all(
+		"Otto Task", filters={"name": ("in", [e["task"] for e in executions])}, fields=["name", "title"]
+	)
 
 	task_map = {t["name"]: t for t in tasks}
 	execution_map = {e["session"]: e for e in executions}
 
 	for s in sessions:
-		if s["type"] != "Task" or s["name"] not in execution_map:
+		if s["name"] not in execution_map:
 			s["execution"] = "-"
 			s["status"] = "-"
 			s["task"] = "-"
@@ -141,17 +137,22 @@ def set_execution_info(session_name: str, info: dict[str, Any]):
 
 def set_tools_info(session_name: str, info: dict[str, Any]):
 	"""Return task relevant info for a Task session view."""
+	# FIXME: do this for non execution linked sessions
+	# session_tools = frappe.db.get_all(
+	# 	"Otto Session Tool CT",
+	# 	filters={"parent": session_name},
+	# 	fields=["tool", "slug"],
+	# )
+	# if not session_tools and (task := info.get("task")):
+	task = info.get("task")
+	if not task:
+		return
+
 	session_tools = frappe.db.get_all(
-		"Otto Session Tool CT",
-		filters={"parent": session_name},
+		"Otto Task Tool CT",
+		filters={"parent": task},
 		fields=["tool", "slug"],
 	)
-	if not session_tools and (task := info.get("task")):
-		session_tools = frappe.db.get_all(
-			"Otto Task Tool CT",
-			filters={"parent": task},
-			fields=["tool", "slug"],
-		)
 
 	tools = frappe.db.get_all(
 		"Otto Tool",

@@ -17,6 +17,7 @@ from otto.otto.doctype.otto_task.tools import is_meta_tool
 if TYPE_CHECKING:
 	from otto.llm.types import SessionItem
 	from otto.otto.doctype.otto_session.otto_session import OttoSession
+	from otto.otto.doctype.otto_session_tool_ct.otto_session_tool_ct import OttoSessionToolCT
 
 logger = otto.logger("otto_execution")
 DEFAULT_MAX_LLM_CALLS = 30
@@ -52,6 +53,7 @@ class OttoExecution(Document):
 		instruction: str | None = None,
 	):
 		from otto.otto.doctype.otto_session.otto_session import OttoSession
+		from otto.otto.doctype.otto_task.otto_task import get_tools
 
 		doc = cast(OttoExecution, frappe.get_doc({"doctype": "Otto Execution", "task": task}))
 
@@ -68,9 +70,8 @@ class OttoExecution(Document):
 			llm=llm or frappe.get_cached_value("Otto Task", task, "llm"),
 			instruction=instruction or frappe.get_cached_value("Otto Task", task, "instruction"),
 			reasoning_effort=reasoning_effort,
-			session_type="Task",
+			tools=get_tools(task),
 		)
-		set_session_tools(session, task)
 
 		assert session.name is not None, "type check"
 		doc.session = session.name
@@ -150,7 +151,7 @@ class OttoExecution(Document):
 		content, it executes the requested tools and appends the results to the
 		session. It also handles special meta tools, like `end_task`.
 		"""
-		from otto.otto.doctype.otto_session.otto_session import get_tool_map
+		from otto.otto.doctype.otto_task.otto_task import get_tool_map
 
 		item = session_doc.get_last_item()
 		if item is None:
@@ -160,8 +161,7 @@ class OttoExecution(Document):
 		if session is None:
 			return
 
-		env_map = {t.name: t.env for t in session_doc.tools}
-		tool_map = get_tool_map(session_doc.tools)
+		tool_map = get_tool_map(self.task)
 
 		# Move meta tools to the end of the list
 		content = sorted(item["content"], key=lambda x: is_meta_tool(x))
@@ -180,9 +180,9 @@ class OttoExecution(Document):
 				stderr=None,
 			)
 
+			tool_name, env_str = tool_map.get(content["name"], (None, None))
 			if not is_meta_tool(content):
-				tool_name = tool_map[content["name"]]
-				env_str = env_map.get(tool_name, None)
+				assert tool_name is not None, "sanity check"
 				update = self._execute_tool(tool_name, content["args"], env_str)
 
 			llm.update_with_tool_result(session=session, id=content["id"], update=update)
@@ -245,7 +245,7 @@ class OttoExecution(Document):
 		if max_llm_calls is None:
 			max_llm_calls = DEFAULT_MAX_LLM_CALLS
 
-		if max_llm_calls > 0 and session.get_count_of_llm_calls() >= max_llm_calls:
+		if max_llm_calls > 0 and session.count_llm_calls() >= max_llm_calls:
 			self.set_status("Failure", "Max LLM calls reached")
 			return True
 
@@ -336,16 +336,3 @@ def get_recent_execution(limit: int = 20) -> list[dict]:
 		session["task_name"] = task_map[session["task"]]["title"]
 
 	return sessions
-
-
-def set_session_tools(session: OttoSession, task: str):
-	tools = frappe.get_all(
-		"Otto Task Tool CT",
-		filters={"parent": task, "is_enabled": True},
-		fields=["tool", "slug", "env"],
-	)
-	for t in tools:
-		session.append("tools", {**t, "is_enabled": True})
-
-	session.save(ignore_permissions=True, ignore_version=True)
-	frappe.db.commit()

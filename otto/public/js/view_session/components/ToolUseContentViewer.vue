@@ -4,6 +4,7 @@ import {
 	copy_to_clipboard,
 	format_date,
 	format_duration,
+	get_chevron,
 	get_status_color,
 	get_status_style,
 } from "../utils";
@@ -14,7 +15,7 @@ const props = defineProps({
 	call: { type: Object, required: true },
 	tool: { type: Object, required: true },
 });
-const show = ref(true);
+const show = ref(false);
 </script>
 <template>
 	<div class="container" :style="{ borderLeftColor: get_status_color(call.status, 200) }">
@@ -56,11 +57,14 @@ const show = ref(true);
 				>
 					{{ format_duration(call.end_time - call.start_time, 3) }}
 				</p>
+
+				<div v-html="get_chevron(show)"></div>
 			</div>
 		</div>
 
 		<!-- Row Body -->
 		<div class="row-body" v-if="show">
+			<!-- Args -->
 			<div class="row-body-item">
 				<div
 					class="label"
@@ -72,6 +76,7 @@ const show = ref(true);
 				<ContentViewer :value="call.args" class="content-viewer" />
 			</div>
 
+			<!-- Result -->
 			<div class="row-body-item">
 				<div
 					class="label"
@@ -83,6 +88,7 @@ const show = ref(true);
 				<ContentViewer :value="call.result" class="content-viewer" />
 			</div>
 
+			<!-- Stdout -->
 			<div class="row-body-item" v-if="call.stdout">
 				<div
 					class="label"
@@ -94,6 +100,7 @@ const show = ref(true);
 				<ContentViewer :value="call.stdout" class="content-viewer" />
 			</div>
 
+			<!-- Stderr -->
 			<div class="row-body-item" v-if="call.stderr">
 				<div
 					class="label"
@@ -128,14 +135,11 @@ const show = ref(true);
 
 	div {
 		display: flex;
-		align-items: baseline;
+		flex-direction: row;
+		align-items: center;
 		justify-content: center;
 		gap: var(--padding-sm);
 		font-family: monospace;
-
-		.left {
-			gap: var(--padding-lg);
-		}
 
 		p {
 			margin: 0;

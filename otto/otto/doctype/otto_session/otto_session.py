@@ -3,19 +3,16 @@
 from __future__ import annotations
 
 # import frappe
-import json
-import time
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, cast
 
 import frappe
 from frappe.model.document import Document
 
 import otto
 from otto import llm
-from otto.llm.types import Session, ToolUseUpdate
+from otto.llm.types import Session, ToolSchema
 from otto.llm.utils import get_last_id, get_session_list
 from otto.otto.doctype.otto_session_tool_ct.otto_session_tool_ct import OttoSessionToolCT
-from otto.otto.doctype.otto_task.tools import is_meta_tool
 
 if TYPE_CHECKING:
 	from otto.llm.types import Session, SessionItem
@@ -55,7 +52,6 @@ class OttoSession(Document):
 		reason: DF.SmallText | None
 		reasoning_effort: DF.Literal["None", "Low", "Medium", "High"]
 		tools: DF.Table[OttoSessionToolCT]
-		type: DF.Literal["Task", "Chat"]
 		uid: DF.Data | None
 	# end: auto-generated types
 
@@ -69,18 +65,18 @@ class OttoSession(Document):
 		llm: str,
 		instruction: str,
 		reasoning_effort: str | None,
-		session_type: Literal["Task", "Chat"],
+		tools: list[ToolSchema] | None = None,
 	):
 		doc = cast(OttoSession, frappe.get_doc({"doctype": "Otto Session"}))
 
 		doc.llm = llm
 		doc.instruction = instruction
-		doc.type = session_type
 		if reasoning_effort and reasoning_effort in ["None", "Low", "Medium", "High"]:
 			doc.reasoning_effort = reasoning_effort  # type: ignore
 		else:
 			doc.reasoning_effort = "None"
 
+		doc.set_tools(tools or [])
 		doc.save(ignore_permissions=True, ignore_version=True)
 		return doc
 
@@ -97,7 +93,7 @@ class OttoSession(Document):
 
 		Args:
 		    query: The user's input for this turn. Can be a string, a list of
-		    	strings, or None to let the LLM continue its turn.
+		        strings, or None to let the LLM continue its turn.
 
 		Returns:
 		    A tuple containing the latest session item and an error reason.
@@ -112,7 +108,7 @@ class OttoSession(Document):
 			interaction, reason = llm.interact(
 				query,  # type: ignore needed cause not strong enough type system
 				session=self._get_session(),
-				tools=self._get_tools(),
+				tools=[t.get_schema() for t in self.tools],
 				model=self.llm,
 				system=self.instruction,
 				reasoning_effort=get_reasoning_effort(self.reasoning_effort),
@@ -153,6 +149,11 @@ class OttoSession(Document):
 
 		id = get_last_id(session)
 		return session["items"].get(id)
+
+	def set_tools(self, tools: list[ToolSchema]):
+		self.tools.clear()
+		for tool in tools:
+			self.append("tools", OttoSessionToolCT.new(tool))
 
 	def _set_status(
 		self,
@@ -233,7 +234,7 @@ class OttoSession(Document):
 		self.save(ignore_permissions=True, ignore_version=True)
 		frappe.db.commit()
 
-	def get_count_of_llm_calls(self, selected: bool = False):
+	def count_llm_calls(self, selected: bool = False):
 		"""
 		If selected is True, returns the number of LLM calls in the selected items.
 		If selected is False returns total count including selected and non-selected items.
@@ -254,40 +255,7 @@ class OttoSession(Document):
 		return llm.get_stats(session)
 
 	def _set_osi_map(self) -> None:
-		"""Sets _osi_map if not already set, should be used only in get_session and set_session"""
+		"""Sets _osi_map (OttoSessionItemCT) if not already set, should be used only in get_session and set_session"""
 		if hasattr(self, "_osi_map") and self._osi_map is not None:
 			return
 		self._osi_map = {}
-
-	def _get_tools(self):
-		from otto.otto.doctype.otto_task.tools import meta_tools
-		from otto.otto.doctype.otto_tool.otto_tool import OttoTool
-
-		tools = []
-		for tool in self.tools:
-			tool_doc = otto.get(OttoTool, tool.tool)
-			if not tool_doc.is_valid:
-				continue
-
-			tools.append(tool_doc.get_function_schema(tool.slug))
-
-		tools.extend(meta_tools)
-		return tools
-
-
-def get_tool_map(tools: list[OttoSessionToolCT]) -> dict[str, str]:
-	"""returns dict[slug, name]"""
-	names = [t.tool for t in tools if not t.slug and t.is_enabled]
-	_tool_map = {
-		t.name: t.slug
-		for t in frappe.get_all("Otto Tool", filters={"name": ("in", names)}, fields=["slug", "name"])
-	}
-
-	tool_map = {}
-	for t in tools:
-		if not t.is_enabled:
-			continue
-
-		slug = t.slug or _tool_map[t.tool]
-		tool_map[slug] = t.tool
-	return tool_map
