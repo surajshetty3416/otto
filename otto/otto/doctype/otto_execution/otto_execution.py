@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import json
+import time
 from typing import TYPE_CHECKING, Literal, cast
 
 import frappe
 from frappe.model.document import Document
 
 import otto
-from otto.llm.types import Content
+from otto import llm
+from otto.llm.types import Content, ToolUseUpdate
+from otto.otto.doctype.otto_task.tools import is_meta_tool
 
 if TYPE_CHECKING:
 	from otto.llm.types import SessionItem
@@ -130,7 +133,7 @@ class OttoExecution(Document):
 			return self.set_status("Failure", reason)
 
 		try:
-			session.run_tools()
+			self.run_tools(session)
 		except Exception as e:
 			otto.log_error(title="run_tools error", doc=self)
 			return self.set_status("Failure", f"Error in run_tools: {e}")
@@ -139,6 +142,89 @@ class OttoExecution(Document):
 			return self.set_status("Success")
 
 		self.loop(None)
+
+	def run_tools(self, session_doc: OttoSession):
+		"""Executes tool use requests from the last LLM response.
+
+		This method inspects the last `SessionItem`. If it contains `tool_use`
+		content, it executes the requested tools and appends the results to the
+		session. It also handles special meta tools, like `end_task`.
+		"""
+		from otto.otto.doctype.otto_session.otto_session import get_tool_map
+
+		item = session_doc.get_last_item()
+		if item is None:
+			return
+
+		session = session_doc._get_session()
+		if session is None:
+			return
+
+		env_map = {t.name: t.env for t in session_doc.tools}
+		tool_map = get_tool_map(session_doc.tools)
+
+		# Move meta tools to the end of the list
+		content = sorted(item["content"], key=lambda x: is_meta_tool(x))
+
+		for content in item["content"]:
+			if content["type"] != "tool_use":
+				continue
+
+			# Used if meta tool
+			update = ToolUseUpdate(
+				start_time=time.time(),
+				end_time=time.time(),
+				is_error=False,
+				result="",
+				stdout=None,
+				stderr=None,
+			)
+
+			if not is_meta_tool(content):
+				tool_name = tool_map[content["name"]]
+				env_str = env_map.get(tool_name, None)
+				update = self._execute_tool(tool_name, content["args"], env_str)
+
+			llm.update_with_tool_result(session=session, id=content["id"], update=update)
+			session_doc._set_session(session)
+
+	def _execute_tool(self, tool_name: str, args: dict, env_str: str | None) -> ToolUseUpdate:
+		"""Executes tool and returns tuple of (result, is_error)"""
+		from otto.otto.doctype.otto_tool.otto_tool import OttoTool
+
+		tool_doc = otto.get(OttoTool, tool_name)
+		update = ToolUseUpdate(
+			start_time=time.time(),
+			end_time=time.time(),
+			is_error=False,
+			result="",
+			stdout=None,
+			stderr=None,
+		)
+
+		try:
+			env = json.loads(env_str) if env_str else None
+			result = tool_doc.execute(
+				args,
+				task=self.task,
+				session=self.session,
+				env=env,
+			)
+			update["is_error"] = False
+			update["result"] = result["result"]
+			update["stdout"] = result["stdout"]
+			update["stderr"] = result["stderr"]
+			update["end_time"] = time.time()
+		except Exception as e:
+			otto.log_error(
+				"Tool Use Error",
+				doc=self,
+				tool=tool_name,
+			)
+			update["is_error"] = True
+			update["result"] = str(e)
+			update["end_time"] = time.time()
+		return update
 
 	def should_stop(self, session: OttoSession) -> bool:
 		item = session.get_last_item()

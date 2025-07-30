@@ -14,6 +14,7 @@ import otto
 from otto import llm
 from otto.llm.types import Session, ToolUseUpdate
 from otto.llm.utils import get_last_id, get_session_list
+from otto.otto.doctype.otto_session_tool_ct.otto_session_tool_ct import OttoSessionToolCT
 from otto.otto.doctype.otto_task.tools import is_meta_tool
 
 if TYPE_CHECKING:
@@ -86,16 +87,17 @@ class OttoSession(Document):
 	def interact(self, query: str | list[str] | None = None) -> tuple[SessionItem, None] | tuple[None, str]:
 		"""Performs one turn of interaction with the LLM.
 
-		This method sends the user's query, along with the current session context (history and tools),
-		to the LLM. It then updates the session with the LLM's response.
+		This method sends the user's query, along with the current session
+		context (history and tools), to the LLM. It then updates the session
+		with the LLM's response.
 
-		The caller is responsible for creating an interaction loop. This method only represents a
-		single API call. After this, `run_tools` should be called if the LLM response includes
-		tool use requests.
+		The caller is responsible for creating an interaction loop. This method
+		only represents a single API call. After this, the caller should execute
+		the tool use requests and invoke this again.
 
 		Args:
-		    query: The user's input for this turn. Can be a string, a list of strings, or None
-		        to let the LLM continue its turn.
+		    query: The user's input for this turn. Can be a string, a list of
+		    	strings, or None to let the LLM continue its turn.
 
 		Returns:
 		    A tuple containing the latest session item and an error reason.
@@ -140,50 +142,6 @@ class OttoSession(Document):
 
 		self._last_item = interaction["item"]
 		return self._last_item, None
-
-	def run_tools(self):
-		"""Executes tool use requests from the last LLM response.
-
-		This method inspects the last `SessionItem`. If it contains `tool_use` content,
-		it executes the requested tools and appends the results to the session. It also
-		handles special meta tools, like `end_task`.
-		"""
-
-		item = self.get_last_item()
-		if item is None:
-			return
-
-		session = self._get_session()
-		if session is None:
-			return
-
-		env_map = {t.name: t.env for t in self.tools}
-		tool_map = self._get_tool_map()
-
-		# Move meta tools to the end of the list
-		content = sorted(item["content"], key=lambda x: is_meta_tool(x))
-
-		for content in item["content"]:
-			if content["type"] != "tool_use":
-				continue
-
-			# Used if meta tool
-			update = ToolUseUpdate(
-				start_time=time.time(),
-				end_time=time.time(),
-				is_error=False,
-				result="",
-				stdout=None,
-				stderr=None,
-			)
-
-			if not is_meta_tool(content):
-				tool_name = tool_map[content["name"]]
-				env_str = env_map.get(tool_name, None)
-				update = self._execute_tool(tool_name, content["args"], env_str)
-
-			llm.update_with_tool_result(session=session, id=content["id"], update=update)
-			self._set_session(session)
 
 	def get_last_item(self) -> SessionItem | None:
 		if self._last_item:
@@ -288,54 +246,6 @@ class OttoSession(Document):
 			count += 1
 		return count
 
-	def _execute_tool(self, tool_name: str, args: dict, env_str: str | None) -> ToolUseUpdate:
-		"""Executes tool and returns tuple of (result, is_error)"""
-		from otto.otto.doctype.otto_tool.otto_tool import OttoTool
-
-		tool_doc = otto.get(OttoTool, tool_name)
-		update = ToolUseUpdate(
-			start_time=time.time(),
-			end_time=time.time(),
-			is_error=False,
-			result="",
-			stdout=None,
-			stderr=None,
-		)
-
-		try:
-			env = json.loads(env_str) if env_str else None
-			result = tool_doc.execute(
-				args,
-				task=self._get_task_name(),
-				session=self.name,
-				env=env,
-			)
-			update["is_error"] = False
-			update["result"] = result["result"]
-			update["stdout"] = result["stdout"]
-			update["stderr"] = result["stderr"]
-			update["end_time"] = time.time()
-		except Exception as e:
-			otto.log_error(
-				"Tool Use Error",
-				doc=self,
-				tool=tool_name,
-			)
-			update["is_error"] = True
-			update["result"] = str(e)
-			update["end_time"] = time.time()
-		return update
-
-	def _get_task_name(self) -> str | None:
-		if self.type != "Task":
-			return None
-
-		exec_tasks = frappe.get_all("Otto Execution", filters={"session": self.name}, pluck="task", limit=1)
-		if not exec_tasks or not isinstance(exec_tasks[0], str):
-			return None
-
-		return exec_tasks[0]
-
 	@frappe.whitelist()
 	def get_stats(self):
 		if not (session := self._get_session()):
@@ -364,19 +274,20 @@ class OttoSession(Document):
 		tools.extend(meta_tools)
 		return tools
 
-	def _get_tool_map(self) -> dict[str, str]:
-		"""returns dict[slug, name]"""
-		names = [t.tool for t in self.tools if not t.slug and t.is_enabled]
-		_tool_map = {
-			t.name: t.slug
-			for t in frappe.get_all("Otto Tool", filters={"name": ("in", names)}, fields=["slug", "name"])
-		}
 
-		tool_map = {}
-		for t in self.tools:
-			if not t.is_enabled:
-				continue
+def get_tool_map(tools: list[OttoSessionToolCT]) -> dict[str, str]:
+	"""returns dict[slug, name]"""
+	names = [t.tool for t in tools if not t.slug and t.is_enabled]
+	_tool_map = {
+		t.name: t.slug
+		for t in frappe.get_all("Otto Tool", filters={"name": ("in", names)}, fields=["slug", "name"])
+	}
 
-			slug = t.slug or _tool_map[t.tool]
-			tool_map[slug] = t.tool
-		return tool_map
+	tool_map = {}
+	for t in tools:
+		if not t.is_enabled:
+			continue
+
+		slug = t.slug or _tool_map[t.tool]
+		tool_map[slug] = t.tool
+	return tool_map
