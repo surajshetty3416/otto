@@ -25,7 +25,7 @@ async function fetchData() {
 
 	try {
 		res = await frappe.call({
-			method: "otto.otto.page.view_otto_session.session_view.get_session_view",
+			method: "otto.api.session_view.get_session_view",
 			args: { name: props.sessionName },
 		});
 	} catch (e) {

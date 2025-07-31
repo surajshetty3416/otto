@@ -11,6 +11,7 @@ Library wrapper around OttoSession
 
 import otto
 from otto.lib.types import (
+	Content,
 	InteractInput,
 	PendingToolUse,
 	SessionInteractReturn,
@@ -218,6 +219,19 @@ class Session:
 		    The last `SessionItem` in the history, or `None` if the session is empty.
 		"""
 		return self._session.get_last_item()
+
+	def get_last_response(self) -> list[Content] | None:
+		"""Returns the last agent response from the session. If last item is not
+		an agent response, returns `None`.
+
+		Returns:
+		    A list of `Content` objects, or `None`.
+		"""
+		item = self.get_last_item()
+		if item is None or item["meta"]["role"] != "agent":
+			return None
+
+		return item["content"]
 
 	def get_items(self) -> list[SessionItem]:
 		"""Returns all items in the session's interaction history.
