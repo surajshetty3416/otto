@@ -1,8 +1,10 @@
 import os
 import unittest
+from collections.abc import Generator
 
 import frappe
 
+from otto.llm.types import ContentChunk, ToolUseUpdate
 from otto.llm.utils import get_stats, to_content, update_with_tool_result
 
 # Ensure litellm can be imported if needed (though interact handles its import)
@@ -12,7 +14,7 @@ except ImportError:
 	litellm = None  # Allow tests to be defined but skipped if litellm not installed
 
 # Now import the function to test and types
-from otto.llm.litellm import interact  # Keep DEFAULT_LLM for info if needed
+from otto.llm.litellm import InteractReturn, interact  # Keep DEFAULT_LLM for info if needed
 
 # Model to use for testing
 TEST_MODEL = "openai/gpt-4.1-mini"  # current cheapest model
@@ -60,7 +62,7 @@ class TestLiteLLMIntegration(unittest.TestCase):
 		system_prompt = "You are a concise assistant."
 
 		# Use the specific test model
-		response, error = interact(query, system=system_prompt, model=TEST_MODEL)
+		response, error = drain(interact(query, system=system_prompt, model=TEST_MODEL))
 
 		# Basic checks
 		self.assertIsNone(error, f"Interaction failed with error: {error}")
@@ -141,7 +143,7 @@ class TestLiteLLMIntegration(unittest.TestCase):
 		tools = [get_weather_tool]
 
 		# Use the specific test model known for tool calling
-		response, error = interact(query, tools=tools, model=TEST_MODEL)
+		response, error = drain(interact(query, tools=tools, model=TEST_MODEL))
 
 		self.assertIsNone(error, f"Interaction failed with error: {error}")
 		self.assertIsNotNone(response)
@@ -179,7 +181,7 @@ class TestLiteLLMIntegration(unittest.TestCase):
 	def test_multiple_tool_calls(self):
 		query = "What is the weather like in London and Paris?"
 		tools = [get_weather_tool, get_weather_tool]
-		response, error = interact(query, tools=tools, model=TEST_MODEL)
+		response, error = drain(interact(query, tools=tools, model=TEST_MODEL))
 
 		self.assertIsNone(error, f"Interaction failed with error: {error}")
 		self.assertIsNotNone(response)
@@ -191,10 +193,22 @@ class TestLiteLLMIntegration(unittest.TestCase):
 		self.assertEqual(len(tool_use), 2)
 
 		assert len(tool_use) == 2, "Expected 2 tool calls"
-		update_with_tool_result(session=session, result="10 degrees celsius", id=tool_use[0]["id"])
-		update_with_tool_result(session=session, result="10 degrees celsius", id=tool_use[1]["id"])
+		update_with_tool_result(
+			session=session,
+			id=tool_use[0]["id"],
+			update=ToolUseUpdate(
+				result="10 degrees celsius", is_error=False, stdout="", stderr="", start_time=0, end_time=0
+			),
+		)
+		update_with_tool_result(
+			session=session,
+			id=tool_use[1]["id"],
+			update=ToolUseUpdate(
+				result="10 degrees celsius", is_error=False, stdout="", stderr="", start_time=0, end_time=0
+			),
+		)
 
-		response, error = interact(session=session, model=TEST_MODEL)
+		response, error = drain(interact(session=session, model=TEST_MODEL))
 		self.assertIsNone(error, f"Interaction failed with error: {error}")
 		self.assertIsNotNone(response)
 		assert response is not None  # for type checker
@@ -204,7 +218,7 @@ class TestLiteLLMIntegration(unittest.TestCase):
 	def test_file_handling(self):
 		file = get_testfile_path("test.pdf")
 		query = to_content(["What is in this file?", file])
-		response, error = interact(query, model=TEST_MODEL)
+		response, error = drain(interact(query, model=TEST_MODEL))
 
 		self.assertIsNone(error, f"Interaction failed with error: {error}")
 		self.assertIsNotNone(response)
@@ -224,7 +238,7 @@ class TestLiteLLMIntegration(unittest.TestCase):
 	def test_image_handling(self):
 		file = get_testfile_path("test.png")
 		query = to_content(["What is in this image?", file])
-		response, error = interact(query, model=TEST_MODEL)
+		response, error = drain(interact(query, model=TEST_MODEL))
 
 		self.assertIsNone(error, f"Interaction failed with error: {error}")
 		self.assertIsNotNone(response)
@@ -249,3 +263,15 @@ def get_testfile_path(file_name: str):
 		"test_llm",
 		file_name,
 	)
+
+
+def drain(generator: Generator[ContentChunk, None, InteractReturn]) -> InteractReturn:
+	while True:
+		try:
+			next(generator)
+		except StopIteration as e:
+			value = e.value
+			if isinstance(value, InteractReturn):
+				return value
+			else:
+				raise ValueError(f"Expected InteractReturn, got {type(value)}")

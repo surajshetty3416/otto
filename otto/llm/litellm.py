@@ -19,9 +19,8 @@ import os
 import random
 import threading
 import time
-from typing import TYPE_CHECKING
-
-import frappe.realtime
+from collections.abc import Generator
+from typing import TYPE_CHECKING, NamedTuple, cast
 
 import otto
 from otto.llm.format import get_messages
@@ -55,12 +54,22 @@ if TYPE_CHECKING:
 DEFAULT_LLM = "gemini/gemini-2.5-flash-preview-05-20"
 MAX_RETRIES = 6
 
-logger = otto.logger("otto_litellm", "DEBUG")
-thinking_budget_map: dict[ReasoningEffort, int] = {
+logger = otto.logger("otto_litellm", "INFO")
+DEFAULT_REASONING_BUDGET_MAP: dict[ReasoningEffort, int] = {
 	"low": 4096,
 	"medium": 8192,
 	"high": 16384,
 }
+
+
+class StreamReturn(NamedTuple):
+	chunks: list[ContentChunk]
+	signature: str | None
+
+
+class InteractReturn(NamedTuple):
+	response: InteractResponse | None
+	reason: None | str
 
 
 def interact(
@@ -72,23 +81,26 @@ def interact(
 	system: str | None = None,
 	tools: list[dict] | None = None,
 	reasoning_effort: ReasoningEffort | None = None,
-) -> tuple[InteractResponse, None] | tuple[None, str]:
+) -> Generator[ContentChunk, None, InteractReturn]:
 	"""
 	Interacts with an LLM using LiteLLM, handling conversation history,
 	streaming responses, and tool usage.
 
+	This function is a generator that yields response chunks and returns a final
+	named tuple with the complete interaction response.
+
 	Maintaining state:
 
-	1. The `interact` function maintains state using an Session object. If no session
+	1. The `interact` function maintains state using a `Session` object. If no session
 		object is provided, a new one is created.
 	2. The provided session object should not contain the query. An item for the query is
 		created and added to the session object.
-	3. The `interact` function returns an updated session object on success.
+	3. The `interact` generator's return value contains an updated session object on success.
 	4. The returned session object will contain the user query and the agent response.
 	5. To maintain history the returned object should be provided to the `interact` function
 		upon each call.
-	6. The returned Session object may be updated in the case of certain
-		instances, such as if appending a tool use response.
+	6. The returned `Session` object may be updated in certain cases, such
+		as if appending a tool use response.
 
 	Args:
 		query: The user's input query to start a new conversation or continue an
@@ -100,13 +112,18 @@ def interact(
 			Overrides `model` if provided. If neither is provided, derived from `DEFAULT_LLM`.
 		system: An optional system prompt to guide the LLM's behavior.
 		tools: An optional list of tools (functions) the LLM can use.
+		reasoning_effort: An optional reasoning effort to use if the model supports it.
+
+	Yields:
+		ContentChunk: Chunks of the response from the LLM as they are generated.
 
 	Returns:
-		- On success: A tuple `(InteractResponse, None)`, where `InteractResponse`
-			contains the generated agent response item, the updated session, and
-			a list of content chunks from the stream.
-		- On failure (e.g., API key issue): A tuple `(None, str)` containing
-			`None` and an error reason string.
+		InteractReturn:
+			- On success, `InteractReturn.response` contains an `InteractResponse`
+			  object with the generated agent response item, the updated session,
+			  and a list of content chunks from the stream. `InteractReturn.reason` is `None`.
+			- On failure (e.g., API key issue), `InteractReturn.response` is `None`
+			  and `InteractReturn.reason` contains reason for failure.
 	"""
 	import litellm
 
@@ -122,7 +139,7 @@ def interact(
 	session_id = update["id"]
 
 	if reason := _set_key(model):
-		return None, reason
+		return InteractReturn(None, reason)
 
 	item = get_agent_item(model)
 	item["meta"]["start_time"] = time.time()
@@ -177,7 +194,7 @@ def interact(
 		think["thinking"] = _get_thinking(reasoning_effort)
 
 	logger.debug({"message": "calling litellm.completion", "id": item["id"]})
-	completion = completions(
+	completion = _completions(
 		model=model,
 		messages=messages,
 		tools=tools,
@@ -190,8 +207,17 @@ def interact(
 	# litellm.completion not typed well enough; this shouldn't throw when stream=True
 	assert isinstance(completion, litellm.CustomStreamWrapper), "sanity check"
 
+	chunks = []
+	signature = None
+
 	# Iterates over the completion stream and returns a list of ContentChunk
-	chunks, signature = _stream(completion, item, session_id)
+	stream_generator = _stream(completion, item, session_id)
+	while True:
+		try:
+			yield next(stream_generator)
+		except StopIteration as e:
+			chunks, signature = cast(StreamReturn, e.value)
+			break
 
 	logger.debug(
 		{
@@ -226,7 +252,8 @@ def interact(
 
 	item["meta"]["end_time"] = time.time()
 
-	return InteractResponse(item=item, update=update, chunks=chunks), None
+	response = InteractResponse(item=item, update=update, chunks=chunks)
+	return InteractReturn(response, None)
 
 
 def _get_content(completion_response: dict):
@@ -272,7 +299,7 @@ def _get_content(completion_response: dict):
 	return content
 
 
-def completions(**kwargs):
+def _completions(**kwargs):
 	"""Wrapper around litellm.completion that retries on rate limit errors."""
 	retries = 0
 	import litellm
@@ -295,7 +322,9 @@ def completions(**kwargs):
 			retries += 1
 
 
-def _stream(completion: CustomStreamWrapper, item: SessionItem, session_id: str | None):
+def _stream(
+	completion: CustomStreamWrapper, item: SessionItem, session_id: str | None
+) -> Generator[ContentChunk, None, StreamReturn]:
 	"""
 	Iterates over the completion stream iterable, publishes the chunks, collates
 	them into a list and if a signature is found, updates the item's content.
@@ -309,9 +338,10 @@ def _stream(completion: CustomStreamWrapper, item: SessionItem, session_id: str 
 		if cc := _stream_chunk(chunk, item["id"], session_id):
 			logger.debug({"id": item["id"], "content": cc["content"]})
 			chunks.append(cc)
+			yield cc
 
 		signature = signature or _get_signature(chunk)
-	return chunks, signature
+	return StreamReturn(chunks, signature)
 
 
 def _stream_chunk(chunk: ModelResponseStream, item_id: str, session_id: str | None):
@@ -353,13 +383,6 @@ def _stream_chunk(chunk: ModelResponseStream, item_id: str, session_id: str | No
 
 	else:
 		return None
-
-	if session_id and frappe.session.user:
-		frappe.realtime.publish_realtime(
-			event="otto_interaction",
-			user=frappe.session.user,
-			message={"type": "content_chunk", "data": cc},
-		)
 
 	return cc
 
@@ -410,7 +433,7 @@ def _get_signature(chunk: ModelResponseStream):
 
 	# Check provider specific fields for signature
 	provider_fields = delta.get("provider_specific_fields") or {}
-	if signature := provider_fields.get("signature"):
+	if (signature := provider_fields.get("signature")) and isinstance(signature, str):
 		return signature
 
 	thinking_blocks = provider_fields.get("thinking_blocks")
@@ -425,7 +448,7 @@ def _get_signature_from_thinking_blocks(blocks):
 		return None
 
 	block = blocks[0] or {}
-	if signature := block.get("signature"):
+	if (signature := block.get("signature")) and isinstance(signature, str):
 		return signature
 
 	return None
@@ -442,4 +465,4 @@ def _get_thinking(thinking_effort: ReasoningEffort | None):
 	if thinking_effort is None:
 		return None
 
-	return {"type": "enabled", "budget_tokens": thinking_budget_map[thinking_effort]}
+	return {"type": "enabled", "budget_tokens": DEFAULT_REASONING_BUDGET_MAP[thinking_effort]}

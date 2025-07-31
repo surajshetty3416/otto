@@ -10,6 +10,7 @@ from frappe.model.document import Document
 
 import otto
 from otto import llm
+from otto.llm.litellm import InteractReturn
 from otto.llm.types import Session, ToolSchema
 from otto.llm.utils import get_last_id, get_session_list
 from otto.otto.doctype.otto_session_tool_ct.otto_session_tool_ct import OttoSessionToolCT
@@ -103,31 +104,34 @@ class OttoSession(Document):
 		from otto.otto.doctype.otto_llm.otto_llm import get_reasoning_effort
 
 		self._set_status(is_active=True)
+		interact_generator = llm.interact(
+			query,  # type: ignore needed cause not strong enough type system
+			session=self._get_session(),
+			tools=[t.get_schema() for t in self.tools],
+			model=self.llm,
+			system=self.instruction,
+			reasoning_effort=get_reasoning_effort(self.reasoning_effort),
+		)
 
-		try:
-			interaction, reason = llm.interact(
-				query,  # type: ignore needed cause not strong enough type system
-				session=self._get_session(),
-				tools=[t.get_schema() for t in self.tools],
-				model=self.llm,
-				system=self.instruction,
-				reasoning_effort=get_reasoning_effort(self.reasoning_effort),
-			)
-
-			logger.info(
-				{
-					"message": "interact success",
-					"session": self.name,
-					"session_size": interaction and len(interaction["update"]),
-					"item": interaction and interaction["item"],
-				}
-			)
-
-		except Exception as e:
-			otto.log_error(title="interact error", doc=self)
-			reason = f"Interaction errored out: {e}"
-			self._set_status(is_active=False, reason=reason)
-			return None, reason
+		while True:
+			try:
+				next(interact_generator)
+			except StopIteration as e:
+				interaction, reason = cast(InteractReturn, e.value)
+				logger.info(
+					{
+						"message": "interact success",
+						"session": self.name,
+						"session_size": interaction and len(interaction["update"]),
+						"item": interaction and interaction["item"],
+					}
+				)
+				break
+			except Exception as e:
+				otto.log_error(title="interact error", doc=self)
+				reason = f"Interaction errored out: {e}"
+				self._set_status(is_active=False, reason=reason)
+				return None, reason
 
 		if interaction is None:
 			reason = reason or "No interaction returned"
