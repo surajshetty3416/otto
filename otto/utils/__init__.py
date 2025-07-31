@@ -26,7 +26,16 @@ def _safe_dumps_default(value: Any):
 		return "<unserializable>"
 
 
-def drain[T](generator: Generator[Any, None, T]) -> T:
+# TODO: use this when 3.12 is the minimum
+# def drain[T](generator: Generator[Any, None, T]) -> T:
+# 	while True:
+# 		try:
+# 			next(generator)
+# 		except StopIteration as e:
+# 			return e.value
+
+
+def drain(generator: Generator[Any, None, Any]) -> Any:
 	while True:
 		try:
 			next(generator)
