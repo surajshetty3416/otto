@@ -9,6 +9,7 @@ import frappe
 from frappe.model.document import Document
 
 import otto
+from otto import utils
 from otto.otto.doctype.otto_task.tools import is_meta_tool, meta_tools
 
 logger = otto.logger("otto_task", "DEBUG")
@@ -288,12 +289,7 @@ def _common_handler(doctype: Document, event: str | None = None):
 
 	event_label = EVENT_MAP[event]
 
-	# TODO: Cache this get_all call, update only every 5 minutes or something
-	for task in frappe.db.get_all(
-		"Otto Task",
-		filters={"target_doctype": doctype.doctype, "event": event_label, "is_enabled": True},
-		fields=["name", "condition"],
-	):
+	for task in _get_all_tasks(doctype.doctype, event_label):
 		if task.condition and not test_condition(
 			task.name,
 			task.condition,
@@ -328,6 +324,15 @@ def _common_handler(doctype: Document, event: str | None = None):
 			target_doc=doctype,
 			target_event=event_label,
 		)
+
+
+@utils.cache(ttl=60)
+def _get_all_tasks(target_doctype: str, event: str):
+	return frappe.db.get_all(
+		"Otto Task",
+		filters={"target_doctype": target_doctype, "event": event, "is_enabled": True},
+		fields=["name", "condition"],
+	)
 
 
 def handler(task: str, target_doc: Document, target_event: str):

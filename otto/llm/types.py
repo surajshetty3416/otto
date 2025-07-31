@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Literal, NamedTuple, TypedDict
+from typing import Any, Literal, TypedDict
+
+Provider = Literal["Anthropic", "OpenAI", "Google"]
+ModelSize = Literal["Very Small", "Small", "Medium", "Large"]
 
 ID = str
 SessionRole = Literal["user", "agent"]

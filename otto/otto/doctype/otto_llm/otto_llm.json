@@ -10,7 +10,11 @@
   "enabled",
   "column_break_utmd",
   "provider",
-  "is_reasoning"
+  "properties_section",
+  "is_reasoning",
+  "supports_images",
+  "column_break_jpjj",
+  "size"
  ],
  "fields": [
   {
@@ -18,6 +22,7 @@
    "fieldname": "provider",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Provider",
    "options": "Anthropic\nOpenAI\nGoogle",
    "reqd": 1
@@ -51,6 +56,31 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Is Reasoning"
+  },
+  {
+   "fieldname": "properties_section",
+   "fieldtype": "Section Break",
+   "label": "Properties"
+  },
+  {
+   "fieldname": "column_break_jpjj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Rough classifier of model size, smaller models are usually faster",
+   "fieldname": "size",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Size",
+   "options": "Very Small\nSmall\nMedium\nLarge"
+  },
+  {
+   "default": "0",
+   "description": "Whether the model can process images provided as input",
+   "fieldname": "supports_images",
+   "fieldtype": "Check",
+   "label": "Supports Images"
   }
  ],
  "grid_page_length": 50,
@@ -61,7 +91,7 @@
    "link_fieldname": "llm"
   }
  ],
- "modified": "2025-07-11 12:18:38.892983",
+ "modified": "2025-07-31 18:08:38.887610",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto LLM",

@@ -39,6 +39,8 @@ from otto.llm.types import (
 )
 from otto.llm.utils import (
 	get_agent_item,
+	get_key,
+	get_provider,
 	get_sequence,
 	get_session,
 	to_content,
@@ -400,20 +402,16 @@ def _get_end_reason(completion_response: dict):
 
 
 def _set_key(model: str) -> str | None:
-	from frappe.utils.password import get_decrypted_password
+	provider = get_provider(model)
+	if not provider:
+		return f"Model {model} not supported"
 
-	if model.startswith("openai"):
-		key = "OPENAI_API_KEY"
-	elif model.startswith("anthropic"):
-		key = "ANTHROPIC_API_KEY"
-	elif model.startswith("gemini"):
-		key = "GEMINI_API_KEY"
-	else:
-		return None
+	key, value = get_key(provider)
+	if not key:
+		return f"Model {model} not supported"
 
-	value = get_decrypted_password("Otto Settings", "Otto Settings", key.lower())
 	if not value:
-		return f"API key {key.lower()} not set"
+		return f"API key {key} not set"
 
 	os.environ[key] = value
 	return None

@@ -9,6 +9,8 @@ from otto.llm.types import (
 	ImageContent,
 	InteractInput,
 	InteractResponse,
+	ModelSize,
+	Provider,
 	ReasoningEffort,
 	Session,
 	SessionItem,
@@ -47,7 +49,9 @@ __all__ = [
 	"SessionInteractReturn",
 	"ToolSchemaParameters",
 	"SessionInteractReturn",
+	"Provider",
 	"SessionInteractStream",
+	"ModelSize",
 ]
 
 

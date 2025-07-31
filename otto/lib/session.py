@@ -192,7 +192,7 @@ class Session:
 
 		return pending
 
-	def update_tool_use(self, update: ToolUseUpdate | list[ToolUseUpdate]):
+	def update_tool_use(self, update: ToolUseUpdate | list[ToolUseUpdate]) -> None:
 		"""Updates the status and result of given tool use within this session.
 
 		After executing a tool requested by the LLM (see `Session.get_pending_tool_use()`),

@@ -14,8 +14,8 @@ from urllib.request import urlopen
 
 import frappe
 
-from otto.llm.types import Session, ToolUseContent
-from otto.utils import json_dumps
+from otto import utils
+from otto.llm.types import Provider, Session, ToolUseContent
 
 if TYPE_CHECKING:
 	from otto.llm.types import SessionItem, SessionMeta, ToolUseUpdate, UserContent
@@ -357,7 +357,7 @@ def to_content(query: str | list[Any]) -> list[UserContent]:
 				content.append(q)
 				continue
 			else:
-				q = json_dumps(q)[0]
+				q = utils.json_dumps(q)[0]
 
 		c = TextContent(type="text", text=q)
 		if q.startswith("data:application/"):
@@ -394,3 +394,33 @@ def reset_user(force: bool = False):
 		if frappe.local.session.user != user or force:
 			assert isinstance(user, str), "sanity check"
 			frappe.set_user(user)
+
+
+def get_provider(model: str) -> Provider | None:
+	if model.startswith("openai"):
+		return "OpenAI"
+
+	elif model.startswith("anthropic"):
+		return "Anthropic"
+
+	elif model.startswith("gemini"):
+		return "Google"
+
+	return None
+
+
+@utils.cache(ttl=60)
+def get_key(provider: Provider) -> tuple[str | None, str | None]:
+	from frappe.utils.password import get_decrypted_password
+
+	match provider:
+		case "OpenAI":
+			key = "OPENAI_API_KEY"
+		case "Anthropic":
+			key = "ANTHROPIC_API_KEY"
+		case "Google":
+			key = "GEMINI_API_KEY"
+		case _:
+			return (None, None)
+
+	return (key, get_decrypted_password("Otto Settings", "Otto Settings", key.lower()))

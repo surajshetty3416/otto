@@ -4,9 +4,11 @@
   "doctype": "Otto LLM",
   "enabled": 1,
   "is_reasoning": 0,
-  "modified": "2025-05-26 12:15:34.212492",
+  "modified": "2025-07-31 18:07:59.907714",
   "name": "anthropic/claude-3-5-haiku-latest",
   "provider": "Anthropic",
+  "size": "Small",
+  "supports_images": 1,
   "title": "Anthropic Claude Haiku 3.5"
  },
  {
@@ -14,9 +16,11 @@
   "doctype": "Otto LLM",
   "enabled": 1,
   "is_reasoning": 1,
-  "modified": "2025-06-11 13:10:49.354369",
+  "modified": "2025-07-31 18:07:59.904649",
   "name": "anthropic/claude-3-7-sonnet-latest",
   "provider": "Anthropic",
+  "size": "Medium",
+  "supports_images": 1,
   "title": "Anthropic Claude Sonnet 3.7"
  },
  {
@@ -24,19 +28,11 @@
   "doctype": "Otto LLM",
   "enabled": 1,
   "is_reasoning": 1,
-  "modified": "2025-06-11 13:10:49.351107",
-  "name": "anthropic/claude-sonnet-4-20250514",
-  "provider": "Anthropic",
-  "title": "Anthropic Claude Sonnet 4"
- },
- {
-  "docstatus": 0,
-  "doctype": "Otto LLM",
-  "enabled": 1,
-  "is_reasoning": 1,
-  "modified": "2025-06-18 16:33:03.666285",
+  "modified": "2025-07-31 18:07:59.898556",
   "name": "anthropic/claude-opus-4-20250514",
   "provider": "Anthropic",
+  "size": "Large",
+  "supports_images": 1,
   "title": "Anthropic Claude Opus 4"
  },
  {
@@ -44,9 +40,11 @@
   "doctype": "Otto LLM",
   "enabled": 0,
   "is_reasoning": 1,
-  "modified": "2025-06-18 16:32:57.591807",
+  "modified": "2025-07-31 18:07:59.896384",
   "name": "openai/o3",
   "provider": "OpenAI",
+  "size": "Medium",
+  "supports_images": 1,
   "title": "OpenAI o3"
  },
  {
@@ -54,9 +52,11 @@
   "doctype": "Otto LLM",
   "enabled": 1,
   "is_reasoning": 0,
-  "modified": "2025-05-26 12:15:34.352013",
+  "modified": "2025-07-31 18:07:59.893730",
   "name": "openai/o4-mini",
   "provider": "OpenAI",
+  "size": "Small",
+  "supports_images": 1,
   "title": "OpenAI o4 mini"
  },
  {
@@ -64,9 +64,11 @@
   "doctype": "Otto LLM",
   "enabled": 1,
   "is_reasoning": 0,
-  "modified": "2025-05-26 12:15:34.353442",
+  "modified": "2025-07-31 18:07:59.889682",
   "name": "openai/gpt-4o",
   "provider": "OpenAI",
+  "size": "Medium",
+  "supports_images": 1,
   "title": "OpenAI GPT-4o"
  },
  {
@@ -74,9 +76,11 @@
   "doctype": "Otto LLM",
   "enabled": 1,
   "is_reasoning": 0,
-  "modified": "2025-05-26 12:15:34.354892",
+  "modified": "2025-07-31 18:07:59.887044",
   "name": "openai/gpt-4o-mini",
   "provider": "OpenAI",
+  "size": "Small",
+  "supports_images": 1,
   "title": "OpenAI GPT-4o mini"
  },
  {
@@ -84,9 +88,11 @@
   "doctype": "Otto LLM",
   "enabled": 1,
   "is_reasoning": 0,
-  "modified": "2025-05-26 12:15:34.356227",
+  "modified": "2025-07-31 18:07:59.884662",
   "name": "openai/gpt-4.1",
   "provider": "OpenAI",
+  "size": "Medium",
+  "supports_images": 1,
   "title": "OpenAI GPT-4.1"
  },
  {
@@ -94,19 +100,11 @@
   "doctype": "Otto LLM",
   "enabled": 1,
   "is_reasoning": 0,
-  "modified": "2025-05-26 12:15:34.358069",
-  "name": "openai/gpt-4.1-mini",
-  "provider": "OpenAI",
-  "title": "OpenAI GPT-4.1 mini"
- },
- {
-  "docstatus": 0,
-  "doctype": "Otto LLM",
-  "enabled": 1,
-  "is_reasoning": 0,
-  "modified": "2025-05-26 12:15:34.359399",
+  "modified": "2025-07-31 18:07:59.875425",
   "name": "openai/gpt-4.1-nano",
   "provider": "OpenAI",
+  "size": "Very Small",
+  "supports_images": 1,
   "title": "OpenAI GPT-4.1 nano"
  },
  {
@@ -114,9 +112,11 @@
   "doctype": "Otto LLM",
   "enabled": 0,
   "is_reasoning": 1,
-  "modified": "2025-06-18 16:31:46.870498",
+  "modified": "2025-07-31 18:07:59.871762",
   "name": "gemini/gemini-2.5-pro-preview-06-05",
   "provider": "Google",
+  "size": "Medium",
+  "supports_images": 1,
   "title": "Google Gemini 2.5 Pro (Preview)"
  },
  {
@@ -124,9 +124,11 @@
   "doctype": "Otto LLM",
   "enabled": 0,
   "is_reasoning": 1,
-  "modified": "2025-06-18 16:31:55.774343",
+  "modified": "2025-07-31 18:07:59.868726",
   "name": "gemini/gemini-2.5-flash-preview-05-20",
   "provider": "Google",
+  "size": "Small",
+  "supports_images": 1,
   "title": "Google Gemini 2.5 Flash (Preview)"
  },
  {
@@ -134,9 +136,11 @@
   "doctype": "Otto LLM",
   "enabled": 1,
   "is_reasoning": 1,
-  "modified": "2025-06-18 16:31:40.364983",
+  "modified": "2025-07-31 18:07:59.865012",
   "name": "gemini/gemini-2.5-pro",
   "provider": "Google",
+  "size": "Medium",
+  "supports_images": 1,
   "title": "Google Gemini 2.5 Pro"
  },
  {
@@ -144,9 +148,35 @@
   "doctype": "Otto LLM",
   "enabled": 1,
   "is_reasoning": 1,
-  "modified": "2025-06-18 16:32:10.313187",
+  "modified": "2025-07-31 18:07:59.812982",
   "name": "gemini/gemini-2.5-flash",
   "provider": "Google",
+  "size": "Small",
+  "supports_images": 1,
   "title": "Google Gemini 2.5 Flash"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Otto LLM",
+  "enabled": 1,
+  "is_reasoning": 1,
+  "modified": "2025-07-31 18:07:59.900788",
+  "name": "anthropic/claude-sonnet-4-20250514",
+  "provider": "Anthropic",
+  "size": "Medium",
+  "supports_images": 1,
+  "title": "Anthropic Claude Sonnet 4"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Otto LLM",
+  "enabled": 1,
+  "is_reasoning": 0,
+  "modified": "2025-07-31 18:07:59.879880",
+  "name": "openai/gpt-4.1-mini",
+  "provider": "OpenAI",
+  "size": "Small",
+  "supports_images": 1,
+  "title": "OpenAI GPT-4.1 mini"
  }
 ]

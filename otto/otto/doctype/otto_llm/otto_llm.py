@@ -24,11 +24,20 @@ class OttoLLM(Document):
 		enabled: DF.Check
 		is_reasoning: DF.Check
 		provider: DF.Literal["Anthropic", "OpenAI", "Google"]
+		size: DF.Literal["Very Small", "Small", "Medium", "Large"]
+		supports_images: DF.Check
 		title: DF.Data
 	# end: auto-generated types
 
 	@staticmethod
-	def new(name: str, title: str, provider: str, is_reasoning: bool = False):
+	def new(
+		name: str,
+		title: str,
+		provider: str,
+		is_reasoning: bool = False,
+		size: str | None = None,
+		supports_images: bool = False,
+	):
 		doc = cast(
 			OttoLLM,
 			frappe.get_doc(
