@@ -10,17 +10,14 @@ import frappe
 from frappe.model.document import Document
 
 import otto
-from otto import llm
-from otto.llm.types import Content, ToolUseUpdate
+from otto.llm.types import ToolUseUpdate
 from otto.otto.doctype.otto_task.tools import is_meta_tool
-
-if TYPE_CHECKING:
-	from otto.llm.types import SessionItem
-	from otto.otto.doctype.otto_session.otto_session import OttoSession
-	from otto.otto.doctype.otto_session_tool_ct.otto_session_tool_ct import OttoSessionToolCT
 
 logger = otto.logger("otto_execution")
 DEFAULT_MAX_LLM_CALLS = 30
+
+if TYPE_CHECKING:
+	from otto.lib import Session
 
 
 class OttoExecution(Document):
@@ -39,7 +36,7 @@ class OttoExecution(Document):
 		target_doctype: DF.Link | None
 		task: DF.Link
 	# end: auto-generated types
-	_session: OttoSession | None = None
+	_session: Session | None = None
 
 	@staticmethod
 	def new(
@@ -52,7 +49,7 @@ class OttoExecution(Document):
 		reasoning_effort: str | None = None,
 		instruction: str | None = None,
 	):
-		from otto.otto.doctype.otto_session.otto_session import OttoSession
+		from otto.lib import Session
 		from otto.otto.doctype.otto_task.otto_task import get_tools
 
 		doc = cast(OttoExecution, frappe.get_doc({"doctype": "Otto Execution", "task": task}))
@@ -66,15 +63,14 @@ class OttoExecution(Document):
 		else:
 			reasoning_effort = frappe.get_cached_value("Otto Task", task, "reasoning_effort")
 
-		session = OttoSession.new(
+		session = Session.new(
 			llm=llm or frappe.get_cached_value("Otto Task", task, "llm"),
 			instruction=instruction or frappe.get_cached_value("Otto Task", task, "instruction"),
 			reasoning_effort=reasoning_effort,
 			tools=get_tools(task),
 		)
 
-		assert session.name is not None, "type check"
-		doc.session = session.name
+		doc.session = session.id
 		doc.save(ignore_permissions=True, ignore_version=True)
 		return doc
 
@@ -122,7 +118,7 @@ class OttoExecution(Document):
 	def loop(self, context: str | list[str] | None = None):
 		try:
 			session = self.get_session()
-			item, reason = session.interact(context)
+			item, reason = session.interact(context, stream=False)
 		except Exception as e:
 			otto.log_error(title="interact error", doc=self)
 			return self.set_status("Failure", f"Interaction errored out: {e}")
@@ -144,7 +140,7 @@ class OttoExecution(Document):
 
 		self.loop(None)
 
-	def run_tools(self, session_doc: OttoSession):
+	def run_tools(self, session: Session):
 		"""Executes tool use requests from the last LLM response.
 
 		This method inspects the last `SessionItem`. If it contains `tool_use`
@@ -153,54 +149,35 @@ class OttoExecution(Document):
 		"""
 		from otto.otto.doctype.otto_task.otto_task import get_tool_map
 
-		item = session_doc.get_last_item()
-		if item is None:
+		if not (pending := session.get_pending_tool_use()):
 			return
 
-		session = session_doc._get_session()
-		if session is None:
-			return
-
+		updates: list[ToolUseUpdate] = []
 		tool_map = get_tool_map(self.task)
-
-		# Move meta tools to the end of the list
-		content = sorted(item["content"], key=lambda x: is_meta_tool(x))
-
-		for content in item["content"]:
-			if content["type"] != "tool_use":
-				continue
+		for tool in pending:
+			slug = tool["name"]
+			tool_use_id = tool["id"]
+			tool_use_args = tool["args"]
 
 			# Used if meta tool
-			update = ToolUseUpdate(
-				start_time=time.time(),
-				end_time=time.time(),
-				is_error=False,
-				result="",
-				stdout=None,
-				stderr=None,
-			)
-
-			tool_name, env_str = tool_map.get(content["name"], (None, None))
-			if not is_meta_tool(content):
+			update = ToolUseUpdate(id=tool_use_id)
+			tool_name, env_str = tool_map.get(slug, (None, None))
+			if not is_meta_tool(slug):
 				assert tool_name is not None, "sanity check"
-				update = self._execute_tool(tool_name, content["args"], env_str)
+				update = self._execute_tool(tool_name, tool_use_args, tool_use_id, env_str)
 
-			llm.update_with_tool_result(session=session, id=content["id"], update=update)
-			session_doc._set_session(session)
+			updates.append(update)
 
-	def _execute_tool(self, tool_name: str, args: dict, env_str: str | None) -> ToolUseUpdate:
+		session.update_tool_use(updates)
+
+	def _execute_tool(
+		self, tool_name: str, args: dict, tool_use_id: str, env_str: str | None
+	) -> ToolUseUpdate:
 		"""Executes tool and returns tuple of (result, is_error)"""
 		from otto.otto.doctype.otto_tool.otto_tool import OttoTool
 
 		tool_doc = otto.get(OttoTool, tool_name)
-		update = ToolUseUpdate(
-			start_time=time.time(),
-			end_time=time.time(),
-			is_error=False,
-			result="",
-			stdout=None,
-			stderr=None,
-		)
+		update = ToolUseUpdate(id=tool_use_id, start_time=time.time(), end_time=time.time())
 
 		try:
 			env = json.loads(env_str) if env_str else None
@@ -214,7 +191,6 @@ class OttoExecution(Document):
 			update["result"] = result["result"]
 			update["stdout"] = result["stdout"]
 			update["stderr"] = result["stderr"]
-			update["end_time"] = time.time()
 		except Exception as e:
 			otto.log_error(
 				"Tool Use Error",
@@ -223,10 +199,11 @@ class OttoExecution(Document):
 			)
 			update["is_error"] = True
 			update["result"] = str(e)
+		finally:
 			update["end_time"] = time.time()
 		return update
 
-	def should_stop(self, session: OttoSession) -> bool:
+	def should_stop(self, session: Session) -> bool:
 		item = session.get_last_item()
 		if item is None:
 			return False
@@ -245,7 +222,7 @@ class OttoExecution(Document):
 		if max_llm_calls is None:
 			max_llm_calls = DEFAULT_MAX_LLM_CALLS
 
-		if max_llm_calls > 0 and session.count_llm_calls() >= max_llm_calls:
+		if max_llm_calls > 0 and session.get_llm_call_count() >= max_llm_calls:
 			self.set_status("Failure", "Max LLM calls reached")
 			return True
 
@@ -258,14 +235,13 @@ class OttoExecution(Document):
 
 		return False
 
-	def get_session(self) -> OttoSession:
-		from otto.otto.doctype.otto_session.otto_session import OttoSession
+	def get_session(self) -> Session:
+		from otto.lib import Session
 
 		if self._session is not None:
 			return self._session
 
-		self._session = otto.get(OttoSession, self.session)
-		return self._session
+		return Session.load(self.session)
 
 	def get_context(self, doc: Document | None, event: str) -> tuple[str | list, None] | tuple[None, str]:
 		from otto.otto.doctype.otto_task.otto_task import run_get_context

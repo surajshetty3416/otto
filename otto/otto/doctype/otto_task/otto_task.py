@@ -9,7 +9,7 @@ import frappe
 from frappe.model.document import Document
 
 import otto
-from otto.otto.doctype.otto_task.tools import meta_tools
+from otto.otto.doctype.otto_task.tools import is_meta_tool, meta_tools
 
 logger = otto.logger("otto_task", "DEBUG")
 
@@ -104,6 +104,10 @@ class OttoTask(Document):
 	def validate(self):
 		if self.no_target and not self.get_context:
 			raise frappe.ValidationError("get_context cannot be empty if No Target is set")
+
+		for tool in self.tools:
+			if tool.slug and is_meta_tool(tool.slug):
+				raise frappe.ValidationError(f'Slug cannot be named "{tool.slug}" as it is a meta tool')
 
 	def set_if_no_target(self):
 		if self.target_doctype and not self.no_target:

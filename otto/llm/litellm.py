@@ -27,6 +27,7 @@ from otto.llm.format import get_messages
 from otto.llm.types import (
 	Content,
 	ContentChunk,
+	InteractInput,
 	InteractResponse,
 	ReasoningEffort,
 	Session,
@@ -38,8 +39,8 @@ from otto.llm.types import (
 )
 from otto.llm.utils import (
 	get_agent_item,
+	get_sequence,
 	get_session,
-	get_session_list,
 	to_content,
 	update_session,
 )
@@ -74,7 +75,7 @@ class InteractReturn(NamedTuple):
 
 def interact(
 	# query should be None only if session is provided with a call call update
-	query: str | list[str | UserContent] | list[UserContent] | None = None,
+	query: InteractInput = None,
 	*,
 	session: Session | None = None,
 	model: str | None = None,
@@ -179,7 +180,7 @@ def interact(
 
 	litellm.success_callback = [success_callback]
 
-	items = get_session_list(update)
+	items = get_sequence(update)
 	messages, last_id = get_messages(
 		items,
 		system,

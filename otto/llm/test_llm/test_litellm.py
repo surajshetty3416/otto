@@ -1,11 +1,13 @@
 import os
 import unittest
 from collections.abc import Generator
+from typing import Any
 
 import frappe
 
 from otto.llm.types import ContentChunk, ToolUseUpdate
-from otto.llm.utils import get_stats, to_content, update_with_tool_result
+from otto.llm.utils import get_stats, to_content, update_tool_use
+from otto.utils import drain
 
 # Ensure litellm can be imported if needed (though interact handles its import)
 try:
@@ -193,19 +195,13 @@ class TestLiteLLMIntegration(unittest.TestCase):
 		self.assertEqual(len(tool_use), 2)
 
 		assert len(tool_use) == 2, "Expected 2 tool calls"
-		update_with_tool_result(
+		update_tool_use(
 			session=session,
-			id=tool_use[0]["id"],
-			update=ToolUseUpdate(
-				result="10 degrees celsius", is_error=False, stdout="", stderr="", start_time=0, end_time=0
-			),
+			update=ToolUseUpdate(id=tool_use[0]["id"], result="10 degrees celsius"),
 		)
-		update_with_tool_result(
+		update_tool_use(
 			session=session,
-			id=tool_use[1]["id"],
-			update=ToolUseUpdate(
-				result="10 degrees celsius", is_error=False, stdout="", stderr="", start_time=0, end_time=0
-			),
+			update=ToolUseUpdate(id=tool_use[1]["id"], result="10 degrees celsius"),
 		)
 
 		response, error = drain(interact(session=session, model=TEST_MODEL))
@@ -263,15 +259,3 @@ def get_testfile_path(file_name: str):
 		"test_llm",
 		file_name,
 	)
-
-
-def drain(generator: Generator[ContentChunk, None, InteractReturn]) -> InteractReturn:
-	while True:
-		try:
-			next(generator)
-		except StopIteration as e:
-			value = e.value
-			if isinstance(value, InteractReturn):
-				return value
-			else:
-				raise ValueError(f"Expected InteractReturn, got {type(value)}")

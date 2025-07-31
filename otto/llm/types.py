@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Literal, TypedDict
+from typing import Any, Literal, NamedTuple, TypedDict
 
 ID = str
 SessionRole = Literal["user", "agent"]
@@ -116,10 +116,11 @@ All of the following inputs are converted into list[UserContent]:
 If input is None, it is treated as an empty list. It should be None only if the
 session provided has some update such as a tool result.
 """
-InteractInput = str | list[str | UserContent] | list[UserContent] | None
+InteractInput = str | list[str] | list[str | UserContent] | list[UserContent] | None
 
 
-class ToolUseUpdate(TypedDict):
+class ToolUseUpdate(TypedDict, total=False):
+	id: str  # Tool use id
 	result: Any
 	stdout: str | None
 	stderr: str | None

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any
 import frappe
 
 import otto
-from otto.llm.utils import get_session_list
+from otto.llm.utils import get_sequence
 from otto.otto.doctype.otto_session.otto_session import OttoSession
 from otto.otto.doctype.otto_task.tools import is_meta_tool
 
@@ -30,7 +30,7 @@ def get_session_view(name: str):
 	)
 
 	if session is not None:
-		info["sequence"] = get_session_list(session)
+		info["sequence"] = get_sequence(session)
 
 	if doc.llm:
 		llm = otto.get(OttoLLM, doc.llm)

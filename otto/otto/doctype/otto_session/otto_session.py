@@ -2,8 +2,8 @@
 # For license information, please see license.txt
 from __future__ import annotations
 
-# import frappe
-from typing import TYPE_CHECKING, cast
+from collections.abc import Generator
+from typing import TYPE_CHECKING, NamedTuple, cast
 
 import frappe
 from frappe.model.document import Document
@@ -11,8 +11,8 @@ from frappe.model.document import Document
 import otto
 from otto import llm
 from otto.llm.litellm import InteractReturn
-from otto.llm.types import Session, ToolSchema
-from otto.llm.utils import get_last_id, get_session_list
+from otto.llm.types import ContentChunk, InteractInput, Session, ToolSchema
+from otto.llm.utils import get_last_id, get_sequence
 from otto.otto.doctype.otto_session_tool_ct.otto_session_tool_ct import OttoSessionToolCT
 
 if TYPE_CHECKING:
@@ -21,17 +21,26 @@ if TYPE_CHECKING:
 logger = otto.logger("otto_session")
 
 
+class SessionInteractReturn(NamedTuple):
+	interaction: SessionItem | None
+	reason: str | None
+
+
+SessionInteractStream = Generator[ContentChunk, None, SessionInteractReturn]
+
+
 class OttoSession(Document):
 	"""Represents a single session with an LLM.
 
-	An Otto Session can be a "Task" or a "Chat". It manages:
-	- interaction history (i.e. the session)
-	- tool availability (i.e. the tools)
-	- tool execution
+	Session is purpose agnostic, it may be a turn-based chat or a task handled
+	entirely by the LLM.
 
 	This DocType acts as a persistent wrapper around the in-memory session
-	representation used by the `otto.llm` module. The invoker of an OttoSession
-	is responsible for managing the loop, invoking the tool calls.
+	representation used by the `otto.llm` module.
+
+	OttoSession is not meant to be used directly, use the wrapper
+	`otto.lib.Session` instead, this exposes specific convenience functions to
+	handle a session. View `OttoExecution` for an example on how it's used.
 	"""
 
 	# begin: auto-generated types
@@ -81,12 +90,12 @@ class OttoSession(Document):
 		doc.save(ignore_permissions=True, ignore_version=True)
 		return doc
 
-	def interact(self, query: str | list[str] | None = None) -> tuple[SessionItem, None] | tuple[None, str]:
-		"""Performs one turn of interaction with the LLM.
+	def interact(self, query: InteractInput = None) -> SessionInteractStream:
+		"""Performs one turn of interaction with the LLM, streaming the response.
 
 		This method sends the user's query, along with the current session
 		context (history and tools), to the LLM. It then updates the session
-		with the LLM's response.
+		with the LLM's full response upon completion.
 
 		The caller is responsible for creating an interaction loop. This method
 		only represents a single API call. After this, the caller should execute
@@ -96,8 +105,12 @@ class OttoSession(Document):
 		    query: The user's input for this turn. Can be a string, a list of
 		        strings, or None to let the LLM continue its turn.
 
+		Yields:
+		    ContentChunk: Chunks of the LLM's response in real-time.
+
 		Returns:
-		    A tuple containing the latest session item and an error reason.
+		    On completion, returns a tuple containing the latest session item
+		    and an error reason.
 		    - `(SessionItem, None)` on success.
 		    - `(None, str)` on failure, where the string is the error reason.
 		"""
@@ -115,7 +128,7 @@ class OttoSession(Document):
 
 		while True:
 			try:
-				next(interact_generator)
+				yield next(interact_generator)
 			except StopIteration as e:
 				interaction, reason = cast(InteractReturn, e.value)
 				logger.info(
@@ -131,17 +144,17 @@ class OttoSession(Document):
 				otto.log_error(title="interact error", doc=self)
 				reason = f"Interaction errored out: {e}"
 				self._set_status(is_active=False, reason=reason)
-				return None, reason
+				return SessionInteractReturn(None, reason)
 
 		if interaction is None:
 			reason = reason or "No interaction returned"
 			self._set_status(is_active=False, reason=reason)
-			return None, reason
+			return SessionInteractReturn(None, reason)
 
 		self._set_status(is_active=False, session=interaction["update"])
 
 		self._last_item = interaction["item"]
-		return self._last_item, None
+		return SessionInteractReturn(self._last_item, None)
 
 	def get_last_item(self) -> SessionItem | None:
 		if self._last_item:
@@ -211,7 +224,7 @@ class OttoSession(Document):
 		assert self._osi_map is not None, "type check"
 
 		# Active sequence items first
-		for item in get_session_list(session):
+		for item in get_sequence(session):
 			osi = self._osi_map.get(item["id"])
 			if not osi:
 				osi = OttoSessionItemCT.from_session_item(item)
@@ -238,7 +251,7 @@ class OttoSession(Document):
 		self.save(ignore_permissions=True, ignore_version=True)
 		frappe.db.commit()
 
-	def count_llm_calls(self, selected: bool = False):
+	def get_llm_call_count(self, selected: bool = False):
 		"""
 		If selected is True, returns the number of LLM calls in the selected items.
 		If selected is False returns total count including selected and non-selected items.

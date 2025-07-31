@@ -4,7 +4,6 @@ from __future__ import annotations
 # For license information, please see license.txt
 # import frappe
 import json
-import textwrap
 from typing import Any, cast
 
 import frappe
@@ -13,6 +12,7 @@ from frappe.model.document import Document
 
 from otto.llm.types import ToolSchema
 from otto.llm.utils import reset_user
+from otto.otto.doctype.otto_task.tools import is_meta_tool
 from otto.otto.doctype.otto_tool import lib
 from otto.utils import execute
 
@@ -80,6 +80,10 @@ class OttoTool(Document):
 
 		doc.save()
 		return doc
+
+	def validate(self):
+		if self.slug and is_meta_tool(self.slug):
+			raise frappe.ValidationError(f'Slug cannot be named "{self.slug}" as it is a meta tool')
 
 	def before_save(self):
 		reasons, args_def = execute.validate(self.code, self.slug)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import json
+from collections.abc import Generator
 from typing import Any
 
 
@@ -23,3 +24,11 @@ def _safe_dumps_default(value: Any):
 		return str(value)
 	except ValueError:
 		return "<unserializable>"
+
+
+def drain[T](generator: Generator[Any, None, T]) -> T:
+	while True:
+		try:
+			next(generator)
+		except StopIteration as e:
+			return e.value

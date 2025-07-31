@@ -5,6 +5,7 @@ import datetime
 import json
 import mimetypes
 import os
+import time
 import uuid
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, TypeGuard
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
 	from otto.llm.types import SessionItem, SessionMeta, ToolUseUpdate, UserContent
 
 
-def get_session_list(session: Session) -> list[SessionItem]:
+def get_sequence(session: Session) -> list[SessionItem]:
 	"""
 	Session is defined as a linked list with multiple next nodes (i.e a tree but
 	with only one 'active' branch sequence). This converts the linked list into a list
@@ -142,30 +143,39 @@ def update_session(session: Session, last_id: str, item: SessionItem) -> None:
 	session["items"][item["id"]] = item
 
 
-def update_with_tool_result(*, session: Session, id: str, update: ToolUseUpdate) -> None:
-	content: None | ToolUseContent = None
+def update_tool_use(*, session: Session, update: ToolUseUpdate | list[ToolUseUpdate]) -> None:
+	if not isinstance(update, list):
+		update = [update]
 
+	update_map = {u["id"]: u for u in update if "id" in u}
+	tool_use_ids = set(update_map.keys())
+	content_map: dict[str, ToolUseContent] = {}
 	for item in session["items"].values():
-		for part in item["content"]:
-			if part["type"] != "tool_use" or part["id"] != id:
+		for content in item["content"]:
+			if content["type"] != "tool_use" or content["id"] not in tool_use_ids:
 				continue
 
-			content = part
-			break
+			content_map[content["id"]] = content
+			tool_use_ids.remove(content["id"])
 
-	if content is None or content["status"] != "pending":
-		return
+			if len(tool_use_ids) == 0:
+				break
 
-	result = update["result"]
-	if not isinstance(result, str):
-		result = json.dumps(result)
+	for id, update in update_map.items():
+		content = content_map.get(id)
+		if content is None or content["status"] != "pending":
+			continue
 
-	content["status"] = "success" if not update["is_error"] else "error"
-	content["result"] = result
-	content["stdout"] = update["stdout"]
-	content["stderr"] = update["stderr"]
-	content["start_time"] = update["start_time"]
-	content["end_time"] = update["end_time"]
+		result = update.get("result", "")
+		if not isinstance(result, str):
+			result = json.dumps(result)
+
+		content["status"] = "success" if not update.get("is_error", False) else "error"
+		content["result"] = result
+		content["stdout"] = update.get("stdout")
+		content["stderr"] = update.get("stderr")
+		content["start_time"] = update.get("start_time", time.time())
+		content["end_time"] = update.get("end_time", time.time())
 
 
 def get_last_id(session: Session):

@@ -43,7 +43,10 @@ end_task_tool: ToolSchema = {
 meta_tools: list[ToolSchema] = [think_tool, end_task_tool]
 
 
-def is_meta_tool(tool: Content) -> bool:
+def is_meta_tool(tool: Content | str) -> bool:
+	if isinstance(tool, str):
+		return tool in [t["name"] for t in meta_tools]
+
 	if tool["type"] != "tool_use":
 		return False
 
