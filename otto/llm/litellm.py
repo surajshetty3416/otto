@@ -27,7 +27,7 @@ from otto.llm.format import get_messages
 from otto.llm.types import (
 	Content,
 	ContentChunk,
-	InteractResponse,
+	InteractReturn,
 	Query,
 	ReasoningEffort,
 	Session,
@@ -64,8 +64,8 @@ class StreamReturn(NamedTuple):
 	signature: str | None
 
 
-class InteractReturn(NamedTuple):
-	response: InteractResponse | None
+class InteractReturnTuple(NamedTuple):
+	response: InteractReturn | None
 	reason: None | str
 
 
@@ -78,7 +78,7 @@ def interact(
 	system: str | None = None,
 	tools: list[dict] | None = None,
 	reasoning_effort: ReasoningEffort | None = None,
-) -> Generator[ContentChunk, None, InteractReturn]:
+) -> Generator[ContentChunk, None, InteractReturnTuple]:
 	"""
 	Interacts with an LLM using LiteLLM, handling conversation history,
 	streaming responses, and tool usage.
@@ -136,7 +136,7 @@ def interact(
 	session_id = update["id"]
 
 	if reason := _set_key(model):
-		return InteractReturn(None, reason)
+		return InteractReturnTuple(None, reason)
 
 	item = get_agent_item(model)
 	item["meta"]["start_time"] = time.time()
@@ -249,8 +249,8 @@ def interact(
 
 	item["meta"]["end_time"] = time.time()
 
-	response = InteractResponse(item=item, update=update, chunks=chunks)
-	return InteractReturn(response, None)
+	response = InteractReturn(item=item, update=update, chunks=chunks)
+	return InteractReturnTuple(response, None)
 
 
 def _get_content(completion_response: dict):

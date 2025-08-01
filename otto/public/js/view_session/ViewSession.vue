@@ -161,6 +161,7 @@ onMounted(async () => await fetchData());
 				:key="item.id"
 				:item="item"
 				:index="index"
+				:has_task="!!info.task"
 			/>
 		</SectionContainer>
 

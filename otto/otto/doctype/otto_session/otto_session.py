@@ -10,8 +10,8 @@ from frappe.model.document import Document
 
 import otto
 from otto import llm
-from otto.llm.litellm import InteractReturn
-from otto.llm.types import ContentChunk, Query, Session, ToolSchema
+from otto.llm.litellm import InteractReturnTuple
+from otto.llm.types import ContentChunk, InteractResponse, Query, Session, ToolSchema
 from otto.llm.utils import get_last_id, get_sequence
 from otto.otto.doctype.otto_session_tool_ct.otto_session_tool_ct import OttoSessionToolCT
 
@@ -21,12 +21,7 @@ if TYPE_CHECKING:
 logger = otto.logger("otto_session")
 
 
-class SessionInteractReturn(NamedTuple):
-	interaction: SessionItem | None
-	reason: str | None
-
-
-SessionInteractStream = Generator[ContentChunk, None, SessionInteractReturn]
+SessionInteractStream = Generator[ContentChunk, None, InteractResponse]
 
 
 class OttoSession(Document):
@@ -130,7 +125,7 @@ class OttoSession(Document):
 			try:
 				yield next(interact_generator)
 			except StopIteration as e:
-				interaction, reason = cast(InteractReturn, e.value)
+				interaction, reason = cast(InteractReturnTuple, e.value)
 				logger.info(
 					{
 						"message": "interact success",
@@ -144,17 +139,17 @@ class OttoSession(Document):
 				otto.log_error(title="interact error", doc=self)
 				reason = f"Interaction errored out: {e}"
 				self._set_status(is_active=False, reason=reason)
-				return SessionInteractReturn(None, reason)
+				return InteractResponse(None, reason)
 
 		if interaction is None:
 			reason = reason or "No interaction returned"
 			self._set_status(is_active=False, reason=reason)
-			return SessionInteractReturn(None, reason)
+			return InteractResponse(None, reason)
 
 		self._set_status(is_active=False, session=interaction["update"])
 
 		self._last_item = interaction["item"]
-		return SessionInteractReturn(self._last_item, None)
+		return InteractResponse(self._last_item, None)
 
 	def get_last_item(self) -> SessionItem | None:
 		if self._last_item:

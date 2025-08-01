@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import NamedTuple, TypedDict
 
 from otto.llm.types import (
 	ID,
@@ -24,7 +24,6 @@ from otto.llm.types import (
 	ToolUseUpdate,
 	UserContent,
 )
-from otto.otto.doctype.otto_session.otto_session import SessionInteractReturn, SessionInteractStream
 
 __all__ = [
 	"ID",
@@ -46,16 +45,15 @@ __all__ = [
 	"InteractResponse",
 	"ToolUseUpdate",
 	"ToolSchema",
-	"SessionInteractReturn",
+	"InteractResponse",
 	"ToolSchemaParameters",
-	"SessionInteractReturn",
+	"InteractResponse",
 	"Provider",
-	"SessionInteractStream",
 	"ModelSize",
 ]
 
 
-class PendingToolUse(TypedDict):
+class PendingToolUse(NamedTuple):
 	"""
 	Represents a pending tool use request from the LLM.
 

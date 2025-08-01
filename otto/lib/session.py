@@ -13,16 +13,23 @@ Library wrapper around OttoSession
 import otto
 from otto.lib.types import (
 	Content,
+	ContentChunk,
+	InteractResponse,
 	PendingToolUse,
 	Query,
 	ReasoningEffort,
-	SessionInteractReturn,
-	SessionInteractStream,
 	SessionItem,
 	ToolSchema,
 	ToolUseUpdate,
 )
-from otto.otto.doctype.otto_session.otto_session import OttoSession
+from otto.otto.doctype.otto_session.otto_session import OttoSession, SessionInteractStream
+
+__all__ = [
+	"Session",
+	"new",
+	"load",
+	"quick_query",
+]
 
 
 class Session:
@@ -41,22 +48,12 @@ class Session:
 
 	@staticmethod
 	def new(
-		model: str,
-		instruction: str,
-		reasoning_effort: ReasoningEffort | None,
+		model: str = utils.DEFAULT_MODEL,
+		instruction: str = utils.DEFAULT_INSTRUCTION,
+		reasoning_effort: ReasoningEffort | None = None,
 		tools: list[ToolSchema] | None = None,
 	) -> Session:
-		"""Creates a new LLM session.
-
-		Args:
-		    llm: The identifier of the LLM to use for this session.
-		    instruction: The system prompt or instruction for the LLM.
-		    reasoning_effort: The reasoning effort level for the LLM.
-		    tools: A list of tool schemas available to the LLM during this session.
-
-		Returns:
-		    A new `Session` instance.
-		"""
+		# See session.new for details
 		manager = Session()
 
 		manager._session = OttoSession.new(
@@ -69,14 +66,7 @@ class Session:
 
 	@staticmethod
 	def load(id: str) -> Session:
-		"""Loads an existing LLM session from the database.
-
-		Args:
-		    id: The unique identifier of the session to load.
-
-		Returns:
-		    A `Session` instance corresponding to the given ID.
-		"""
+		# See session.load for details
 		manager = Session()
 		manager._session = otto.get(OttoSession, id)
 		return manager
@@ -102,17 +92,17 @@ class Session:
 		return bool(self._session.is_active)
 
 	@overload
-	def interact(self, query: Query, *, stream: Literal[False]) -> SessionInteractReturn: ...
+	def interact(self, query: Query, *, stream: Literal[False]) -> InteractResponse: ...
 
 	@overload
-	def interact(self, query: Query, *, stream: Literal[True]) -> SessionInteractStream: ...
+	def interact(self, query: Query, *, stream: Literal[True]) -> InteractStreamResponse: ...
 
 	def interact(
 		self,
 		query: Query = None,
 		*,
 		stream: bool = True,
-	) -> SessionInteractStream | SessionInteractReturn:
+	) -> InteractStreamResponse | InteractResponse:
 		"""Performs one turn of interaction with the LLM.
 
 		This method sends the user's query, along with the current session
@@ -132,24 +122,15 @@ class Session:
 		        If `False`, returns.
 
 		Returns:
-		    If `stream` is `True`, returns a generator (`SessionInteractStream`) that
-		    yields `ContentChunk`s and returns a `SessionInteractReturn` object.
-		    If `stream` is `False`, returns a `SessionInteractReturn` object directly.
+		    If `stream` is `True`, returns an `InteractStreamResponse` object that yields
+		    `ContentChunk`s. The full response is available on the `item` property after iterating.
+		    If `stream` is `False`, returns an `InteractResponse` tuple `(interaction, reason)` directly.
 		"""
 		interact_generator = self._session.interact(query)
 
 		if not stream:
 			return drain(interact_generator)
-
-		def _interact():
-			# Inner function to prevent outer function from becoming a generator
-			while True:
-				try:
-					yield next(interact_generator)
-				except StopIteration as e:
-					return cast(SessionInteractReturn, e.value)
-
-		return _interact()
+		return InteractStreamResponse(interact_generator)
 
 	def get_pending_tool_use(self, last_item_only: bool = True) -> list[PendingToolUse]:
 		"""Retrieves a list of tool use requests that are pending execution.
@@ -253,6 +234,48 @@ class Session:
 		return self._session.get_llm_call_count()
 
 
+class InteractStreamResponse:
+	"""A wrapper for a streaming interaction that provides access to the final
+	aggregated response after the stream has been consumed.
+	"""
+
+	_stream: SessionInteractStream
+	_item: SessionItem | None
+	_reason: str | None
+
+	@property
+	def item(self) -> SessionItem | None:
+		return self._item
+
+	@property
+	def content(self) -> list[Content]:
+		if self._item is None:
+			return []
+
+		return self._item["content"]
+
+	@property
+	def failure_reason(self) -> str | None:
+		return self._reason
+
+	def __init__(self, stream: SessionInteractStream):
+		self._stream = stream
+		self._item = None
+		self._reason = None
+
+	def __iter__(self):
+		return self
+
+	def __next__(self) -> ContentChunk:
+		try:
+			return next(self._stream)
+		except StopIteration as e:
+			interaction, reason = cast(InteractResponse, e.value)
+			self._item = interaction
+			self._reason = reason
+			raise StopIteration
+
+
 @overload
 def quick_query(
 	query: Query,
@@ -262,7 +285,7 @@ def quick_query(
 	reasoning_effort: ReasoningEffort | None = None,
 	tools: list[ToolSchema] | None = None,
 	stream: Literal[True] = True,
-) -> SessionInteractStream: ...
+) -> InteractStreamResponse: ...
 
 
 @overload
@@ -287,7 +310,7 @@ def quick_query(
 	reasoning_effort: ReasoningEffort | None = None,
 	# Determines the output type, see overloads
 	stream: bool = True,
-) -> SessionInteractStream | list[Content]:
+) -> InteractStreamResponse | list[Content]:
 	"""Convenience function to be used for one-off queries.
 
 	This is a convenience function that creates a new session and immediately
@@ -297,12 +320,12 @@ def quick_query(
 
 	The behavior and return type varies based on the `stream` parameter:
 
-	- With `stream=True`: Returns a token stream generator (SessionInteractStream)
+	- With `stream=True`: Returns an `InteractStreamResponse` instance.
 	- With `stream=False`: Returns just the response content (list[Content])
 
 	Args:
 		query: The query to send to the LLM
-		llm: The identifier of the LLM to use
+		model: The identifier of the LLM to use
 		instruction: The system prompt or instruction for the LLM
 		reasoning_effort: The reasoning effort level for the LLM
 		tools: A list of tool schemas available to the LLM
@@ -329,3 +352,35 @@ def quick_query(
 		raise InteractionError(reason or "Unknown error, did not receive a response")
 
 	return interaction["content"]
+
+
+def new(
+	model: str = utils.DEFAULT_MODEL,
+	instruction: str = utils.DEFAULT_INSTRUCTION,
+	reasoning_effort: ReasoningEffort | None = None,
+	tools: list[ToolSchema] | None = None,
+) -> Session:
+	"""Creates a new LLM session.
+
+	Args:
+		model: The identifier of the LLM to use for this session.
+		instruction: The system prompt or instruction for the LLM.
+		reasoning_effort: The reasoning effort level for the LLM.
+		tools: A list of tool schemas available to the LLM during this session.
+
+	Returns:
+		A new `Session` instance.
+	"""
+	return Session.new(model, instruction, reasoning_effort, tools)
+
+
+def load(id: str) -> Session:
+	"""Loads an existing LLM session from the database.
+
+	Args:
+		id: The unique identifier of the session to load.
+
+	Returns:
+		A `Session` instance corresponding to the given ID.
+	"""
+	return Session.load(id)

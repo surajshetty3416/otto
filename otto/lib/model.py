@@ -6,6 +6,13 @@ from otto.lib.types import ModelSize, Provider
 from otto.llm import utils
 from otto.utils import cache
 
+__all__ = [
+	"is_model_available",
+	"is_provider_available",
+	"create_model",
+	"get_model",
+	"get_models",
+]
 
 @cache(ttl=60)
 def is_model_available(model: str, exact: bool = True) -> bool:

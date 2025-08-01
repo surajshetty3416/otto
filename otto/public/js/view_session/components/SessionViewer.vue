@@ -14,6 +14,10 @@ const props = defineProps({
 		type: Object,
 		required: true,
 	},
+	has_task: {
+		type: Boolean,
+		required: true,
+	},
 });
 
 const show = ref(true);
@@ -26,6 +30,17 @@ const duration = computed(() => {
 
 	return null;
 });
+const role = computed(() => {
+	if (props.item.meta.role !== "user") {
+		return "llm";
+	}
+
+	if (props.has_task) {
+		return "system";
+	}
+
+	return "user";
+});
 </script>
 
 <template>
@@ -36,7 +51,7 @@ const duration = computed(() => {
 			@click="show = !show"
 		>
 			<div class="role" :class="{ 'role-system': isSystem, 'role-llm': !isSystem }">
-				{{ isSystem ? "system" : "llm" }}
+				{{ role }}
 			</div>
 			<div class="header-meta">
 				<p :title="`ID: ${item.id}`">{{ item.id.slice(0, 10) }}</p>

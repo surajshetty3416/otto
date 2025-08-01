@@ -434,3 +434,8 @@ def get_key(provider: Provider) -> tuple[str | None, str | None]:
 			return (None, None)
 
 	return (key, get_decrypted_password("Otto Settings", "Otto Settings", key.lower()))
+
+
+def is_reasoning_effort(value: Any) -> TypeGuard[ReasoningEffort]:
+	"""Type guard to check if a value is a valid ReasoningEffort."""
+	return value in ["low", "medium", "high"]

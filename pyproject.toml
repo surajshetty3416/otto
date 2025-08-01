@@ -1,7 +1,7 @@
 [project]
 name = "otto"
 authors = [{ name = "Alan Tom", email = "alan@frappe.io" }]
-description = "Test app to validate ideas in Flow"
+description = ""
 requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]

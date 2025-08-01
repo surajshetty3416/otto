@@ -11,6 +11,7 @@ from frappe.model.document import Document
 
 import otto
 from otto.llm.types import ToolUseUpdate
+from otto.llm.utils import is_reasoning_effort
 from otto.otto.doctype.otto_task.tools import is_meta_tool
 
 logger = otto.logger("otto_execution")
@@ -49,7 +50,7 @@ class OttoExecution(Document):
 		reasoning_effort: str | None = None,
 		instruction: str | None = None,
 	):
-		from otto.lib import Session
+		import otto.lib as lib
 		from otto.otto.doctype.otto_task.otto_task import get_tools
 
 		doc = cast(OttoExecution, frappe.get_doc({"doctype": "Otto Execution", "task": task}))
@@ -58,12 +59,13 @@ class OttoExecution(Document):
 		doc.target = target
 		doc.event = event
 
-		if reasoning_effort and reasoning_effort in ["None", "Low", "Medium", "High"]:
-			reasoning_effort = reasoning_effort  # type: ignore
-		else:
+		if reasoning_effort is None:
 			reasoning_effort = frappe.get_cached_value("Otto Task", task, "reasoning_effort")
 
-		session = Session.new(
+		if not is_reasoning_effort(reasoning_effort):
+			reasoning_effort = None
+
+		session = lib.new(
 			model=llm or frappe.get_cached_value("Otto Task", task, "llm"),
 			instruction=instruction or frappe.get_cached_value("Otto Task", task, "instruction"),
 			reasoning_effort=reasoning_effort,
@@ -155,16 +157,12 @@ class OttoExecution(Document):
 		updates: list[ToolUseUpdate] = []
 		tool_map = get_tool_map(self.task)
 		for tool in pending:
-			slug = tool["name"]
-			tool_use_id = tool["id"]
-			tool_use_args = tool["args"]
-
 			# Used if meta tool
-			update = ToolUseUpdate(id=tool_use_id)
-			tool_name, env_str = tool_map.get(slug, (None, None))
-			if not is_meta_tool(slug):
+			update = ToolUseUpdate(id=tool.id)
+			tool_name, env_str = tool_map.get(tool.name, (None, None))
+			if not is_meta_tool(tool.name):
 				assert tool_name is not None, "sanity check"
-				update = self._execute_tool(tool_name, tool_use_args, tool_use_id, env_str)
+				update = self._execute_tool(tool_name, tool.args, tool.id, env_str)
 
 			updates.append(update)
 
@@ -236,12 +234,12 @@ class OttoExecution(Document):
 		return False
 
 	def get_session(self) -> Session:
-		from otto.lib import Session
+		import otto.lib as lib
 
 		if self._session is not None:
 			return self._session
 
-		return Session.load(self.session)
+		return lib.load(self.session)
 
 	def get_context(self, doc: Document | None, event: str) -> tuple[str | list, None] | tuple[None, str]:
 		from otto.otto.doctype.otto_task.otto_task import run_get_context
