@@ -11,7 +11,7 @@ from frappe.model.document import Document
 import otto
 from otto import llm
 from otto.llm.litellm import InteractReturn
-from otto.llm.types import ContentChunk, InteractInput, Session, ToolSchema
+from otto.llm.types import ContentChunk, Query, Session, ToolSchema
 from otto.llm.utils import get_last_id, get_sequence
 from otto.otto.doctype.otto_session_tool_ct.otto_session_tool_ct import OttoSessionToolCT
 
@@ -72,14 +72,14 @@ class OttoSession(Document):
 	@staticmethod
 	def new(
 		*,
-		llm: str,
+		model: str,
 		instruction: str,
 		reasoning_effort: str | None,
 		tools: list[ToolSchema] | None = None,
 	):
 		doc = cast(OttoSession, frappe.get_doc({"doctype": "Otto Session"}))
 
-		doc.llm = llm
+		doc.llm = model
 		doc.instruction = instruction
 		if reasoning_effort and reasoning_effort in ["None", "Low", "Medium", "High"]:
 			doc.reasoning_effort = reasoning_effort  # type: ignore
@@ -90,7 +90,7 @@ class OttoSession(Document):
 		doc.save(ignore_permissions=True, ignore_version=True)
 		return doc
 
-	def interact(self, query: InteractInput = None) -> SessionInteractStream:
+	def interact(self, query: Query = None) -> SessionInteractStream:
 		"""Performs one turn of interaction with the LLM, streaming the response.
 
 		This method sends the user's query, along with the current session

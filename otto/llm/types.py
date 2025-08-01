@@ -119,7 +119,7 @@ All of the following inputs are converted into list[UserContent]:
 If input is None, it is treated as an empty list. It should be None only if the
 session provided has some update such as a tool result.
 """
-InteractInput = str | list[str] | list[str | UserContent] | list[UserContent] | None
+Query = str | list[str] | list[str | UserContent] | list[UserContent] | None
 
 
 class ToolUseUpdate(TypedDict, total=False):

@@ -64,7 +64,7 @@ class OttoExecution(Document):
 			reasoning_effort = frappe.get_cached_value("Otto Task", task, "reasoning_effort")
 
 		session = Session.new(
-			llm=llm or frappe.get_cached_value("Otto Task", task, "llm"),
+			model=llm or frappe.get_cached_value("Otto Task", task, "llm"),
 			instruction=instruction or frappe.get_cached_value("Otto Task", task, "instruction"),
 			reasoning_effort=reasoning_effort,
 			tools=get_tools(task),

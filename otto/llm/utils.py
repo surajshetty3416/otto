@@ -15,7 +15,17 @@ from urllib.request import urlopen
 import frappe
 
 from otto import utils
-from otto.llm.types import Provider, Session, ToolUseContent
+from otto.llm.types import Provider, ReasoningEffort, Session, ToolUseContent
+
+MAX_RETRIES = 6
+DEFAULT_INSTRUCTION = "You are a helpful assistant."
+DEFAULT_MODEL = "openai/gpt-4.1-nano"
+DEFAULT_REASONING_BUDGET_MAP: dict[ReasoningEffort, int] = {
+	"low": 4096,
+	"medium": 8192,
+	"high": 16384,
+}
+
 
 if TYPE_CHECKING:
 	from otto.llm.types import SessionItem, SessionMeta, ToolUseUpdate, UserContent

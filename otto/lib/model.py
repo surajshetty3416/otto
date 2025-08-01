@@ -4,9 +4,35 @@ import frappe
 
 from otto.lib.types import ModelSize, Provider
 from otto.llm import utils
+from otto.utils import cache
 
 
-def is_model_available(model: str) -> bool:
+@cache(ttl=60)
+def is_model_available(model: str, exact: bool = True) -> bool:
+	"""Checks if a given model name is available in Otto LLM.
+
+	This function checks if a model exists and is enabled in the Otto LLM system.
+	The check can be done either with exact matching or partial name matching.
+
+	Args:
+		model: The name of the model to check
+		exact: If True, only returns True on exact name match. If False, also
+			checks for partial case-insensitive matches.
+
+	Returns:
+		True if the model exists and is enabled, False otherwise.
+	"""
+	if frappe.db.exists("Otto LLM", {"name": model}):
+		return True
+
+	if not exact:
+		return False
+
+	for name in frappe.get_all("Otto LLM", filters={"is_enabled": True}, pluck="name"):
+		assert isinstance(name, str)
+		if model.lower() in name.lower():
+			return True
+
 	return False
 
 
@@ -126,6 +152,7 @@ def get_model(
 	return models[0]
 
 
+@cache(ttl=60)
 def get_models(
 	*,
 	provider: Provider | None = None,

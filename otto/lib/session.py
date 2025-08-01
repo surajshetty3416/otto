@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Literal, cast, overload
 
+from otto.lib.errors import InteractionError
 from otto.llm import utils
 from otto.utils import drain
 
@@ -12,8 +13,9 @@ Library wrapper around OttoSession
 import otto
 from otto.lib.types import (
 	Content,
-	InteractInput,
 	PendingToolUse,
+	Query,
+	ReasoningEffort,
 	SessionInteractReturn,
 	SessionInteractStream,
 	SessionItem,
@@ -39,9 +41,9 @@ class Session:
 
 	@staticmethod
 	def new(
-		llm: str,
+		model: str,
 		instruction: str,
-		reasoning_effort: str | None,
+		reasoning_effort: ReasoningEffort | None,
 		tools: list[ToolSchema] | None = None,
 	) -> Session:
 		"""Creates a new LLM session.
@@ -58,7 +60,7 @@ class Session:
 		manager = Session()
 
 		manager._session = OttoSession.new(
-			llm=llm,
+			model=model,
 			instruction=instruction,
 			reasoning_effort=reasoning_effort,
 			tools=tools,
@@ -100,14 +102,14 @@ class Session:
 		return bool(self._session.is_active)
 
 	@overload
-	def interact(self, query: InteractInput, *, stream: Literal[False]) -> SessionInteractReturn: ...
+	def interact(self, query: Query, *, stream: Literal[False]) -> SessionInteractReturn: ...
 
 	@overload
-	def interact(self, query: InteractInput, *, stream: Literal[True]) -> SessionInteractStream: ...
+	def interact(self, query: Query, *, stream: Literal[True]) -> SessionInteractStream: ...
 
 	def interact(
 		self,
-		query: InteractInput = None,
+		query: Query = None,
 		*,
 		stream: bool = True,
 	) -> SessionInteractStream | SessionInteractReturn:
@@ -249,3 +251,81 @@ class Session:
 	def get_llm_call_count(self) -> int:
 		"""Returns the total number of calls made to the LLM in this session."""
 		return self._session.get_llm_call_count()
+
+
+@overload
+def quick_query(
+	query: Query,
+	*,
+	model: str = utils.DEFAULT_MODEL,
+	instruction: str = utils.DEFAULT_INSTRUCTION,
+	reasoning_effort: ReasoningEffort | None = None,
+	tools: list[ToolSchema] | None = None,
+	stream: Literal[True] = True,
+) -> SessionInteractStream: ...
+
+
+@overload
+def quick_query(
+	query: Query,
+	*,
+	model: str = utils.DEFAULT_MODEL,
+	instruction: str = utils.DEFAULT_INSTRUCTION,
+	reasoning_effort: ReasoningEffort | None = None,
+	tools: list[ToolSchema] | None = None,
+	stream: Literal[False] = False,
+) -> list[Content]: ...
+
+
+def quick_query(
+	query: Query,
+	*,
+	# Interaction config
+	model: str = utils.DEFAULT_MODEL,
+	instruction: str = utils.DEFAULT_INSTRUCTION,
+	tools: list[ToolSchema] | None = None,
+	reasoning_effort: ReasoningEffort | None = None,
+	# Determines the output type, see overloads
+	stream: bool = True,
+) -> SessionInteractStream | list[Content]:
+	"""Convenience function to be used for one-off queries.
+
+	This is a convenience function that creates a new session and immediately
+	interacts with it.
+
+	For more control use `Session.new|load` then `Session.interact`.
+
+	The behavior and return type varies based on the `stream` parameter:
+
+	- With `stream=True`: Returns a token stream generator (SessionInteractStream)
+	- With `stream=False`: Returns just the response content (list[Content])
+
+	Args:
+		query: The query to send to the LLM
+		llm: The identifier of the LLM to use
+		instruction: The system prompt or instruction for the LLM
+		reasoning_effort: The reasoning effort level for the LLM
+		tools: A list of tool schemas available to the LLM
+		stream: Whether to stream the response
+
+	Returns:
+		Either a response stream or content list depending on the stream parameter
+
+	Raises:
+		InteractionError: If the interaction fails or returns no response
+	"""
+	session = Session.new(
+		model=model,
+		instruction=instruction,
+		reasoning_effort=reasoning_effort,
+		tools=tools,
+	)
+
+	if stream:
+		return session.interact(query, stream=True)
+
+	interaction, reason = session.interact(query, stream=False)
+	if reason or interaction is None:
+		raise InteractionError(reason or "Unknown error, did not receive a response")
+
+	return interaction["content"]

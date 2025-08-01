@@ -27,17 +27,19 @@ from otto.llm.format import get_messages
 from otto.llm.types import (
 	Content,
 	ContentChunk,
-	InteractInput,
 	InteractResponse,
+	Query,
 	ReasoningEffort,
 	Session,
 	SessionItem,
 	TextContent,
 	ThinkingContent,
 	ToolUseContent,
-	UserContent,
 )
 from otto.llm.utils import (
+	DEFAULT_MODEL,
+	DEFAULT_REASONING_BUDGET_MAP,
+	MAX_RETRIES,
 	get_agent_item,
 	get_key,
 	get_provider,
@@ -54,15 +56,7 @@ if TYPE_CHECKING:
 	from litellm.types.utils import ModelResponseStream
 
 
-DEFAULT_LLM = "gemini/gemini-2.5-flash-preview-05-20"
-MAX_RETRIES = 6
-
 logger = otto.logger("otto_litellm", "INFO")
-DEFAULT_REASONING_BUDGET_MAP: dict[ReasoningEffort, int] = {
-	"low": 4096,
-	"medium": 8192,
-	"high": 16384,
-}
 
 
 class StreamReturn(NamedTuple):
@@ -77,7 +71,7 @@ class InteractReturn(NamedTuple):
 
 def interact(
 	# query should be None only if session is provided with a call call update
-	query: InteractInput = None,
+	query: Query = None,
 	*,
 	session: Session | None = None,
 	model: str | None = None,
@@ -135,7 +129,7 @@ def interact(
 	)
 
 	content = None if query is None else to_content(query)
-	model = model or DEFAULT_LLM
+	model = model or DEFAULT_MODEL
 
 	# Creates a new session if session is None, else uses a copy
 	update = get_session(content, session)

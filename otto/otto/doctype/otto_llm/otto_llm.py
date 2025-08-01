@@ -6,7 +6,10 @@ import json
 from typing import TYPE_CHECKING, cast
 
 import frappe
+import frappe.realtime
 from frappe.model.document import Document
+
+from otto.llm.utils import DEFAULT_INSTRUCTION
 
 if TYPE_CHECKING:
 	from otto.llm.types import ReasoningEffort
@@ -55,32 +58,32 @@ class OttoLLM(Document):
 		return doc
 
 	@frappe.whitelist()
-	def ask(self, query: str, system: str | None = None, reasoning_effort: str | None = None):
+	def ask(self, query: str, instruction: str | None = None, reasoning_effort: str | None = None):
 		"""Test the LLM with a query and system prompt."""
-		from otto.llm import interact
+		from otto.lib import quick_query
 
-		system = system or "You are a helpful assistant."
-
-		result, reason = interact(
-			query,
-			model=self.name,
-			system=system,
-			reasoning_effort=get_reasoning_effort(reasoning_effort, self),
-		)
-		if reason:
-			return reason
-
-		assert result is not None, "sanity check"
+		assert self.name is not None, "type check"
 
 		try:
-			content = result["item"]["content"][-1]
+			stream = quick_query(
+				query,
+				model=self.name,
+				instruction=instruction or DEFAULT_INSTRUCTION,
+				reasoning_effort=get_reasoning_effort(reasoning_effort, self),
+			)
 
-			if content["type"] == "text":
-				return content["text"]
+			for chunk in stream:
+				frappe.realtime.publish_realtime(
+					f"stream-llm-{self.name}",
+					{
+						"llm": self.name,
+						"chunk": chunk,
+					},
+				)
+		except Exception as e:
+			return json.dumps({"error": str(e)})
 
-			return json.dumps(content, indent=2)
-		except Exception:
-			return json.dumps(result.get("item", {}).get("content", []), indent=2)
+		return {"message": "success"}
 
 
 def get_reasoning_effort(effort: str | None, llm: OttoLLM | None = None) -> ReasoningEffort | None:
