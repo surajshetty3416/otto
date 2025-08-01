@@ -4,7 +4,6 @@ import frappe
 
 import otto
 from otto.llm.utils import get_sequence
-from otto.otto.doctype.otto_session.otto_session import OttoSession
 from otto.otto.doctype.otto_task.tools import is_meta_tool
 
 if TYPE_CHECKING:
@@ -39,7 +38,7 @@ def get_session_view(name: str):
 	set_execution_info(name, info)
 	set_tools_info(name, info)
 	set_scrapbook_info(name, info)
-	set_tool_use_info(doc, info)
+	set_tool_use_info(info)
 
 	return info
 
@@ -187,15 +186,18 @@ def set_tools_info(session_name: str, info: dict[str, Any]):
 			c["tool"] = tool_map.get(tool_name)
 
 
-def set_tool_use_info(doc: OttoSession, info: dict[str, Any]):
+def set_tool_use_info(info: dict[str, Any]):
 	sequence: list[SessionItem] = info.get("sequence", [])
 	if not sequence:
 		return
 
 	tool_use = {}
 
-	slug_map = info["slug_map"]
-	tool_map = info["tool_map"]
+	slug_map = info.get("slug_map")
+	tool_map = info.get("tool_map")
+
+	if not slug_map or not tool_map:
+		return
 
 	for i, item in enumerate(sequence):
 		for j, c in enumerate(item.get("content", [])):

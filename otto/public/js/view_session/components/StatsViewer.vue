@@ -21,7 +21,7 @@ const props = defineProps({
 			:value="format_number(stats.total_input_tokens) + ' tok'"
 		/>
 		<Detail
-			label="TotalOutput Tokens"
+			label="Total Output Tokens"
 			:value="format_number(stats.total_output_tokens) + ' tok'"
 		/>
 		<Detail

@@ -236,7 +236,7 @@ class Session:
 		return item["content"]
 
 	def get_items(self) -> list[SessionItem]:
-		"""Returns all items in the session's interaction history.
+		"""Returns all items in the session's interaction history in order.
 
 		This provides the full chronological record of the conversation.
 
