@@ -48,11 +48,15 @@ class C:
 	@staticmethod
 	def thinking(text: str, signature: str | None):
 		# LiteLLM specific, used only by Anthropic, OpenAI throws error
-		return {
+		thinking = {
 			"type": "thinking",
 			"thinking": text,
-			"signature": signature,
 		}
+
+		if signature:
+			thinking["signature"] = signature
+
+		return thinking
 
 
 def get_messages(

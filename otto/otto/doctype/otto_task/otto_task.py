@@ -10,6 +10,8 @@ from frappe.model.document import Document
 
 import otto
 from otto import utils
+from otto.llm.types import ReasoningEffort
+from otto.llm.utils import is_reasoning_effort
 from otto.otto.doctype.otto_task.tools import is_meta_tool, meta_tools
 
 logger = otto.logger("otto_task", "DEBUG")
@@ -90,6 +92,9 @@ class OttoTask(Document):
 
 	@frappe.whitelist()
 	def execute_task(self, target: str, llm: str | None, reasoning_effort: str | None = None):
+		if not is_reasoning_effort(reasoning_effort):
+			reasoning_effort = None
+
 		return self.trigger_execution(
 			target=target,
 			event="Manual",
@@ -132,7 +137,7 @@ class OttoTask(Document):
 		target: str | None,
 		event: str,
 		llm: str | None = None,
-		reasoning_effort: str | None = None,
+		reasoning_effort: ReasoningEffort | None = None,
 		instruction: str | None = None,
 		is_background: bool = True,
 	):

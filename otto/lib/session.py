@@ -91,6 +91,28 @@ class Session:
 		"""
 		return bool(self._session.is_active)
 
+	@property
+	def model(self) -> str:
+		"""The LLM model used for this session."""
+		assert self._session.llm is not None, "type check"
+		return self._session.llm
+
+	@property
+	def instruction(self) -> str:
+		"""The instruction used for this session."""
+		assert self._session.instruction is not None, "type check"
+		return self._session.instruction
+
+	@property
+	def reasoning_effort(self) -> ReasoningEffort | None:
+		"""The reasoning effort used for this session."""
+		assert self._session.reasoning_effort is not None, "type check"
+		reasoning_effort = self._session.reasoning_effort
+		if utils.is_reasoning_effort(reasoning_effort):
+			return reasoning_effort
+
+		return None
+
 	@overload
 	def interact(self, query: Query, *, stream: Literal[False]) -> InteractResponse: ...
 

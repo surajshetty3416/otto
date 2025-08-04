@@ -10,7 +10,12 @@ frappe.ui.form.on("Otto Execution", {
 				method: "retry",
 				doc: frm.doc,
 				callback(r) {
-					frappe.msgprint(r.message, __("Retry"));
+					const link = frappe.utils.get_form_link("Otto Session", r.message);
+
+					frappe.msgprint(
+						`Retrying with session <a href="${link}" target="_blank">${r.message}</a>.`,
+						__("Retrying")
+					);
 					frm.reload_doc();
 					frm.refresh();
 				},

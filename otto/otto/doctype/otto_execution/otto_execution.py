@@ -10,8 +10,7 @@ import frappe
 from frappe.model.document import Document
 
 import otto
-from otto.llm.types import ToolUseUpdate
-from otto.llm.utils import is_reasoning_effort
+from otto.llm.types import ReasoningEffort, ToolUseUpdate
 from otto.otto.doctype.otto_task.tools import is_meta_tool
 
 logger = otto.logger("otto_execution")
@@ -47,7 +46,7 @@ class OttoExecution(Document):
 		target_doctype: str | None,
 		event: str | None = None,
 		llm: str | None = None,
-		reasoning_effort: str | None = None,
+		reasoning_effort: ReasoningEffort | None = None,
 		instruction: str | None = None,
 	):
 		import otto.lib as lib
@@ -61,9 +60,6 @@ class OttoExecution(Document):
 
 		if reasoning_effort is None:
 			reasoning_effort = frappe.get_cached_value("Otto Task", task, "reasoning_effort")
-
-		if not is_reasoning_effort(reasoning_effort):
-			reasoning_effort = None
 
 		session = lib.new(
 			model=llm or frappe.get_cached_value("Otto Task", task, "llm"),
@@ -276,21 +272,31 @@ class OttoExecution(Document):
 
 	@frappe.whitelist()
 	def retry(self):
+		import otto.lib as lib
+		from otto.otto.doctype.otto_task.otto_task import get_timeout, get_tools
+
 		if self.status != "Failure":
 			return "Retry available only for failed sessions"
-		from otto.otto.doctype.otto_task.otto_task import get_timeout
 
-		self.set_status("Running")
-		self.save()
+		prev = self.get_session()
+		session = lib.new(
+			model=prev.model,
+			instruction=prev.instruction,
+			reasoning_effort=prev.reasoning_effort,
+			tools=get_tools(self.task),
+		)
+
+		self.session = session.id
+		self.save(ignore_permissions=True, ignore_version=True)
 
 		frappe.enqueue_doc(
 			doctype="Otto Execution",
 			name=self.name,
-			method="loop",
+			method="execute",
 			timeout=get_timeout(),
 		)
 
-		return "Session enqueued"
+		return session.id
 
 
 @frappe.whitelist()

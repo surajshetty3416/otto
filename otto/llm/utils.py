@@ -21,9 +21,9 @@ MAX_RETRIES = 6
 DEFAULT_INSTRUCTION = "You are a helpful assistant."
 DEFAULT_MODEL = "openai/gpt-4.1-nano"
 DEFAULT_REASONING_BUDGET_MAP: dict[ReasoningEffort, int] = {
-	"low": 4096,
-	"medium": 8192,
-	"high": 16384,
+	"Low": 4096,
+	"Medium": 8192,
+	"High": 16384,
 }
 
 
@@ -456,4 +456,4 @@ def get_key(provider: Provider) -> tuple[str, str] | tuple[None, None]:
 
 def is_reasoning_effort(value: Any) -> TypeGuard[ReasoningEffort]:
 	"""Type guard to check if a value is a valid ReasoningEffort."""
-	return value in ["low", "medium", "high"]
+	return value in ["Low", "Medium", "High"]

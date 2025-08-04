@@ -8,7 +8,7 @@ ModelSize = Literal["Very Small", "Small", "Medium", "Large"]
 ID = str
 SessionRole = Literal["user", "agent"]
 EndReason = Literal["turn_end", "tool_use"]
-ReasoningEffort = Literal["low", "medium", "high"]
+ReasoningEffort = Literal["Low", "Medium", "High"]
 
 
 class ThinkingContent(TypedDict):

@@ -10,7 +10,7 @@ import frappe.realtime
 from frappe.model.document import Document
 
 from otto.llm.types import ModelSize, Provider
-from otto.llm.utils import DEFAULT_INSTRUCTION
+from otto.llm.utils import DEFAULT_INSTRUCTION, is_reasoning_effort
 
 if TYPE_CHECKING:
 	from otto.llm.types import ReasoningEffort
@@ -103,15 +103,7 @@ def get_reasoning_effort(effort: str | None, llm: OttoLLM | None = None) -> Reas
 	if not effort:
 		return None
 
-	if llm and not llm.is_reasoning:
+	if llm and not llm.is_reasoning or not is_reasoning_effort(effort):
 		return None
 
-	if effort in ["low", "medium", "high"]:
-		return cast("ReasoningEffort", effort)
-
-	return {
-		"None": None,
-		"Low": "low",
-		"Medium": "medium",
-		"High": "high",
-	}.get(effort, None)
+	return effort

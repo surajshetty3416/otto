@@ -56,7 +56,7 @@ if TYPE_CHECKING:
 	from litellm.types.utils import ModelResponseStream
 
 
-logger = otto.logger("otto_litellm", "INFO")
+logger = otto.logger("otto_litellm", "DEBUG")
 
 
 class StreamReturn(NamedTuple):
@@ -143,7 +143,6 @@ def interact(
 
 	# Required cause of LiteLLM's spaghetti design
 	done = threading.Event()
-	done.clear()
 
 	def success_callback(
 		kwargs: dict,  # kwargs to completion
@@ -185,7 +184,7 @@ def interact(
 
 	think = {}
 	if reasoning_effort:
-		think["reasoning_effort"] = reasoning_effort
+		think["reasoning_effort"] = reasoning_effort.lower()  # litellm expects "low", "medium", "high"
 
 	if reasoning_effort and (model.startswith("anthropic") or model.startswith("gemini")):
 		think["thinking"] = _get_thinking(reasoning_effort)
@@ -213,19 +212,34 @@ def interact(
 		try:
 			yield next(stream_generator)
 		except StopIteration as e:
-			chunks, signature = cast(StreamReturn, e.value)
+			ret = cast(StreamReturn, e.value)
+			chunks = ret.chunks
+			signature = ret.signature
 			break
 
 	logger.debug(
 		{
-			"message": "waiting for callback",
+			"message": "waiting for stream completion",
 			"id": item["id"],
 			"signature": signature,
 			"chunks": len(chunks),
 		}
 	)
-	# Wait until the success callback is called
+
+	# Note:
+	#
+	# There is/was a weird bug where if insufficient logging statements were
+	# present then the signature value would not be set.
+	#
+	# This kinda implies that the final callback was being called before the
+	# StopIteration exception was handled and that the logging statements
+	# delayed execution enough for signature to be set.
+	#
+	# Adding the 1ms sleep statement seems to fix the issue, but it is still
+	# vexing because the wait call should not be reached unless and until the
+	# stream, and the StopIteration exception is handled.
 	done.wait()
+	time.sleep(0.001)
 
 	logger.debug(
 		{
@@ -448,7 +462,6 @@ def _get_signature_from_thinking_blocks(blocks):
 
 
 def _should_preserve_thinking(model: str):
-	# rn only Sonnet 3.7 requires reasoning to be preserved
 	# reference: https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking?q=thinking#preserving-thinking-blocks
 	return "sonnet" in model or "opus" in model
 
