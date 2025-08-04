@@ -5,8 +5,8 @@ Library for adding LLM capabilities into Frappe apps.
 > [!NOTE]
 >
 > Otto Lib is meant to be used specifically with Frappe apps. The library
-> features offered by Otto are backed by DocTypes in Otto and so cannot be
-> provided as a standalone library.
+> features offered by Otto are backed by DocTypes and so cannot be provided as a
+> standalone library.
 
 ## Index
 

@@ -12,7 +12,22 @@ __all__ = [
 	"create_model",
 	"get_model",
 	"get_models",
+	"set_api_key",
 ]
+
+
+def set_api_key(provider: Provider, value: str) -> None:
+	"""Sets the API key for a provider.
+
+	Args:
+		provider: The provider to set the key for
+		key: The API key to set
+	"""
+	if (key := utils.get_provider_key(provider)) is None:
+		return
+
+	frappe.set_value("Otto Settings", "Otto Settings", key.lower(), value)
+
 
 @cache(ttl=60)
 def is_model_available(model: str, exact: bool = True) -> bool:
@@ -29,15 +44,23 @@ def is_model_available(model: str, exact: bool = True) -> bool:
 	Returns:
 		True if the model exists and is enabled, False otherwise.
 	"""
-	if frappe.db.exists("Otto LLM", {"name": model}):
+	if (
+		frappe.db.exists({"doctype": "Otto LLM", "name": model, "enabled": True})
+		and (provider := utils.get_provider(model))
+		and is_provider_available(provider)
+	):
 		return True
 
-	if not exact:
+	if exact or not model:
 		return False
 
-	for name in frappe.get_all("Otto LLM", filters={"is_enabled": True}, pluck="name"):
-		assert isinstance(name, str)
-		if model.lower() in name.lower():
+	for res in frappe.get_all("Otto LLM", filters={"enabled": True}, fields=["name", "title"]):
+		assert isinstance(res.name, str) and isinstance(res.title, str), "sanity check"
+		if (
+			(model.lower() in res.name.lower() or model.lower() in res.title.lower())
+			and (provider := utils.get_provider(res.name))
+			and is_provider_available(provider)
+		):
 			return True
 
 	return False
@@ -63,7 +86,7 @@ def create_model(
 	provider_model_id: str,
 	size: ModelSize,
 	is_reasoning: bool,
-	supports_image: bool,
+	supports_vision: bool,
 ) -> str:
 	"""Creates a new Otto LLM entry with the specified parameters.
 
@@ -81,7 +104,7 @@ def create_model(
 		provider_model_id: Provider-specific model identifier
 		size: Model size category (Very Small, Small, Medium, Large)
 		is_reasoning: Whether model supports reasoning capabilities
-		supports_image: Whether model supports image input
+		supports_vision: Whether model supports image input
 
 	Returns:
 		Name of the created model in format "{provider_id}/{provider_model_id}"
@@ -100,7 +123,7 @@ def create_model(
 		provider=provider,
 		is_reasoning=is_reasoning,
 		size=size,
-		supports_images=supports_image,
+		supports_vision=supports_vision,
 	)
 	assert llm.name is not None, "sanity check"
 	return llm.name
@@ -111,7 +134,7 @@ def get_model(
 	provider: Provider | None = None,
 	size: ModelSize | None = None,
 	is_reasoning: bool | None = None,
-	supports_image: bool | None = None,
+	supports_vision: bool | None = None,
 	preference: str | None = None,
 ) -> str | None:
 	"""Returns the first available model matching the given criteria.
@@ -137,7 +160,7 @@ def get_model(
 		provider: Filter by specific provider (OpenAI, Anthropic, etc)
 		size: Filter by model size (Very Small, Small, Medium, Large)
 		is_reasoning: Filter by whether model supports reasoning
-		supports_image: Filter by whether model supports image input
+		supports_vision: Filter by whether model supports image input
 		preference: Optional model name preference - will try to match this first
 
 	Returns:
@@ -147,7 +170,7 @@ def get_model(
 		provider=provider,
 		size=size,
 		is_reasoning=is_reasoning,
-		supports_image=supports_image,
+		supports_vision=supports_vision,
 	)
 
 	if not models:
@@ -165,7 +188,7 @@ def get_models(
 	provider: Provider | None = None,
 	size: ModelSize | None = None,
 	is_reasoning: bool | None = None,
-	supports_image: bool | None = None,
+	supports_vision: bool | None = None,
 ) -> list[str]:
 	"""Returns a list of available models matching the given criteria.
 
@@ -176,7 +199,7 @@ def get_models(
 		provider: Filter by specific provider (OpenAI, Anthropic, etc)
 		size: Filter by model size (Very Small, Small, Medium, Large)
 		is_reasoning: Filter by whether model supports reasoning
-		supports_image: Filter by whether model supports image input
+		supports_vision: Filter by whether model supports image input
 
 	Returns:
 		List of model names that match all criteria and are available for use
@@ -184,7 +207,7 @@ def get_models(
 	if provider and not is_provider_available(provider):
 		return []
 
-	filters: dict[str, Any] = {"is_enabled": True}
+	filters: dict[str, Any] = {"enabled": True}
 	if provider is not None:
 		filters["provider"] = provider
 
@@ -194,8 +217,8 @@ def get_models(
 	if is_reasoning is not None:
 		filters["is_reasoning"] = is_reasoning
 
-	if supports_image is not None:
-		filters["supports_image"] = supports_image
+	if supports_vision is not None:
+		filters["supports_vision"] = supports_vision
 
 	models = frappe.get_all("Otto LLM", filters=filters, pluck="name")
 	if provider:

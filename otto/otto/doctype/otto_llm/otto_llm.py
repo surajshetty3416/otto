@@ -9,6 +9,7 @@ import frappe
 import frappe.realtime
 from frappe.model.document import Document
 
+from otto.llm.types import ModelSize, Provider
 from otto.llm.utils import DEFAULT_INSTRUCTION
 
 if TYPE_CHECKING:
@@ -28,7 +29,7 @@ class OttoLLM(Document):
 		is_reasoning: DF.Check
 		provider: DF.Literal["Anthropic", "OpenAI", "Google"]
 		size: DF.Literal["Very Small", "Small", "Medium", "Large"]
-		supports_images: DF.Check
+		supports_vision: DF.Check
 		title: DF.Data
 	# end: auto-generated types
 
@@ -36,25 +37,22 @@ class OttoLLM(Document):
 	def new(
 		name: str,
 		title: str,
-		provider: str,
+		provider: Provider,
+		size: ModelSize,
 		is_reasoning: bool = False,
-		size: str | None = None,
-		supports_images: bool = False,
+		supports_vision: bool = False,
 	):
-		doc = cast(
-			OttoLLM,
-			frappe.get_doc(
-				{
-					"doctype": "Otto LLM",
-					"name": name,
-					"title": title,
-					"provider": provider,
-					"is_reasoning": is_reasoning,
-				}
-			),
-		)
+		doc = cast(OttoLLM, frappe.get_doc({"doctype": "Otto LLM"}))
 
-		doc.save()
+		doc.name = name
+		doc.title = title
+		doc.provider = provider
+		doc.is_reasoning = is_reasoning
+		doc.supports_vision = supports_vision
+		doc.size = size
+
+		# Name being present causes doc.save to fail
+		doc.insert(ignore_permissions=True)
 		return doc
 
 	@frappe.whitelist()

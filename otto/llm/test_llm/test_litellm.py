@@ -1,54 +1,19 @@
-import os
 import unittest
-from collections.abc import Generator
-from typing import Any
 
-import frappe
-
-from otto.llm.types import ContentChunk, ToolUseUpdate
+from otto.llm.litellm import interact
+from otto.llm.test_llm.utils import (
+	TEST_MODEL,
+	get_testfile_path,
+	get_weather_tool,
+	skip_unless_can_run_llm_tests,
+)
+from otto.llm.types import ToolUseUpdate
 from otto.llm.utils import get_stats, to_content, update_tool_use
 from otto.utils import drain
 
-# Ensure litellm can be imported if needed (though interact handles its import)
-try:
-	import litellm
-except ImportError:
-	litellm = None  # Allow tests to be defined but skipped if litellm not installed
-
-# Now import the function to test and types
-from otto.llm.litellm import InteractReturn, interact  # Keep DEFAULT_LLM for info if needed
-
-# Model to use for testing
-TEST_MODEL = "openai/gpt-4.1-mini"  # current cheapest model
-
-get_weather_tool = {
-	"type": "function",
-	"function": {
-		"name": "get_weather",
-		"description": "Get the current weather in a given location",
-		"parameters": {
-			"type": "object",
-			"properties": {
-				"location": {
-					"type": "string",
-					"description": "The city and state, e.g. San Francisco, CA",
-				},
-				"unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
-			},
-			"required": ["location"],
-		},
-	},
-}
-
 
 #  Skip if not explicitly enabled
-@unittest.skipUnless(
-	os.environ.get("RUN_LLM_TESTS", "false").lower() == "true",
-	reason="""
-	LLM integration tests are disabled, these tests require API keys to be set
-	and so cost money to run. Set RUN_LLM_TESTS=true to enable.
-	""",
-)
+@skip_unless_can_run_llm_tests
 class TestLiteLLMIntegration(unittest.TestCase):
 	"""
 	Integration tests for the litellm interact function using {TEST_MODEL_NAME}.
@@ -250,12 +215,3 @@ class TestLiteLLMIntegration(unittest.TestCase):
 				agent_text += content["text"]
 
 		self.assertIn("Test", agent_text, "Expected 'Test' in response text for PNG")
-
-
-def get_testfile_path(file_name: str):
-	return os.path.join(
-		frappe.get_app_path("otto"),
-		"llm",
-		"test_llm",
-		file_name,
-	)

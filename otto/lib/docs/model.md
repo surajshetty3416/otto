@@ -4,11 +4,12 @@ Model discovery, creation, and availability utilities.
 
 ## Exports
 
-- `is_model_available`: Check if a specific model is available for usage
-- `is_provider_available`: Check if a specific provider is available for usage
-- `create_model`: Create new model entries with specific configuration
-- `get_model`: Find the first model matching criteria with optional preference
-- `get_models`: Get all models matching specified filters
+- [`is_model_available`](#is_model_available): Check if a specific model is available for usage
+- [`is_provider_available`](#is_provider_available): Check if a specific provider is available for usage
+- [`create_model`](#create_model): Create new model entries with specific configuration
+- [`get_model`](#get_model): Find the first model matching criteria with optional preference
+- [`get_models`](#get_models): Get all models matching specified filters
+- [`set_api_key`](#set_api_key): Set the API key for a provider
 
 ## Example
 
@@ -45,3 +46,17 @@ model = otto.get_model(
 - Anthropic: https://docs.anthropic.com/en/docs/about-claude/models/overview#model-names
 - OpenAI: https://platform.openai.com/docs/models
 - Gemini: https://ai.google.dev/gemini-api/docs/models#model-variations
+
+## Methods
+
+### `is_model_available`
+
+### `is_provider_available`
+
+### `create_model`
+
+### `get_model`
+
+### `get_models`
+
+### `set_api_key`

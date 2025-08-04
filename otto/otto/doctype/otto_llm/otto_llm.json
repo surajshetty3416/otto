@@ -12,7 +12,7 @@
   "provider",
   "properties_section",
   "is_reasoning",
-  "supports_images",
+  "supports_vision",
   "column_break_jpjj",
   "size"
  ],
@@ -78,9 +78,9 @@
   {
    "default": "0",
    "description": "Whether the model can process images provided as input",
-   "fieldname": "supports_images",
+   "fieldname": "supports_vision",
    "fieldtype": "Check",
-   "label": "Supports Images"
+   "label": "Supports Vision"
   }
  ],
  "grid_page_length": 50,
@@ -91,7 +91,7 @@
    "link_fieldname": "llm"
   }
  ],
- "modified": "2025-07-31 18:08:38.887610",
+ "modified": "2025-08-04 10:54:28.696153",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto LLM",

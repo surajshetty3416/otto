@@ -443,9 +443,10 @@ def import_task(data: str):
 		from otto.otto.doctype.otto_llm.otto_llm import OttoLLM
 
 		OttoLLM.new(
-			llm["name"],
-			llm["title"],
-			llm["provider"],
+			name=llm["name"],
+			title=llm["title"],
+			provider=llm["provider"],
+			size=llm["size"],
 			is_reasoning=llm.get("is_reasoning", False),
 		)
 

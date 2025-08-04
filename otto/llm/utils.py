@@ -419,21 +419,39 @@ def get_provider(model: str) -> Provider | None:
 	return None
 
 
-@utils.cache(ttl=60)
-def get_key(provider: Provider) -> tuple[str | None, str | None]:
-	from frappe.utils.password import get_decrypted_password
-
+def get_provider_key(provider: Provider):
+	"""API envvar name for the provider's API key. For fieldname in Settings, lowercase the key."""
 	match provider:
 		case "OpenAI":
-			key = "OPENAI_API_KEY"
+			return "OPENAI_API_KEY"
 		case "Anthropic":
-			key = "ANTHROPIC_API_KEY"
+			return "ANTHROPIC_API_KEY"
 		case "Google":
-			key = "GEMINI_API_KEY"
+			return "GEMINI_API_KEY"
 		case _:
-			return (None, None)
+			return None
 
-	return (key, get_decrypted_password("Otto Settings", "Otto Settings", key.lower()))
+
+@utils.cache(ttl=60)
+def get_key(provider: Provider) -> tuple[str, str] | tuple[None, None]:
+	"""Get API key name and value for provider. Checks envvar and Otto Settings.
+
+	Returns:
+		Tuple of (key, value) if found, (None, None) if not found.
+	"""
+	from frappe.utils.password import get_decrypted_password
+
+	if (key := get_provider_key(provider)) is None:
+		return None, None
+
+	password = os.environ.get(key.upper())
+	if not password:
+		password = get_decrypted_password("Otto Settings", "Otto Settings", key.lower())
+
+	if password is None:
+		return None, None
+
+	return (key, password)
 
 
 def is_reasoning_effort(value: Any) -> TypeGuard[ReasoningEffort]:
