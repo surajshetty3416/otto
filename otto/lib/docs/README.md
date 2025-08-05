@@ -10,7 +10,11 @@ Library for adding LLM capabilities into Frappe apps.
 
 ## Index
 
-- [Example](#example)
+- [Examples](#examples)
+    - [Quick one off query](#quick-one-off-query)
+    - [Session based interaction](#session-based-interaction)
+    - [Tool usage](#tool-usage)
+    - [Model discovery and creation](#model-discovery-and-creation)
 - [Installation](#installation)
 - [Sessions](./session.md)
 - [Models](./model.md)
@@ -39,34 +43,138 @@ Using this library allows Otto to manage:
    - Use models that the user has access to.
    - Discover available models.
 
-## Example
+## Examples
+
+A few short examples that illustrate how Otto can be used:
+
+- [Quick one off query](#quick-one-off-query)
+- [Session based interaction](#session-based-interaction)
+- [Tool usage](#tool-usage)
+- [Model discovery and creation](#model-discovery-and-creation)
+
+
+### Quick One-off Query
+
+Quick one off query to summarize a document
 
 ```python
 import otto.lib as otto
 
-# 1. Get available model that matches criteria
-model = otto.get_model(provider="Anthropic", is_reasoning=True)
+# 1. Get model that matches criteria
+model = otto.get_model(provider="Anthropic", size="Small")
 
+# 2. Use model to summarize document
+response = otto.quick_query(
+    [
+        {
+            "type": "file",
+            "name": "document.pdf",
+            "data": to_base64(document_path)
+        }
+    ],
+    model=model,
+    instruction="Summarize the given document in 2 sentences.",
+    stream=False,
+)
 
-# 2. Quick one-off query
-response = otto.quick_query("Hello, world!", model=model, stream=False)
+# 3. Get content from response
 print(response[0]["text"])
+```
 
+### Session-based Interaction
 
-# 3. Session-based interaction
-session = otto.new(model=model, instruction="You are a helpful assistant")
+Session based interaction.
+
+```python
+import otto.lib as otto
+
+# 1. Create session
+session = otto.new(model="openai/gpt-4.1-mini", instruction="You are a helpful assistant")
+session_id = session.id # save session id to continue session later
+
+# 2. Send user query to session
 for chunk in session.interact("What's the weather like?"):
     print(chunk.get("text", ""), end="")
+    stream_response(chunk)
+```
 
+Continue interaction with existing session.
 
-# 4. Load existing session and continue interaction
+```python
+import otto.lib as otto
+
+# 1. Load existing session
 session = otto.load(session_id)
-response, _ = session.interact("What was the last thing I told you?", stream=False)
-print(response[0]["text"])
 
+# 2. Continue interaction (without streaming)
+response, _ = session.interact("What was my previous question?", stream=False)
+print(response[0]["text"])
+```
+
+### Tool-usage
+
+```python
+import otto.lib as otto
+from otto.lib.types import ToolUseUpdate, ToolSchema
+
+# 1. Create session with tools
+weather_tool = ToolSchema(
+    name="get_weather",
+    description="Get current weather for a location",
+    parameters={
+        "type": "object",
+        "properties": {"location": {"type": "string"}},
+        "required": ["location"]
+    }
+)
+session = otto.new(model="openai/gpt-4.1", tools=[weather_tool])
+
+# 2. Send user query and stream response
+for chunk in session.interact("What's the weather in London?"):
+    print(chunk.get("text", ""), end="")
+
+# 3. Check and process pending tool calls
+tool_updates: list[ToolUseUpdate] = []
+for pending_tool in session.get_pending_tool_use():
+    result = process_tool_call(
+        name=pending_tool.name, # tool name eg: get_weather
+        args=pending_tool.args, # tool args eg: {"location": "London"}
+    )
+
+    tool_update = ToolUseUpdate(
+        id=pending_tool['id'], # tool use id
+        result=result,
+    )
+    tool_updates.append(tool_update)
+
+# 4. Update session with tool call results
+session.update_tool_use(tool_updates)
+
+# 5. Continue session
+for chunk in session.interact():
+    print(chunk.get("text", ""), end="")
+```
+
+### Model discovery and creation
+
+```python
+import otto.lib as otto
+
+# 1. Check availablilty
+model = otto.is_model_available(model="gpt-4.1-mini")
+
+# 2. Create new model if not available
+model = otto.create_model(
+    provider="Anthropic",
+    name="gpt-4.1-mini",
+    size="Small",
+    is_reasoning=False,
+    supports_vision=True,
+)
+otto.quick_query("...", model=model) # use created model
 
 # 5. Model discovery
-available_models = otto.get_models(provider="Google", size="Large")
+available_models = otto.get_models(is_reasoning=True, supports_vision=True)
 ```
 
 ## Installation
