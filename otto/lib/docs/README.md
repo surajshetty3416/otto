@@ -52,7 +52,8 @@ The library is sufficiently typed, with definitions exported from
 and defined in
 [`otto.llm.types`](https://github.com/frappe/otto/blob/develop/otto/llm/types.py).
 
-Otto makes use of this library internally for it's application level features ([ref](https://github.com/frappe/otto/blob/develop/otto/otto/doctype/otto_execution/otto_execution.py)).
+Otto uses this library internally for it's application level features, for example
+[Otto Execution](https://github.com/frappe/otto/blob/develop/otto/otto/doctype/otto_execution/otto_execution.py).
 
 ## Examples
 

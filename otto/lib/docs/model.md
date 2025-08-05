@@ -76,7 +76,13 @@ model = otto.get_model(
 
 ### `is_model_available`
 
-Checks if a given model name is available in Otto LLM. This function checks if a model exists and is enabled in the Otto LLM system. The check can be done either with exact matching or partial name matching.
+Checks if a given model name is available in Otto LLM. Availablity depends on:
+
+1. _Otto LLM_ DocType entry is present for the model
+2. The enabled flag on _Otto LLM_ is set to true
+3. The provider's API key is configured in _Otto Settings_
+
+The check can be done either with exact matching or partial name matching.
 
 ```python
 def is_model_available(model: str, exact: bool = True) -> bool
@@ -92,17 +98,13 @@ if otto.is_model_available("anthropic/claude-3-5-haiku-latest"):
     print("Model is available")
 
 # Check for partial match (case insensitive)
-if otto.is_model_available("claude", exact=False):
-    print("Found a Claude model")
-
-# Check for disabled models (returns False)
-if not otto.is_model_available("openai/o3"):
-    print("Model is not available or disabled")
+if otto.is_model_available("sonnet", exact=False):
+    print("Found a Claude Sonnet model")
 ```
 
 ### `is_provider_available`
 
-Returns `True` if the provider is available. This checks if the provider's API key is configured and valid.
+Returns `True` if the provider is available. This checks if the provider's API key is set in _Otto Settings_.
 
 ```python
 def is_provider_available(provider: Provider) -> bool
@@ -126,7 +128,11 @@ if not otto.is_provider_available("Google"):
 
 ### `create_model`
 
-Creates a new Otto LLM entry with the specified parameters. Returns the name of the created model in format "{provider_id}/{provider_model_id}".
+Creates a new Otto LLM entry with the specified parameters. Returns the name of
+the created model in format `"{provider_id}/{provider_model_id}"`, returned
+model id is the name of the _Otto LLM_ DocType entry.
+
+Given `provider_model_id` is the name of the model in the provider's API.
 
 ```python
 def create_model(
@@ -181,7 +187,13 @@ google_model = otto.create_model(
 
 ### `get_model`
 
-Returns the first available model matching the given criteria. `preference` can be used to specify a model name that is preferred - if available this will be returned, otherwise a model matching the rest of the criteria will be returned.
+Returns the first available model matching the given criteria. `preference` can
+be used to specify a model name that is preferred. If preferred model is
+available this will be returned, otherwise a model matching the rest of the
+criteria will be returned.
+
+Check [is_model_available](#is_model_available) for more details on model
+availablity.
 
 ```python
 def get_model(
@@ -222,7 +234,8 @@ model = otto.get_model(
 
 ### `get_models`
 
-Returns a list of available models matching the given criteria. This function checks both the model capabilities and provider availability. Models are only returned if their provider's API key is configured and valid.
+Returns a list of available models matching the given criteria. Check
+[is_model_available](#is_model_available) for more details on model availablity.
 
 ```python
 def get_models(
@@ -262,7 +275,9 @@ filtered_models = otto.get_models(
 
 ### `set_api_key`
 
-Sets the API key for a provider. This configures the API key that Otto will use to authenticate with the specified provider.
+Sets the API key for a provider. This configures the API key that Otto will use
+to authenticate with the specified provider. This updates the respective field
+in _Otto Settings_.
 
 ```python
 def set_api_key(provider: Provider, value: str) -> None
