@@ -10,6 +10,9 @@ Otto creates default entries when its installed
 the user is free to enable or disable these models. If the models required by
 your apps aren't available you may create them.
 
+- [Example](#example)
+- [Reference](#reference)
+
 ## Example
 
 A short example that illustrates how the utils in model may be used.
@@ -73,11 +76,11 @@ model = otto.get_model(
 
 ### `is_model_available`
 
+Checks if a given model name is available in Otto LLM. This function checks if a model exists and is enabled in the Otto LLM system. The check can be done either with exact matching or partial name matching.
+
 ```python
 def is_model_available(model: str, exact: bool = True) -> bool
 ```
-
-Checks if a given model name is available in Otto LLM. This function checks if a model exists and is enabled in the Otto LLM system. The check can be done either with exact matching or partial name matching.
 
 **Example:**
 
@@ -99,11 +102,11 @@ if not otto.is_model_available("openai/o3"):
 
 ### `is_provider_available`
 
+Returns `True` if the provider is available. This checks if the provider's API key is configured and valid.
+
 ```python
 def is_provider_available(provider: Provider) -> bool
 ```
-
-Returns `True` if the provider is available. This checks if the provider's API key is configured and valid.
 
 **Example:**
 
@@ -123,6 +126,8 @@ if not otto.is_provider_available("Google"):
 
 ### `create_model`
 
+Creates a new Otto LLM entry with the specified parameters. Returns the name of the created model in format "{provider_id}/{provider_model_id}".
+
 ```python
 def create_model(
     *,
@@ -134,8 +139,6 @@ def create_model(
     supports_vision: bool,
 ) -> str
 ```
-
-Creates a new Otto LLM entry with the specified parameters. Returns the name of the created model in format "{provider_id}/{provider_model_id}".
 
 **Example:**
 
@@ -167,7 +170,7 @@ anthropic_model = otto.create_model(
 # Create a new Google model
 google_model = otto.create_model(
     title="Gemini 2.5 Flash",
-    provider="Google", 
+    provider="Google",
     provider_model_id="gemini-2.5-flash",
     size="Medium",
     is_reasoning=False,
@@ -177,6 +180,8 @@ google_model = otto.create_model(
 ```
 
 ### `get_model`
+
+Returns the first available model matching the given criteria. `preference` can be used to specify a model name that is preferred - if available this will be returned, otherwise a model matching the rest of the criteria will be returned.
 
 ```python
 def get_model(
@@ -188,8 +193,6 @@ def get_model(
     preference: str | None = None,
 ) -> str | None
 ```
-
-Returns the first available model matching the given criteria. `preference` can be used to specify a model name that is preferred - if available this will be returned, otherwise a model matching the rest of the criteria will be returned.
 
 **Example:**
 
@@ -219,6 +222,8 @@ model = otto.get_model(
 
 ### `get_models`
 
+Returns a list of available models matching the given criteria. This function checks both the model capabilities and provider availability. Models are only returned if their provider's API key is configured and valid.
+
 ```python
 def get_models(
     *,
@@ -228,8 +233,6 @@ def get_models(
     supports_vision: bool | None = None,
 ) -> list[str]
 ```
-
-Returns a list of available models matching the given criteria. This function checks both the model capabilities and provider availability. Models are only returned if their provider's API key is configured and valid.
 
 **Example:**
 
@@ -259,11 +262,11 @@ filtered_models = otto.get_models(
 
 ### `set_api_key`
 
+Sets the API key for a provider. This configures the API key that Otto will use to authenticate with the specified provider.
+
 ```python
 def set_api_key(provider: Provider, value: str) -> None
 ```
-
-Sets the API key for a provider. This configures the API key that Otto will use to authenticate with the specified provider.
 
 **Example:**
 

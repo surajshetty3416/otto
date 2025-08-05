@@ -10,6 +10,9 @@ interaction. All changes made here will be reflected in the respective DocType.
 To see how `Session` is used by Otto you may view the [Otto Execution
 source](https://github.com/frappe/otto/blob/develop/otto/otto/doctype/otto_execution/otto_execution.py).
 
+- [Example](#example)
+- [Reference](#reference)
+
 ## Example
 
 A short example that illustrates how session may be used.
@@ -71,6 +74,8 @@ if response:
 
 ### `new`
 
+Creates a new LLM session with the specified configuration.
+
 ```python
 def new(
     model: str = utils.DEFAULT_MODEL,
@@ -79,8 +84,6 @@ def new(
     tools: list[ToolSchema] | None = None,
 ) -> Session
 ```
-
-Creates a new LLM session with the specified configuration.
 
 **Example:**
 
@@ -97,11 +100,11 @@ session = otto.new(
 
 ### `load`
 
+Loads an existing LLM session from the database using its unique identifier.
+
 ```python
 def load(id: str) -> Session
 ```
-
-Loads an existing LLM session from the database using its unique identifier.
 
 **Example:**
 
@@ -129,6 +132,8 @@ The main class for managing LLM interaction state. Provides a high-level wrapper
 
 #### `Session.interact`
 
+Performs one turn of interaction with the LLM. Sends the query along with session context to the LLM and updates the session with the response.
+
 ```python
 def interact(
     self,
@@ -137,8 +142,6 @@ def interact(
     stream: bool = True,
 ) -> InteractStreamResponse | InteractResponse
 ```
-
-Performs one turn of interaction with the LLM. Sends the query along with session context to the LLM and updates the session with the response.
 
 **Example:**
 
@@ -157,11 +160,11 @@ if response:
 
 #### `Session.get_pending_tool_use`
 
+Retrieves tool use requests that are pending execution after an LLM response.
+
 ```python
 def get_pending_tool_use(self, last_item_only: bool = True) -> list[PendingToolUse]
 ```
-
-Retrieves tool use requests that are pending execution after an LLM response.
 
 **Example:**
 
@@ -177,11 +180,11 @@ for tool in pending_tools:
 
 #### `Session.update_tool_use`
 
+Updates the status and result of tool use requests within the session after execution.
+
 ```python
 def update_tool_use(self, update: ToolUseUpdate | list[ToolUseUpdate]) -> None
 ```
-
-Updates the status and result of tool use requests within the session after execution.
 
 **Example:**
 
@@ -206,11 +209,11 @@ session.update_tool_use(updates)
 
 #### `Session.get_last_item`
 
+Returns the most recent item from the session's interaction history (user message, agent response, or tool result).
+
 ```python
 def get_last_item(self) -> SessionItem | None
 ```
-
-Returns the most recent item from the session's interaction history (user message, agent response, or tool result).
 
 **Example:**
 
@@ -223,11 +226,11 @@ if last_item:
 
 #### `Session.get_last_response`
 
+Returns the last agent response from the session. Returns `None` if the last item is not an agent response.
+
 ```python
 def get_last_response(self) -> list[Content] | None
 ```
-
-Returns the last agent response from the session. Returns `None` if the last item is not an agent response.
 
 **Example:**
 
@@ -298,6 +301,8 @@ call_count = session.get_llm_call_count()
 
 ### `quick_query`
 
+Convenience function for one-off queries without manual session management. Creates a new session and immediately interacts with it.
+
 ```python
 def quick_query(
     query: Query,
@@ -309,8 +314,6 @@ def quick_query(
     stream: bool = True,
 ) -> InteractStreamResponse | list[Content]
 ```
-
-Convenience function for one-off queries without manual session management. Creates a new session and immediately interacts with it.
 
 **Example:**
 
