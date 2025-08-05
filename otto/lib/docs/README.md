@@ -199,7 +199,7 @@ along side your Frappe application ([docs](https://docs.frappe.io/framework/user
 
 ```bash
 # In your bench folder
-bench get-app https://github.com/frappe/otto
+bench get-app otto --branch develop
 
 # Install the app on your site
 bench --site site_name install-app otto

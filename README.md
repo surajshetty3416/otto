@@ -1,41 +1,58 @@
-# Otto
+<div align="center" markdown="1">
 
-> [!NOTE]
+<img src="./.github/assets/otto.png" alt="Otto logo" width="80" />
+<h1>Otto</h1>
+
+**Automation intelligence for the Frappe ecosystem**
+
+<div>
+    <picture>
+        <img width="1402" alt="Otto Session Viewer Screenshot" src=".github/assets/otto-ss.png">
+    </picture>
+</div>
+
+</div>
+
+> [!WARNING]
 >
-> The application aspect of Otto has barely begun, a significant work in
-> progress that can only be called an experiment as of now.
+> Otto is in very early stages of development, the application aspects of it are
+> still under heavy experimentation.
 >
-> Nevertheless, you may use it's library features in your own Frappe app
-> to build LLM capabilities. See [docs for reference](./otto/lib/docs/README.md).
+> Nevertheless, you may use it as library in your own Frappe app to manage interaction
+> with LLMs.
+>
+> [Library documentation](./otto/lib/docs/README.md) for reference.
 
-### Installation
+### Current Features
 
-You can install this app using the [bench](https://github.com/frappe/bench) CLI:
+- Handle LLM integration into your Frappe app by using Otto as a library.
+- Use LLMs to handle task automation in your Frappe app.
+
+### Under the hood
+
+[Frappe Framework](https://github.com/frappe/frappe): A full-stack web application framework.
+
+### Local Installation
+
+You can install this app using the [bench](https://github.com/frappe/bench) CLI, first setup a Frappe bench directory and create a new site then:
 
 ```bash
-cd $PATH_TO_YOUR_BENCH
-bench get-app https://github.com/frappe/otto --branch develop
-bench install-app otto
+# In you bench directory
+bench get-app otto --branch develop
+bench --site site-name install-app otto
 ```
 
-<!--
-### Contributing
+## Links
 
-This app uses `pre-commit` for code formatting and linting. Please [install pre-commit](https://pre-commit.com/#installation) and enable it for this repository:
+- [Otto Lib Docs](./otto/lib/docs/README.md)
 
-```bash
-cd apps/otto
-pre-commit install
-```
-
-Pre-commit is configured to use the following tools for checking and formatting your code:
-
-- ruff
-- eslint
-- prettier
-- pyupgrade
--->
-
-### License
-
-agpl-3.0
+<br>
+<br>
+<div align="center">
+	<a href="https://frappe.io" target="_blank">
+		<picture>
+			<source media="(prefers-color-scheme: dark)" srcset="https://frappe.io/files/Frappe-white.png">
+			<img src="https://frappe.io/files/Frappe-black.png" alt="Frappe Technologies" height="28"/>
+		</picture>
+	</a>
+</div>
