@@ -85,7 +85,7 @@ class OttoSession(Document):
 		doc.save(ignore_permissions=True, ignore_version=True)
 		return doc
 
-	def interact(self, query: Query = None) -> SessionInteractStream:
+	def interact(self, query: Query | None = None) -> SessionInteractStream:
 		"""Performs one turn of interaction with the LLM, streaming the response.
 
 		This method sends the user's query, along with the current session

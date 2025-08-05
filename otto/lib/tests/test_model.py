@@ -5,6 +5,8 @@ from unittest.mock import patch
 import frappe
 
 import otto.lib.model as model
+from otto.lib.session import Session
+from otto.lib.tests.utils import delete_sessions, print_stats
 from otto.lib.types import Provider
 from otto.llm.test_llm.utils import skip_unless_can_run_llm_tests
 
@@ -133,6 +135,9 @@ class TestAPIKeyManagement(unittest.TestCase):
 class TestModelCreationAndUsage(unittest.TestCase):
 	"""Test model creation and actual usage with LLM integration."""
 
+	created_models: list[str] = []
+	created_sessions: list[Session] = []
+
 	def setUp(self):
 		"""Set up test fixtures."""
 		self.created_models = []
@@ -140,11 +145,8 @@ class TestModelCreationAndUsage(unittest.TestCase):
 
 	def tearDown(self):
 		"""Clean up created test artifacts."""
-		for session_id in self.created_sessions:
-			try:
-				frappe.delete_doc("Otto Session", session_id, force=True)
-			except Exception:
-				pass  # Ignore cleanup errors
+		print_stats(self.created_sessions)
+		delete_sessions(self.created_sessions)
 
 		for model_name in self.created_models:
 			try:
@@ -173,12 +175,12 @@ class TestModelCreationAndUsage(unittest.TestCase):
 		self.assertIn(model_name, available_models)
 
 		# Use the created model for a simple task
-		import otto.lib.session as session_lib
+		import otto.lib as lib
 
-		test_session = session_lib.new(
+		test_session = lib.new(
 			model=model_name, instruction="You are a helpful assistant. Respond concisely."
 		)
-		self.created_sessions.append(test_session.id)
+		self.created_sessions.append(test_session)
 
 		# Perform a simple interaction
 		response, error = test_session.interact("Say hello!", stream=False)

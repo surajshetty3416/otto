@@ -71,7 +71,7 @@ class InteractReturnTuple(NamedTuple):
 
 def interact(
 	# query should be None only if session is provided with a call call update
-	query: Query = None,
+	query: Query | None = None,
 	*,
 	session: Session | None = None,
 	model: str | None = None,

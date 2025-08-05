@@ -114,14 +114,14 @@ class Session:
 		return None
 
 	@overload
-	def interact(self, query: Query, *, stream: Literal[False]) -> InteractResponse: ...
+	def interact(self, query: Query | None = None, *, stream: Literal[False]) -> InteractResponse: ...
 
 	@overload
-	def interact(self, query: Query, *, stream: Literal[True]) -> InteractStreamResponse: ...
+	def interact(self, query: Query | None = None, *, stream: Literal[True]) -> InteractStreamResponse: ...
 
 	def interact(
 		self,
-		query: Query = None,
+		query: Query | None = None,
 		*,
 		stream: bool = True,
 	) -> InteractStreamResponse | InteractResponse:
@@ -250,6 +250,9 @@ class Session:
 			return []
 
 		return utils.get_sequence(session)
+
+	def get_stats(self):
+		return self._session.get_stats()
 
 	def get_llm_call_count(self) -> int:
 		"""Returns the total number of calls made to the LLM in this session."""
