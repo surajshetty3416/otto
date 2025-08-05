@@ -1,4 +1,4 @@
-# Session
+# Sessions
 
 High-level LLM interaction state management.
 
@@ -9,11 +9,6 @@ interaction. All changes made here will be reflected in the respective DocType.
 
 To see how `Session` is used by Otto you may view the [Otto Execution
 source](https://github.com/frappe/otto/blob/develop/otto/otto/doctype/otto_execution/otto_execution.py).
-
-- [`Session`](#session): Class for managing LLM interaction state.
-- [`new`](#new): Create a new session.
-- [`load`](#load): Load a session from a DocType.
-- [`quick_query`](#quick_query): Convenience function for one-off LLM queries without session management.
 
 ## Example
 

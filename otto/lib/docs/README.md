@@ -17,7 +17,11 @@ Library for adding LLM capabilities into Frappe apps.
   - [Model discovery and creation](#model-discovery-and-creation)
 - [Installation](#installation)
 - [Sessions](./session.md)
+  - [Example](./sesssion.md#example)
+  - [Reference](./sesssion.md#reference)
 - [Models](./model.md)
+  - [Example](./model.md#example)
+  - [Reference](./model.md#reference)
 
 ## Overview
 
