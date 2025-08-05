@@ -11,10 +11,10 @@ Library for adding LLM capabilities into Frappe apps.
 ## Index
 
 - [Examples](#examples)
-    - [Quick one off query](#quick-one-off-query)
-    - [Session based interaction](#session-based-interaction)
-    - [Tool usage](#tool-usage)
-    - [Model discovery and creation](#model-discovery-and-creation)
+  - [Quick one off query](#quick-one-off-query)
+  - [Session based interaction](#session-based-interaction)
+  - [Tool usage](#tool-usage)
+  - [Model discovery and creation](#model-discovery-and-creation)
 - [Installation](#installation)
 - [Sessions](./session.md)
 - [Models](./model.md)
@@ -43,6 +43,13 @@ Using this library allows Otto to manage:
    - Use models that the user has access to.
    - Discover available models.
 
+The library is sufficiently typed, with definitions exported from
+[`otto.lib.types`](https://github.com/frappe/otto/blob/develop/otto/lib/types.py)
+and defined in
+[`otto.llm.types`](https://github.com/frappe/otto/blob/develop/otto/llm/types.py).
+
+Otto makes use of this library internally for it's application level features ([ref](https://github.com/frappe/otto/blob/develop/otto/otto/doctype/otto_execution/otto_execution.py)).
+
 ## Examples
 
 A few short examples that illustrate how Otto can be used:
@@ -51,7 +58,6 @@ A few short examples that illustrate how Otto can be used:
 - [Session based interaction](#session-based-interaction)
 - [Tool usage](#tool-usage)
 - [Model discovery and creation](#model-discovery-and-creation)
-
 
 ### Quick One-off Query
 
@@ -90,7 +96,9 @@ import otto.lib as otto
 
 # 1. Create session
 session = otto.new(model="openai/gpt-4.1-mini", instruction="You are a helpful assistant")
-session_id = session.id # save session id to continue session later
+
+# save session id to continue session later
+session_id = session.id
 
 # 2. Send user query to session
 for chunk in session.interact("What's the weather like?"):
@@ -136,7 +144,9 @@ for chunk in session.interact("What's the weather in London?"):
 # 3. Check and process pending tool calls
 tool_updates: list[ToolUseUpdate] = []
 for pending_tool in session.get_pending_tool_use():
-    result = process_tool_call(
+
+    # Execute tool in you app
+    result = execute_tool(
         name=pending_tool.name, # tool name eg: get_weather
         args=pending_tool.args, # tool args eg: {"location": "London"}
     )

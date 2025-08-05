@@ -2,6 +2,14 @@
 
 Model discovery, creation, and availability utilities.
 
+Model management in Otto is backed by the `OttoLLM` DocType. This keeps track of
+all the models available to the user along with their capabilities.
+
+Otto creates default entries when its installed
+([ref](https://github.com/frappe/otto/blob/develop/otto/fixtures/otto_llm.json)),
+the user is free to enable or disable these models. If the models required by
+your apps aren't available you may create them.
+
 ## Exports
 
 - [`is_model_available`](#is_model_available): Check if a specific model is available for usage
@@ -12,6 +20,8 @@ Model discovery, creation, and availability utilities.
 - [`set_api_key`](#set_api_key): Set the API key for a provider
 
 ## Example
+
+A short example that illustrates how export model may be used.
 
 ```python
 import otto.lib as otto
@@ -47,7 +57,16 @@ model = otto.get_model(
 - OpenAI: https://platform.openai.com/docs/models
 - Gemini: https://ai.google.dev/gemini-api/docs/models#model-variations
 
-## Methods
+## Reference
+
+> [!TIP]
+>
+> It is recommended to view the source code
+> ([ref](https://github.com/frappe/otto/blob/develop/otto/lib/model.py)) for
+> the methods or functions that you need to use as it is well documented.
+>
+> Since most functions and methods are well typed, you can use your IDE's view
+> definition feature to get accurate info on the signature and return types.
 
 ### `is_model_available`
 
