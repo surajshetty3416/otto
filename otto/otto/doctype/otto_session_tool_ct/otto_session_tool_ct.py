@@ -30,7 +30,7 @@ class OttoSessionToolCT(Document):
 		slug: DF.Data
 	# end: auto-generated types
 
-	_schema: dict | None = None
+	_schema: ToolSchema | None = None
 
 	@staticmethod
 	def new(tool_schema: ToolSchema):
@@ -41,7 +41,8 @@ class OttoSessionToolCT(Document):
 		doc.required = json.dumps(tool_schema["parameters"].get("required", []))
 		return doc
 
-	def get_schema(self):
+	@property
+	def schema(self) -> ToolSchema:
 		if self._schema is not None:
 			return self._schema
 
@@ -57,11 +58,12 @@ class OttoSessionToolCT(Document):
 		if self.required:
 			parameters["required"] = json.loads(self.required)
 
-		schema = ToolSchema(
+		self._schema = ToolSchema(
 			name=self.slug,
 			description=self.description,
 			parameters=parameters,
 		)
-
-		self._schema = {"type": "function", "function": schema}
 		return self._schema
+
+	def get_schema(self):
+		return {"type": "function", "function": self.schema}

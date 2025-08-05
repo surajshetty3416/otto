@@ -97,11 +97,21 @@ class Session:
 		assert self._session.llm is not None, "type check"
 		return self._session.llm
 
+	def set_model(self, model_id: str) -> None:
+		"""Set the LLM model for this session."""
+		self._session.llm = model_id
+		self.save()
+
 	@property
 	def instruction(self) -> str:
 		"""The instruction used for this session."""
 		assert self._session.instruction is not None, "type check"
 		return self._session.instruction
+
+	def set_instruction(self, instruction: str) -> None:
+		"""Set the instruction for this session."""
+		self._session.instruction = instruction
+		self.save()
 
 	@property
 	def reasoning_effort(self) -> ReasoningEffort | None:
@@ -112,6 +122,24 @@ class Session:
 			return reasoning_effort
 
 		return None
+
+	def set_reasoning_effort(self, reasoning_effort: ReasoningEffort | None) -> None:
+		"""Set the reasoning effort for this session."""
+		if reasoning_effort is None:
+			self._session.reasoning_effort = "None"
+		else:
+			self._session.reasoning_effort = reasoning_effort
+		self.save()
+
+	@property
+	def tools(self) -> list[ToolSchema]:
+		"""The tools used for this session."""
+		return [tool.schema for tool in self._session.tools]
+
+	def set_tools(self, tools: list[ToolSchema]) -> None:
+		"""Set the tools for this session."""
+		self._session.set_tools(tools)
+		self.save()
 
 	@overload
 	def interact(self, query: Query | None = None, *, stream: Literal[False]) -> InteractResponse: ...
@@ -257,6 +285,10 @@ class Session:
 	def get_llm_call_count(self) -> int:
 		"""Returns the total number of calls made to the LLM in this session."""
 		return self._session.get_llm_call_count()
+
+	def save(self) -> None:
+		"""Save the session to the database."""
+		self._session.save(ignore_permissions=True)
 
 
 class InteractStreamResponse:
