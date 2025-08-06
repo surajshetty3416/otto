@@ -23,14 +23,65 @@
 >
 > [Library documentation](./otto/lib/docs/README.md) for reference.
 
-### Current Features
+### Overview
 
-- Handle LLM integration into your Frappe app by using Otto as a library.
-- Use LLMs to handle task automation in your Frappe app.
+Otto is a [Frappe Framework](https://github.com/frappe/frappe) app which will be
+used for adding intelligent automation capabilities to Frappe apps. It's still a
+work in progress that's being tested out internally.
 
-### Under the hood
+Otto's app features are built on top of it's library. You may use this in your
+Frappe app to handle LLM integrations. ([Docs](./otto/lib/docs/README.md))
 
-[Frappe Framework](https://github.com/frappe/frappe): A full-stack web application framework.
+### Library Examples
+
+Brief example of how the library can be used. Link to [full library docs](./otto/lib/docs/README.md) for more details.
+
+```python
+import otto.lib as otto
+from otto.lib.types import ToolUseUpdate
+
+
+# 1. Fetch model matching some criteria
+model = otto.get_model(supports_vision=True, size="Small", provider="OpenAI") # str model id
+
+
+# 2. Create new session
+session = otto.new(
+    model=model,
+    instruction="You are a helpful coding assistant",
+    tools=[calculator_tool_schema],
+)
+
+# Save id to resume session later
+session_id = session.id
+
+
+# 3. Interact (streaming)
+stream = session.interact("Calculate 15 * 23", stream=True)
+for chunk in stream:
+    print(chunk.get("text", ""), end="")
+result = stream.item
+
+
+# 4. Handle tool use
+for tool in session.get_pending_tool_use():
+    result = execute_tool(tool.name, tool.args) # execute tool
+
+    # update session with tool result
+    session.update_tool_use(
+        ToolUseUpdate(id=tool.id, status="success", result=result)
+    )
+
+# Continue session with tool result
+session.interact(stream=False)
+
+
+# 5. Load and resume interaction (non-streaming)
+session = otto.load(session_id)
+response, _ = session.interact("What was the result?", stream=False)
+if response:
+    print(response["content"])
+```
 
 ### Local Installation
 

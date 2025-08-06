@@ -55,6 +55,13 @@ and defined in
 Otto uses this library internally for it's application level features, for example
 [Otto Execution](https://github.com/frappe/otto/blob/develop/otto/otto/doctype/otto_execution/otto_execution.py).
 
+> [!WARNING]
+>
+> For additional features, it is not recommended to directly access the
+> underlying `OttoSession` DocType as this will change without any notice.
+>
+> If additional features are needed please open a [new issue](https://github.com/frappe/otto/issues/new).
+
 ## Examples
 
 A few short examples that illustrate how Otto can be used:
@@ -157,7 +164,7 @@ for pending_tool in session.get_pending_tool_use():
     )
 
     tool_update = ToolUseUpdate(
-        id=pending_tool['id'], # tool use id
+        id=pending_tool.id, # tool use id
         result=result,
     )
     tool_updates.append(tool_update)
