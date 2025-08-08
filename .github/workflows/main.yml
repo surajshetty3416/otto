@@ -1,0 +1,138 @@
+# Mostly from https://github.com/frappe/press/blob/develop/.github/workflows/main.yaml
+name: Otto Tests
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - "*"
+  workflow_dispatch:
+
+jobs:
+  format:
+    name: "Lint and Format"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install ruff
+
+      - name: Get changed files
+        id: changed-python-files
+        uses: tj-actions/changed-files@v45
+        with:
+          files: |
+            **.py
+
+      - name: List all changed files
+        if: steps.changed-python-files.outputs.any_changed == 'true'
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-python-files.outputs.all_changed_files }}
+        run: |
+          for file in ${ALL_CHANGED_FILES}; do
+            echo "$file was changed"
+          done
+
+      - name: Lint Check
+        if: steps.changed-python-files.outputs.any_changed == 'true'
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-python-files.outputs.all_changed_files }}
+        run: |
+          ruff check --output-format github ${ALL_CHANGED_FILES}
+
+      - name: Format Check
+        if: steps.changed-python-files.outputs.any_changed == 'true'
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-python-files.outputs.all_changed_files }}
+        run: |
+          ruff format --check ${ALL_CHANGED_FILES} --diff
+
+  tests:
+    runs-on: ubuntu-latest
+    name: Server
+
+    services:
+      mariadb:
+        image: mariadb:10.6
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=5s --health-timeout=2s --health-retries=3
+
+    steps:
+      - name: Clone
+        uses: actions/checkout@v4
+
+      - name: Check for valid Python & Merge Conflicts
+        run: |
+          python -m compileall -q -f "${GITHUB_WORKSPACE}"
+          if grep -lr --exclude-dir=node_modules "^<<<<<<< " "${GITHUB_WORKSPACE}"
+              then echo "Found merge conflicts"
+              exit 1
+          fi
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          check-latest: true
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/*requirements.txt', '**/pyproject.toml', '**/setup.py', '**/setup.cfg') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: 'echo "::set-output name=dir::$(yarn cache dir)"'
+
+      - uses: actions/cache@v4
+        id: yarn-cache
+        with:
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: Install
+        run: bash ${GITHUB_WORKSPACE}/.github/helper/install.sh
+
+      - name: Add to Hosts
+        run: |
+          echo "127.0.0.1 test_site" | sudo tee -a /etc/hosts
+
+      - name: Expose GitHub Runtime
+        uses: crazy-max/ghaction-github-runtime@v3
+
+      - name: Run Tests
+        working-directory: /home/runner/frappe-bench
+        run: |
+          bench --site test_site set-config allow_tests true
+          bench --site test_site run-tests --app otto
+
+      - name: Upload bench start logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-start-logs-${{ matrix.container }}
+          path: /home/runner/frappe-bench/bench_start_logs.txt
+        if: always()
