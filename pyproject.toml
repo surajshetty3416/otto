@@ -25,15 +25,7 @@ target-version = "py310"
 [tool.ruff.lint]
 select = ["F", "E", "W", "I", "UP", "B", "RUF", "FA", "TC", "C90", "RET", "SIM"]
 ignore = [
-    # "B017", # assertRaises(Exception) - should be more specific
-    # "B018", # useless expression, not assigned to anything
-    # "B904", # raise inside except without from
-    # "E101", # indentation contains mixed spaces and tabs
-    # "E402", # module level import not at top of file
-    # "E741", # ambiguous variable name
-    # "F401", # "unused" imports
-    # "F403", # can't detect undefined names from * import
-    # "F405", # can't detect undefined names from * import
+    "E101",   # indentation contains mixed spaces and tabs (triggered by spaces in docstrings)
     "UP015",  # Unnecessary open mode parameters
     "SIM108", # Use ternary operator {contents} instead of if-else-block
     "F821",   # Undefined name, cause of DF.Literal
@@ -50,3 +42,6 @@ typing-modules = ["frappe.types.DF"]
 quote-style = "double"
 indent-style = "tab"
 docstring-code-format = true
+
+[tool.ruff.lint.mccabe] # Flag errors (`C901`) whenever the complexity level exceeds 5.
+max-complexity = 15

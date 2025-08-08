@@ -2,18 +2,16 @@ from __future__ import annotations
 
 # Copyright (c) 2025, Alan Tom and contributors
 # For license information, please see license.txt
-import json
 from typing import TYPE_CHECKING, cast
 
 import frappe
 import frappe.realtime
 from frappe.model.document import Document
 
-from otto.llm.types import ModelSize, Provider
 from otto.llm.utils import DEFAULT_INSTRUCTION, is_reasoning_effort
 
 if TYPE_CHECKING:
-	from otto.llm.types import ReasoningEffort
+	from otto.llm.types import ModelSize, Provider, ReasoningEffort
 
 
 class OttoLLM(Document):
@@ -42,7 +40,7 @@ class OttoLLM(Document):
 		is_reasoning: bool = False,
 		supports_vision: bool = False,
 	):
-		doc = cast(OttoLLM, frappe.get_doc({"doctype": "Otto LLM"}))
+		doc = cast("OttoLLM", frappe.get_doc({"doctype": "Otto LLM"}))
 
 		doc.name = name
 		doc.title = title
@@ -100,7 +98,7 @@ def get_reasoning_effort(effort: str | None, llm: OttoLLM | None = None) -> Reas
 	if not effort:
 		return None
 
-	if llm and not llm.is_reasoning or not is_reasoning_effort(effort):
+	if (llm and not llm.is_reasoning) or not is_reasoning_effort(effort):
 		return None
 
 	return effort

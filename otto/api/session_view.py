@@ -230,7 +230,7 @@ def set_tool_use_info(info: dict[str, Any]):
 			if result is None or result == "" or result == "null" or result == "[]" or result == "{}":
 				tool_use[slug]["empty_result_count"] += 1
 
-			if status == "error" or isinstance(result, str) and ("Error" in result or "error" in result):
+			if status == "error" or (isinstance(result, str) and ("Error" in result or "error" in result)):
 				tool_use[slug]["error_count"] += 1
 
 			call = {

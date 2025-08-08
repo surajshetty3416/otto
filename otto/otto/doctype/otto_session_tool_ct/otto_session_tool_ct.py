@@ -34,7 +34,7 @@ class OttoSessionToolCT(Document):
 
 	@staticmethod
 	def new(tool_schema: ToolSchema):
-		doc = cast(OttoSessionToolCT, frappe.new_doc("Otto Session Tool CT"))
+		doc = cast("OttoSessionToolCT", frappe.new_doc("Otto Session Tool CT"))
 		doc.slug = tool_schema["name"]
 		doc.description = tool_schema["description"]
 		doc.properties = json.dumps(tool_schema["parameters"].get("properties", {}), indent=2)

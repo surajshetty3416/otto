@@ -15,7 +15,10 @@ from urllib.request import urlopen
 import frappe
 
 from otto import utils
-from otto.llm.types import Provider, ReasoningEffort, Session, ToolUseContent
+from otto.llm.types import SessionStats, SessionToolUseStats
+
+if TYPE_CHECKING:
+	from otto.llm.types import Provider, ReasoningEffort, Session, ToolUseContent
 
 MAX_RETRIES = 6
 DEFAULT_INSTRUCTION = "You are a helpful assistant."
@@ -214,21 +217,21 @@ def get_last_id(session: Session):
 	return last["id"]
 
 
-def get_stats(session: Session):
+def get_stats(session: Session) -> SessionStats | None:
 	import datetime
 
 	cost = 0
 	input_tokens = 0
 	output_tokens = 0
 	llm_calls = 0
-	tools_called = {}
+	tools_called: dict[str, SessionToolUseStats] = {}
 
 	latencies = []
 	first_chunks = []
 	tps = []
 
 	if not session["items"] or not session["first"] or session["first"] not in session["items"]:
-		return
+		return None
 
 	_start = session["items"][session["first"]]["meta"]["timestamp"]
 	_end = session["items"][get_last_id(session)]["meta"]["end_time"]
@@ -270,24 +273,22 @@ def get_stats(session: Session):
 			result = content_part["result"]
 
 			if name not in tools_called:
-				tools_called[name] = {
-					"called_count": 0,
-					"empty_result_count": 0,
-					"error_count": 0,
-				}
+				tools_called[name] = SessionToolUseStats(
+					called_count=0,
+					error_count=0,
+					empty_result_count=0,
+				)
 			tools_called[name]["called_count"] += 1
 
 			if result is None or result == "" or result == "null" or result == "[]" or result == "{}":
 				tools_called[name]["empty_result_count"] += 1
 
-			if (
-				content_part["status"] == "error"
-				or isinstance(result, str)
-				and ("Error" in result or "error" in result)
+			if content_part["status"] == "error" or (
+				isinstance(result, str) and ("Error" in result or "error" in result)
 			):
 				tools_called[name]["error_count"] += 1
 
-	return dict(
+	return SessionStats(
 		cost=cost,
 		total_input_tokens=input_tokens,
 		total_output_tokens=output_tokens,
@@ -389,8 +390,7 @@ def to_content(query: str | list[Any]) -> list[UserContent]:
 			if is_user_content(q):
 				content.append(q)
 				continue
-			else:
-				q = utils.json_dumps(q)[0]
+			q = utils.json_dumps(q)[0]
 
 		c = TextContent(type="text", text=q)
 		if q.startswith("data:application/"):
@@ -433,10 +433,10 @@ def get_provider(model: str) -> Provider | None:
 	if model.startswith("openai"):
 		return "OpenAI"
 
-	elif model.startswith("anthropic"):
+	if model.startswith("anthropic"):
 		return "Anthropic"
 
-	elif model.startswith("gemini"):
+	if model.startswith("gemini"):
 		return "Google"
 
 	return None

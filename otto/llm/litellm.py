@@ -19,7 +19,6 @@ import os
 import random
 import threading
 import time
-from collections.abc import Generator
 from typing import TYPE_CHECKING, NamedTuple, cast
 
 import otto
@@ -50,6 +49,7 @@ from otto.llm.utils import (
 )
 
 if TYPE_CHECKING:
+	from collections.abc import Generator
 	from datetime import datetime
 
 	from litellm import CustomStreamWrapper
@@ -215,7 +215,7 @@ def interact(
 			if item["meta"]["time_to_first_chunk"] == 0:
 				item["meta"]["time_to_first_chunk"] = time.time() - item["meta"]["start_time"]
 		except StopIteration as e:
-			ret = cast(StreamReturn, e.value)
+			ret = cast("StreamReturn", e.value)
 			chunks = ret.chunks
 			signature = ret.signature
 			item["meta"]["inter_chunk_latency"] = ret.latency

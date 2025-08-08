@@ -2,19 +2,16 @@ from __future__ import annotations
 
 import contextlib
 import json
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 __version__ = "0.0.1"
-__all__ = ["get", "logger", "log_error"]
+__all__ = ["get", "log_error", "logger"]
 
 from typing import TypeVar, cast
 
 import frappe
 import frappe.utils.logger
 from frappe.model.document import Document
-
-if TYPE_CHECKING:
-	from frappe.model.document import Document
 
 Level = Literal["ERROR", "WARNING", "WARN", "INFO", "DEBUG"]
 

@@ -2,15 +2,8 @@ from __future__ import annotations
 
 from typing import Literal, cast, overload
 
-from otto.lib.errors import InteractionError
-from otto.llm import utils
-from otto.utils import drain
-
-"""
-Library wrapper around OttoSession
-"""
-
 import otto
+from otto.lib.errors import InteractionError
 from otto.lib.types import (
 	Content,
 	ContentChunk,
@@ -19,15 +12,18 @@ from otto.lib.types import (
 	Query,
 	ReasoningEffort,
 	SessionItem,
+	SessionStats,
 	ToolSchema,
 	ToolUseUpdate,
 )
+from otto.llm import utils
 from otto.otto.doctype.otto_session.otto_session import OttoSession, SessionInteractStream
+from otto.utils import drain
 
 __all__ = [
 	"Session",
-	"new",
 	"load",
+	"new",
 	"quick_query",
 ]
 
@@ -279,7 +275,7 @@ class Session:
 
 		return utils.get_sequence(session)
 
-	def get_stats(self):
+	def get_stats(self) -> SessionStats | None:
 		return self._session.get_stats()
 
 	def get_llm_call_count(self) -> int:
@@ -327,10 +323,10 @@ class InteractStreamResponse:
 		try:
 			return next(self._stream)
 		except StopIteration as e:
-			interaction, reason = cast(InteractResponse, e.value)
+			interaction, reason = cast("InteractResponse", e.value)
 			self._item = interaction
 			self._reason = reason
-			raise StopIteration
+			raise StopIteration  # noqa: B904
 
 
 @overload

@@ -4,17 +4,19 @@ from __future__ import annotations
 # For license information, please see license.txt
 # import frappe
 import json
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import frappe
 from frappe.exceptions import ValidationError
 from frappe.model.document import Document
 
-from otto.llm.types import ToolSchema
 from otto.llm.utils import reset_user
 from otto.otto.doctype.otto_task.tools import is_meta_tool
 from otto.otto.doctype.otto_tool import lib
 from otto.utils import execute
+
+if TYPE_CHECKING:
+	from otto.llm.types import ToolSchema
 
 arg_type_to_json_type = {
 	"str": "string",
@@ -61,7 +63,7 @@ class OttoTool(Document):
 		mock_return_value: str | None = None,
 	):
 		doc = cast(
-			OttoTool,
+			"OttoTool",
 			frappe.get_doc(
 				{
 					"doctype": "Otto Tool",
@@ -96,6 +98,7 @@ class OttoTool(Document):
 		self.set_args(args_def)
 		self.validate_arg_types()
 		self.validate_descriptions()
+		return None
 
 	def set_args(self, args_def: list[execute.ArgDefinition]):
 		prev_meta = {a.arg_name: (a.type, a.description) for a in (self.args or [])}
@@ -144,7 +147,7 @@ class OttoTool(Document):
 
 	def set_reason(self, reason: str):
 		self.reason = self.reason or ""
-		self.reason = "\n".join(self.reason.splitlines() + [reason])
+		self.reason = "\n".join([*self.reason.splitlines(), reason])
 		self.is_valid = False
 
 	@frappe.whitelist()

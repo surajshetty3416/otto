@@ -13,7 +13,7 @@ from otto.llm.types import ToolSchema, ToolUseUpdate
 from otto.llm.utils import to_content
 
 # Convert get_weather_tool to ToolSchema format
-weather_tool_schema: ToolSchema = cast(ToolSchema, get_weather_tool["function"])
+weather_tool_schema: ToolSchema = cast("ToolSchema", get_weather_tool["function"])
 
 TEST_INSTRUCTION = (
 	"You are a helpful assistant. Be as concise as possible and respond only with what's needed."
@@ -210,9 +210,7 @@ class TestSession(unittest.TestCase):
 		# Verify the response mentions the weather information
 		final_text = ""
 		for content in final_response.content:
-			if content["type"] == "text":
-				final_text += content["text"]
-			elif content["type"] == "thinking":
+			if content["type"] == "text" or content["type"] == "thinking":
 				final_text += content["text"]
 
 		self.assertTrue(
@@ -279,9 +277,7 @@ class TestSession(unittest.TestCase):
 		# Extract text from response
 		response_text = ""
 		for content in response.content:
-			if content["type"] == "text":
-				response_text += content["text"]
-			elif content["type"] == "thinking":
+			if content["type"] == "text" or content["type"] == "thinking":
 				response_text += content["text"]
 
 		# The test image should contain "Test" based on test_litellm.py

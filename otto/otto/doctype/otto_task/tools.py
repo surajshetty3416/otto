@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from otto.llm.types import Content, ToolSchema
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+	from otto.llm.types import Content, ToolSchema
 
 """
 Definitions for meta tools to be used by Otto to perform some task.

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 from urllib.parse import urlparse
 
 import frappe
@@ -10,8 +11,6 @@ from otto.utils import json_dumps
 """
 Code in this is passed as library code to tool session as globals.
 """
-
-from typing import Any
 
 
 def log(
@@ -86,7 +85,7 @@ def interpolate_imgs(html: str):
 		content.append(html[last_idx:end_idx])
 
 		# get image
-		content.append(get_file(str(img.get("src")))) # type: ignore
+		content.append(get_file(str(img.get("src"))))  # type: ignore
 		last_idx = end_idx
 
 	content.append(html[last_idx:])
@@ -118,9 +117,11 @@ def to_html(content: str):
 
 	return markdown(content, extras=extras)
 
+
 def set_user(user: str):
 	"""Sets the current user for the session"""
 	frappe.set_user(user)
+
 
 def get_lib(env: dict | None = None):
 	"""Returned object is available in scripts and code as otto.PROPERTY"""

@@ -7,11 +7,11 @@ from otto.llm import utils
 from otto.utils import cache
 
 __all__ = [
-	"is_model_available",
-	"is_provider_available",
 	"create_model",
 	"get_model",
 	"get_models",
+	"is_model_available",
+	"is_provider_available",
 	"set_api_key",
 ]
 

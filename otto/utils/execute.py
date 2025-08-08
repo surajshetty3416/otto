@@ -6,15 +6,16 @@ import importlib
 import io
 import json
 import sys
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from typing import TYPE_CHECKING, Any, Literal, TypedDict, cast
 
-import frappe
-from frappe.model.document import Document
 from frappe.utils.safe_exec import safe_exec
 from RestrictedPython import PrintCollector
 
 from otto.utils import json_dumps
+
+if TYPE_CHECKING:
+	from frappe.model.document import Document
 
 """
 Server Script session task implies that Python code is executed in a Frappe
@@ -27,14 +28,11 @@ All constraints of a server script apply.
 
 __all__ = [
 	"execute",
-	"validate",
 	"run_get_context",
+	"validate",
 ]
 
 OUT_VAR_NAME = "out"
-
-if TYPE_CHECKING:
-	import io
 
 
 Args = dict[str, Any]
@@ -349,10 +347,8 @@ def extract_imports(script: str) -> tuple[str, dict[str, Any]]:
 
 				# Security check - only allow specific modules
 				if _is_safe_import(module_name):
-					try:
+					with suppress(ImportError):
 						imports[as_name] = importlib.import_module(module_name)
-					except ImportError:
-						pass
 
 		elif isinstance(node, ast.ImportFrom):
 			module_name = node.module

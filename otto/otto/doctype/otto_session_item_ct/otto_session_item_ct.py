@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import frappe
 from frappe.model.document import Document
-from frappe.types import DF
 
 from otto.llm.types import EndReason, Meta, SessionItem, SessionRole
+
+if TYPE_CHECKING:
+	from frappe.types import DF
 
 
 class OttoSessionItemCT(Document):
@@ -45,7 +47,7 @@ class OttoSessionItemCT(Document):
 
 	@staticmethod
 	def from_session_item(item: SessionItem) -> OttoSessionItemCT:
-		osi = cast(OttoSessionItemCT, frappe.new_doc("Otto Session Item CT"))
+		osi = cast("OttoSessionItemCT", frappe.new_doc("Otto Session Item CT"))
 		osi.sync_with_session_item(item)
 		return osi
 
@@ -75,7 +77,7 @@ class OttoSessionItemCT(Document):
 		self.content = json.dumps(item["content"], indent=2)
 
 	def to_session_item(self) -> SessionItem:
-		item = SessionItem(
+		return SessionItem(
 			id=self.uid,
 			next=json.loads(self.next or "[]"),
 			selected_next=self.selected,
@@ -94,8 +96,6 @@ class OttoSessionItemCT(Document):
 			),
 			content=json.loads(self.content),
 		)
-
-		return item
 
 	def _get_role(self) -> SessionRole:
 		if self.role == "user" or self.role == "agent":

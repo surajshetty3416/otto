@@ -3,20 +3,20 @@
 from __future__ import annotations
 
 from collections.abc import Generator
-from typing import TYPE_CHECKING, NamedTuple, cast
+from typing import TYPE_CHECKING, cast
 
 import frappe
 from frappe.model.document import Document
 
 import otto
 from otto import llm
-from otto.llm.litellm import InteractReturnTuple
 from otto.llm.types import ContentChunk, InteractResponse, Query, Session, ToolSchema
 from otto.llm.utils import get_last_id, get_sequence
 from otto.otto.doctype.otto_session_tool_ct.otto_session_tool_ct import OttoSessionToolCT
 
 if TYPE_CHECKING:
-	from otto.llm.types import Session, SessionItem
+	from otto.llm.litellm import InteractReturnTuple
+	from otto.llm.types import SessionItem
 
 logger = otto.logger("otto_session")
 
@@ -72,7 +72,7 @@ class OttoSession(Document):
 		reasoning_effort: str | None,
 		tools: list[ToolSchema] | None = None,
 	):
-		doc = cast(OttoSession, frappe.get_doc({"doctype": "Otto Session"}))
+		doc = cast("OttoSession", frappe.get_doc({"doctype": "Otto Session"}))
 
 		doc.llm = model
 		doc.instruction = instruction
@@ -125,7 +125,7 @@ class OttoSession(Document):
 			try:
 				yield next(interact_generator)
 			except StopIteration as e:
-				interaction, reason = cast(InteractReturnTuple, e.value)
+				interaction, reason = cast("InteractReturnTuple", e.value)
 				logger.info(
 					{
 						"message": "interact success",

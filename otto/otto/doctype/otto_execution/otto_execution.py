@@ -52,7 +52,7 @@ class OttoExecution(Document):
 		import otto.lib as lib
 		from otto.otto.doctype.otto_task.otto_task import get_tools
 
-		doc = cast(OttoExecution, frappe.get_doc({"doctype": "Otto Execution", "task": task}))
+		doc = cast("OttoExecution", frappe.get_doc({"doctype": "Otto Execution", "task": task}))
 
 		doc.target_doctype = target_doctype
 		doc.target = target
@@ -137,6 +137,7 @@ class OttoExecution(Document):
 			return self.set_status("Success")
 
 		self.loop(None)
+		return None
 
 	def run_tools(self, session: Session):
 		"""Executes tool use requests from the last LLM response.

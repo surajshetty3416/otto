@@ -22,7 +22,7 @@ class OttoToolGroup(Document):
 	@staticmethod
 	def new(name: str, description: str | None = None):
 		doc = cast(
-			OttoToolGroup,
+			"OttoToolGroup",
 			frappe.get_doc(
 				{
 					"doctype": "Otto Tool Group",

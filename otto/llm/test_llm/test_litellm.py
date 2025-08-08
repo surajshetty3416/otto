@@ -5,6 +5,7 @@ from otto.llm.test_llm.utils import (
 	TEST_MODEL,
 	get_testfile_path,
 	get_weather_tool,
+	print_stats,
 	skip_unless_can_run_llm_tests,
 )
 from otto.llm.types import ToolUseUpdate
@@ -71,7 +72,7 @@ class TestLiteLLMIntegration(unittest.TestCase):
 		assert response["update"] is not None  # for type checker
 
 		session = response["update"]
-		print(get_stats(session))
+		print_stats([get_stats(session)])
 
 		self.assertIsInstance(session["items"], dict)
 		self.assertEqual(len(session["items"]), 2)  # User query + Agent response
@@ -116,7 +117,7 @@ class TestLiteLLMIntegration(unittest.TestCase):
 		self.assertIsNotNone(response)
 		assert response is not None  # for type checker
 		session = response["update"]
-		print(get_stats(session))
+		print_stats([get_stats(session)])
 
 		# Check response structure (similar to basic test)
 		self.assertIsInstance(response, dict)
@@ -174,7 +175,7 @@ class TestLiteLLMIntegration(unittest.TestCase):
 		self.assertIsNotNone(response)
 		assert response is not None  # for type checker
 
-		print(get_stats(response["update"]))
+		print_stats([get_stats(response["update"])])
 
 	def test_file_handling(self):
 		file = get_testfile_path("test.pdf")
@@ -184,7 +185,7 @@ class TestLiteLLMIntegration(unittest.TestCase):
 		self.assertIsNone(error, f"Interaction failed with error: {error}")
 		self.assertIsNotNone(response)
 		assert response is not None  # for type checker
-		print(get_stats(response["update"]))
+		print_stats([get_stats(response["update"])])
 
 		agent_item = response["item"]
 		self.assertEqual(agent_item["meta"]["role"], "agent")
@@ -204,7 +205,7 @@ class TestLiteLLMIntegration(unittest.TestCase):
 		self.assertIsNone(error, f"Interaction failed with error: {error}")
 		self.assertIsNotNone(response)
 		assert response is not None  # for type checker
-		print(get_stats(response["update"]))
+		print_stats([get_stats(response["update"])])
 
 		agent_item = response["item"]
 		self.assertEqual(agent_item["meta"]["role"], "agent")

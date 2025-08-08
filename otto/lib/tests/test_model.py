@@ -1,3 +1,4 @@
+import contextlib
 import unittest
 from typing import cast
 from unittest.mock import patch
@@ -5,7 +6,6 @@ from unittest.mock import patch
 import frappe
 
 import otto.lib.model as model
-from otto.lib.session import Session
 from otto.lib.tests.utils import delete_sessions, print_stats
 from otto.lib.types import Provider
 from otto.llm.test_llm.utils import skip_unless_can_run_llm_tests
@@ -128,20 +128,32 @@ class TestAPIKeyManagement(unittest.TestCase):
 	def test_set_api_key_invalid_provider(self, mock_set_value):
 		"""Test setting API key for invalid provider."""
 
-		model.set_api_key(cast(Provider, "InvalidProvider"), "test-key-value")
+		model.set_api_key(cast("Provider", "InvalidProvider"), "test-key-value")
 		mock_set_value.assert_not_called()
 
 
 class TestModelCreationAndUsage(unittest.TestCase):
 	"""Test model creation and actual usage with LLM integration."""
 
-	created_models: list[str] = []
-	created_sessions: list[Session] = []
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.created_models = []
+		self.created_sessions = []
 
 	def setUp(self):
 		"""Set up test fixtures."""
 		self.created_models = []
 		self.created_sessions = []
+
+	def delete_model_if_exists(self, model_name: str) -> None:
+		"""Delete a model if it exists, suppressing any errors."""
+		try:
+			if frappe.db.exists("Otto LLM", model_name):
+				frappe.delete_doc("Otto LLM", model_name, force=True)
+				frappe.db.commit()
+		except Exception:
+			# Suppress any errors during deletion
+			pass
 
 	def tearDown(self):
 		"""Clean up created test artifacts."""
@@ -149,16 +161,18 @@ class TestModelCreationAndUsage(unittest.TestCase):
 		delete_sessions(self.created_sessions)
 
 		for model_name in self.created_models:
-			try:
+			with contextlib.suppress(Exception):
 				frappe.delete_doc("Otto LLM", model_name, force=True)
-			except Exception:
-				pass  # Ignore cleanup errors
 
 		frappe.db.commit()
 
 	@skip_unless_can_run_llm_tests
 	def test_create_model_and_use_for_task(self):
 		"""Test creating a model and using it for a simple LLM task."""
+		# Delete model if it exists before creating
+		test_model_name = "openai/gpt-4.1-nano-2025-04-14"
+		self.delete_model_if_exists(test_model_name)
+
 		# Create a test model
 		model_name = model.create_model(
 			title="Test GPT-4.1-nano Model",
@@ -202,6 +216,15 @@ class TestModelCreationAndUsage(unittest.TestCase):
 
 	def test_create_model_name_format(self):
 		"""Test that created model names follow expected format."""
+		# Delete models if they exist before creating
+		openai_model_name = "openai/gpt-4o-test"
+		anthropic_model_name = "anthropic/claude-test"
+		google_model_name = "gemini/gemini-test"
+
+		self.delete_model_if_exists(openai_model_name)
+		self.delete_model_if_exists(anthropic_model_name)
+		self.delete_model_if_exists(google_model_name)
+
 		# Test OpenAI model
 		openai_model = model.create_model(
 			title="Test OpenAI Model",
@@ -240,6 +263,10 @@ class TestModelCreationAndUsage(unittest.TestCase):
 
 	def test_create_model_properties(self):
 		"""Test that created model has correct properties."""
+		# Delete model if it exists before creating
+		test_model_name = "openai/test-model-props"
+		self.delete_model_if_exists(test_model_name)
+
 		model_name = model.create_model(
 			title="Test Model Properties",
 			provider="OpenAI",
@@ -256,7 +283,7 @@ class TestModelCreationAndUsage(unittest.TestCase):
 		self.assertEqual(model_doc.get("provider"), "OpenAI")
 		self.assertEqual(model_doc.get("size"), "Medium")
 		self.assertTrue(model_doc.get("is_reasoning"))
-		self.assertFalse(model_doc.get("supports_visions"))
+		self.assertFalse(model_doc.get("supports_vision"))
 		self.assertTrue(model_doc.get("enabled"))  # Should be enabled by default
 
 

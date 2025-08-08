@@ -26,7 +26,7 @@ class OttoScrapbook(Document):
 	@staticmethod
 	def new(content: str, *, session: str | None = None, task: str | None = None, tool: str | None = None):
 		doc = cast(
-			OttoScrapbook,
+			"OttoScrapbook",
 			frappe.get_doc(
 				{
 					"doctype": "Otto Scrapbook",

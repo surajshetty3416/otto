@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Literal, NamedTuple, TypedDict, TypeGuard
+from typing import Any, Literal, NamedTuple, TypedDict
 
 Provider = Literal["Anthropic", "OpenAI", "Google"]
 ModelSize = Literal["Very Small", "Small", "Medium", "Large"]
@@ -150,3 +150,33 @@ class ToolSchemaParameters(TypedDict):
 	type: Literal["object"]
 	properties: dict[str, Any]
 	required: list[str]
+
+
+class SessionStats(TypedDict):
+	cost: float
+
+	#  Duration stats
+	end: str
+	start: str
+	duration: float
+
+	#  Token stats
+	total_input_tokens: int
+	total_output_tokens: int
+	max_input_tokens: int
+	max_output_tokens: int
+
+	#  Timing stats
+	time_to_first_chunk: float
+	inter_chunk_latency: float
+	tokens_per_second: float
+
+	# Invocation stats
+	llm_calls: int
+	tools: dict[str, SessionToolUseStats]
+
+
+class SessionToolUseStats(TypedDict):
+	empty_result_count: int
+	called_count: int
+	error_count: int

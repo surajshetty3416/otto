@@ -3,16 +3,18 @@
 from __future__ import annotations
 
 import json
-from typing import Any, cast
+from typing import TYPE_CHECKING, cast
 
 import frappe
 from frappe.model.document import Document
 
 import otto
 from otto import utils
-from otto.llm.types import ReasoningEffort
 from otto.llm.utils import is_reasoning_effort
 from otto.otto.doctype.otto_task.tools import is_meta_tool, meta_tools
+
+if TYPE_CHECKING:
+	from otto.llm.types import ReasoningEffort
 
 logger = otto.logger("otto_task", "DEBUG")
 
@@ -65,7 +67,7 @@ class OttoTask(Document):
 		reasoning_effort: str | None = None,
 	):
 		doc = cast(
-			OttoTask,
+			"OttoTask",
 			frappe.get_doc(
 				{
 					"doctype": "Otto Task",
