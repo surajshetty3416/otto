@@ -1,13 +1,13 @@
 <script setup>
 import { onMounted, ref } from "vue";
+import AllToolUseViewer from "./components/AllToolUseViewer.vue";
 import Detail from "./components/Detail.vue";
-import SessionViewer from "./components/SessionViewer.vue";
 import PreViewer from "./components/PreViewer.vue";
 import ScrapbookViewer from "./components/ScrapbookViewer.vue";
 import SectionContainer from "./components/SectionContainer.vue";
+import SessionViewer from "./components/SessionViewer.vue";
 import StatsViewer from "./components/StatsViewer.vue";
 import { format_date, get_link, link_icon } from "./utils";
-import AllToolUseViewer from "./components/AllToolUseViewer.vue";
 
 const props = defineProps({
 	sessionName: {
@@ -59,10 +59,36 @@ onMounted(async () => await fetchData());
 				Session <span>{{ info.name }}</span> <span v-html="link_icon"></span
 			></a>
 
-			<div class="date">{{ format_date(info.session.creation) }}</div>
+			<!-- LLM & Reasoning Effort -->
+			<a
+				v-if="info.llm"
+				class="llm"
+				target="_blank"
+				:title="`Last LLM used: ${info.llm.title}\nLast reasoning effort: ${info.session.reasoning_effort}`"
+				:href="get_link('Otto LLM', info.llm.name)"
+			>
+				{{ info.llm.title }}
+				<span v-if="info.session.reasoning_effort !== 'None'" class="reasoning-effort">
+					[{{ info.session.reasoning_effort }}]
+				</span>
+			</a>
+			<span class="separator">·</span>
+
+			<!-- Creation Date -->
+			<div
+				class="date"
+				:title="`Creation date: ${format_date(
+					info.session.creation
+				)}\nLast updated: ${format_date(info.session.modified)}`"
+			>
+				{{ format_date(info.session.creation) }}
+			</div>
 			<span v-if="info.execution" class="separator">·</span>
+
+			<!-- Execution Status (if execution) -->
 			<div
 				v-if="info.execution"
+				:title="`Execution status: ${info.execution.status}`"
 				class="status"
 				:style="get_status_style(info.execution.status)"
 			>
@@ -71,8 +97,14 @@ onMounted(async () => await fetchData());
 		</div>
 		<div v-else-if="loading" class="detail-header">Loading...</div>
 
-		<!-- 1. Session Details -->
-		<SectionContainer title="" label="" :isLoading="loading" :error="error">
+		<!-- 1. Execution Details (only if task execution) -->
+		<SectionContainer
+			v-if="info?.execution"
+			title=""
+			label=""
+			:isLoading="loading"
+			:error="error"
+		>
 			<div>
 				<!-- Details -->
 				<div class="detail-container">
@@ -95,19 +127,6 @@ onMounted(async () => await fetchData());
 						:link="get_link(info.execution.target_doctype, info.execution.target)"
 					/>
 					<Detail v-if="info.execution" label="Event" :value="info.execution.event" />
-					<Detail
-						v-if="info.llm"
-						title="LLM used to handle this task"
-						label="LLM"
-						:value="info.llm.title"
-						:link="get_link('Otto LLM', info.llm.name)"
-					/>
-					<Detail
-						v-if="info.session.reasoning_effort !== 'None'"
-						title="Reasoning effort used to handle task"
-						label="Reasoning"
-						:value="info.session.reasoning_effort"
-					/>
 				</div>
 			</div>
 		</SectionContainer>
@@ -218,8 +237,12 @@ onMounted(async () => await fetchData());
 		color: var(--gray-900);
 	}
 
-	.date {
+	.llm {
 		margin-left: auto;
+	}
+
+	.date,
+	.llm {
 		font-size: var(--text-xs);
 		color: var(--gray-500);
 	}
@@ -232,6 +255,11 @@ onMounted(async () => await fetchData());
 		font-size: var(--text-xs);
 		padding: 3px var(--padding-sm);
 		margin: 0;
+	}
+
+	.reasoning-effort {
+		margin-left: var(--padding-xs);
+		font-family: monospace;
 	}
 }
 

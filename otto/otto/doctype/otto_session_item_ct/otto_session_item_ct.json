@@ -22,6 +22,10 @@
   "output_tokens",
   "end_time",
   "timestamp",
+  "stats_section",
+  "inter_chunk_latency",
+  "column_break_osmv",
+  "time_to_first_chunk",
   "content_section",
   "content"
  ],
@@ -145,13 +149,34 @@
    "fieldname": "is_selected",
    "fieldtype": "Check",
    "label": "Is Selected"
+  },
+  {
+   "fieldname": "stats_section",
+   "fieldtype": "Section Break",
+   "label": "Stats"
+  },
+  {
+   "description": "Average time taken between two streamed chunks in the response",
+   "fieldname": "inter_chunk_latency",
+   "fieldtype": "Float",
+   "label": "Inter Chunk Latency"
+  },
+  {
+   "fieldname": "column_break_osmv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Time taken to receive the first chunk",
+   "fieldname": "time_to_first_chunk",
+   "fieldtype": "Float",
+   "label": "Time To First Chunk"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-07-11 12:00:16.893047",
+ "modified": "2025-08-08 11:17:44.534824",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Session Item CT",

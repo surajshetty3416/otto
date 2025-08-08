@@ -41,6 +41,32 @@ const role = computed(() => {
 
 	return "user";
 });
+
+const duration_str = computed(() => {
+	const parts = [];
+
+	if (duration.value) {
+		parts.push(`Duration: ${format_duration(duration.value)}`);
+	}
+
+	if (props.item.meta.time_to_first_chunk) {
+		parts.push(`Time to first chunk: ${format_duration(props.item.meta.time_to_first_chunk)}`);
+	}
+
+	if (props.item.meta.inter_chunk_latency) {
+		parts.push(`Inter chunk latency: ${format_duration(props.item.meta.inter_chunk_latency)}`);
+	}
+
+	if (props.item.meta.output_tokens && duration.value) {
+		parts.push(
+			`Tokens per second: ${format_number(
+				props.item.meta.output_tokens / duration.value
+			)} tok/s`
+		);
+	}
+
+	return parts.join("\n");
+});
 </script>
 
 <template>
@@ -81,7 +107,7 @@ const role = computed(() => {
 
 			<!-- Right Shifted meta -->
 			<div class="right-meta">
-				<p class="meta-item" :title="`Duration: ${duration}s`">
+				<p class="meta-item" :title="duration_str">
 					{{ format_duration(duration) }}
 				</p>
 				<p class="separator">·</p>

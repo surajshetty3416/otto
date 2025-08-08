@@ -15,25 +15,62 @@ const props = defineProps({
 </script>
 <template>
 	<div class="stats-container">
-		<Detail label="Cost" :value="`$${stats.cost.toFixed(6)}`" />
+		<Detail
+			label="Cost"
+			:title="`Total cost of the session: $${stats.cost.toFixed(6)}`"
+			:value="`$${stats.cost.toFixed(6)}`"
+		/>
+		<Detail
+			label="Duration"
+			:title="`Duration of the session (from first request to last response): ${format_duration(
+				stats.duration
+			)}`"
+			:value="format_duration(stats.duration)"
+		/>
 		<Detail
 			label="Total Input Tokens"
+			:title="`Total number of tokens sent to provider: ${stats.total_input_tokens} tok`"
 			:value="format_number(stats.total_input_tokens) + ' tok'"
 		/>
 		<Detail
 			label="Total Output Tokens"
+			:title="`Total number of tokens received from provider: ${stats.total_output_tokens} tok`"
 			:value="format_number(stats.total_output_tokens) + ' tok'"
 		/>
 		<Detail
-			label="Duration"
-			:value="format_duration(stats.duration)"
-			:title="`${stats.duration} seconds`"
+			label="LLM Calls"
+			:title="`Number of LLM provider API calls made in this session: ${stats.llm_calls}`"
+			:value="format_number(stats.llm_calls)"
 		/>
-		<Detail label="LLM Calls" :value="format_number(stats.llm_calls)" />
-		<Detail label="Max Input Tokens" :value="format_number(stats.max_input_tokens) + ' tok'" />
 		<Detail
+			v-if="stats.tokens_per_second"
+			:title="`Average tokens per second: ${stats.tokens_per_second} tok/s`"
+			label="Tokens per second"
+			:value="format_number(stats.tokens_per_second) + ' tok/s'"
+		/>
+		<Detail
+			v-if="stats.max_input_tokens !== stats.total_input_tokens"
+			label="Max Input Tokens"
+			:title="`Maximum number of input tokens used in a single call: ${stats.max_input_tokens} tok`"
+			:value="format_number(stats.max_input_tokens) + ' tok'"
+		/>
+		<Detail
+			v-if="stats.max_output_tokens !== stats.total_output_tokens"
 			label="Max Output Tokens"
+			:title="`Maximum number of output tokens received in a single call: ${stats.max_output_tokens} tok`"
 			:value="format_number(stats.max_output_tokens) + ' tok'"
+		/>
+		<Detail
+			v-if="stats.time_to_first_chunk"
+			:title="`Average time taken to receive the first chunk from provider: ${stats.time_to_first_chunk} seconds`"
+			label="Time to first chunk"
+			:value="format_duration(stats.time_to_first_chunk)"
+		/>
+		<Detail
+			v-if="stats.inter_chunk_latency"
+			:title="`Average time between consecutive chunks received: ${stats.inter_chunk_latency} seconds`"
+			label="Inter chunk latency"
+			:value="format_duration(stats.inter_chunk_latency)"
 		/>
 	</div>
 </template>

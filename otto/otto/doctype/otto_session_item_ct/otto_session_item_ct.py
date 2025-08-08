@@ -10,7 +10,7 @@ import frappe
 from frappe.model.document import Document
 from frappe.types import DF
 
-from otto.llm.types import EndReason, SessionItem, SessionMeta, SessionRole
+from otto.llm.types import EndReason, Meta, SessionItem, SessionRole
 
 
 class OttoSessionItemCT(Document):
@@ -27,6 +27,7 @@ class OttoSessionItemCT(Document):
 		end_reason: DF.Data | None
 		end_time: DF.Datetime | None
 		input_tokens: DF.Int
+		inter_chunk_latency: DF.Float
 		is_selected: DF.Check
 		model: DF.Data | None
 		next: DF.SmallText | None
@@ -37,6 +38,7 @@ class OttoSessionItemCT(Document):
 		role: DF.Data
 		selected: DF.Int
 		start_time: DF.Datetime | None
+		time_to_first_chunk: DF.Float
 		timestamp: DF.Datetime
 		uid: DF.Data
 	# end: auto-generated types
@@ -64,6 +66,9 @@ class OttoSessionItemCT(Document):
 		self.start_time = datetime.fromtimestamp(item["meta"]["start_time"])
 		self.end_time = datetime.fromtimestamp(item["meta"]["end_time"])
 
+		self.time_to_first_chunk = item["meta"]["time_to_first_chunk"] or 0
+		self.inter_chunk_latency = item["meta"]["inter_chunk_latency"] or 0
+
 		self.end_reason = item["meta"]["end_reason"]
 
 		# Content
@@ -74,7 +79,7 @@ class OttoSessionItemCT(Document):
 			id=self.uid,
 			next=json.loads(self.next or "[]"),
 			selected_next=self.selected,
-			meta=SessionMeta(
+			meta=Meta(
 				role=self._get_role(),
 				model=self.model,
 				input_tokens=self.input_tokens,
@@ -84,6 +89,8 @@ class OttoSessionItemCT(Document):
 				start_time=get_timestamp(self.start_time),
 				end_time=get_timestamp(self.end_time),
 				end_reason=self._get_end_reason(),
+				time_to_first_chunk=self.time_to_first_chunk or 0,
+				inter_chunk_latency=self.inter_chunk_latency or 0,
 			),
 			content=json.loads(self.content),
 		)

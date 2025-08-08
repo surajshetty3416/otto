@@ -28,7 +28,7 @@ DEFAULT_REASONING_BUDGET_MAP: dict[ReasoningEffort, int] = {
 
 
 if TYPE_CHECKING:
-	from otto.llm.types import SessionItem, SessionMeta, ToolUseUpdate, UserContent
+	from otto.llm.types import Meta, SessionItem, ToolUseUpdate, UserContent
 
 
 def get_sequence(session: Session) -> list[SessionItem]:
@@ -61,7 +61,7 @@ def get_sequence(session: Session) -> list[SessionItem]:
 
 
 def get_user_item(content: list[UserContent] | None = None):
-	meta: SessionMeta = {
+	meta: Meta = {
 		"role": "user",
 		"model": None,
 		"input_tokens": 0,
@@ -71,6 +71,8 @@ def get_user_item(content: list[UserContent] | None = None):
 		"start_time": 0,
 		"end_time": 0,
 		"end_reason": None,
+		"time_to_first_chunk": 0,
+		"inter_chunk_latency": 0,
 	}
 
 	item: SessionItem = {
@@ -88,7 +90,7 @@ def get_user_item(content: list[UserContent] | None = None):
 
 
 def get_agent_item(model: str):
-	meta: SessionMeta = {
+	meta: Meta = {
 		"role": "agent",
 		"model": model,
 		"timestamp": datetime.datetime.now().timestamp(),
@@ -98,6 +100,8 @@ def get_agent_item(model: str):
 		"end_time": 0,
 		"end_reason": None,
 		"cost": 0,
+		"time_to_first_chunk": 0,
+		"inter_chunk_latency": 0,
 	}
 
 	item: SessionItem = {
@@ -219,6 +223,10 @@ def get_stats(session: Session):
 	llm_calls = 0
 	tools_called = {}
 
+	latencies = []
+	first_chunks = []
+	tps = []
+
 	if not session["items"] or not session["first"] or session["first"] not in session["items"]:
 		return
 
@@ -240,8 +248,20 @@ def get_stats(session: Session):
 
 		if item["meta"]["input_tokens"] > max_input_tokens:
 			max_input_tokens = item["meta"]["input_tokens"]
+
 		if item["meta"]["output_tokens"] > max_output_tokens:
 			max_output_tokens = item["meta"]["output_tokens"]
+
+		if item["meta"]["time_to_first_chunk"] > 0:
+			first_chunks.append(item["meta"]["time_to_first_chunk"])
+
+		if item["meta"]["inter_chunk_latency"] > 0:
+			latencies.append(item["meta"]["inter_chunk_latency"])
+
+		if item["meta"]["output_tokens"] > 0:
+			tps.append(
+				item["meta"]["output_tokens"] / (item["meta"]["end_time"] - item["meta"]["start_time"])
+			)
 
 		for content_part in item["content"]:
 			if content_part["type"] != "tool_use":
@@ -278,6 +298,9 @@ def get_stats(session: Session):
 		max_input_tokens=max_input_tokens,
 		max_output_tokens=max_output_tokens,
 		llm_calls=llm_calls,
+		time_to_first_chunk=sum(first_chunks) / (len(first_chunks) if first_chunks else 1),
+		inter_chunk_latency=sum(latencies) / (len(latencies) if latencies else 1),
+		tokens_per_second=sum(tps) / (len(tps) if tps else 1),
 	)
 
 

@@ -57,9 +57,11 @@ frappe.ui.form.on("Otto LLM", {
 							display: none;"
 						>
 							<div id="llm-processing-response-${id}" title="Response content" style="display: none; color: var(--gray-500); font-size: var(--text-sm);">Processing query...</div>
-							<div id="llm-text-response-${id}" title="Text response" style="display: none;"></div>
 							<div id="llm-thinking-response-${id}" title="Thinking response" style="font-style: italic; color: var(--gray-700); display: none;"></div>
-							<pre id="llm-tool-use-response-${id}" title="Tool use response" style="display: none;"></pre>
+							<div id="llm-text-response-${id}" title="Text response" style="display: none;"></div>
+							<div id="llm-tool-use-response-${id}" title="Tool use response" style="display: none;"></div>
+							<div id="llm-stats-response-${id}" title="Response stats" style="display: none; font-size: var(--text-xs); margin-bottom: 0;"></div>
+							<div id="llm-error-response-${id}" title="Response error" style="display: none; font-size: var(--text-xs); margin-bottom: 0; color: var(--red-500);"></div>
 						</div>`,
 					},
 				],
@@ -86,18 +88,23 @@ frappe.ui.form.on("Otto LLM", {
 		}
 
 		function ask(query, instruction, reasoning_effort, dialog) {
-			const event = `stream-llm-${frm.doc.name}`;
 			const responseArea = document.getElementById(`llm-response-area-${id}`);
 			const processingContent = document.getElementById(`llm-processing-response-${id}`);
 			const textContent = document.getElementById(`llm-text-response-${id}`);
 			const thinkingContent = document.getElementById(`llm-thinking-response-${id}`);
 			const toolUseContent = document.getElementById(`llm-tool-use-response-${id}`);
+			const statsContent = document.getElementById(`llm-stats-response-${id}`);
+			const errorContent = document.getElementById(`llm-error-response-${id}`);
 
+			errorContent.style.display = "none";
+			statsContent.style.display = "none";
 			textContent.innerHTML = "";
 			thinkingContent.innerHTML = "";
 			toolUseContent.innerHTML = "";
+			processingContent.style.display = "block";
 
 			// Clear previous response and reset
+			const event = "stream-llm";
 			frappe.realtime.off(event);
 			frappe.realtime.on(event, (data) => {
 				console.log(data);
@@ -118,9 +125,9 @@ frappe.ui.form.on("Otto LLM", {
 						break;
 					case "tool_use":
 						toolUseContent.style.display = "block";
-						toolUseContent.innerHTML = frappe.utils.escape_html(
-							toolUseContent.innerHTML + chunk.content
-						);
+						toolUseContent.innerHTML = `<pre>${frappe.utils.escape_html(
+							chunk.content
+						)}</pre>`;
 						break;
 					case "text":
 					default:
@@ -134,6 +141,59 @@ frappe.ui.form.on("Otto LLM", {
 				responseArea.scrollTop = responseArea.scrollHeight;
 			});
 
+			function update_ui({ item, error }) {
+				console.log(item, error);
+				processingContent.style.display = "none";
+				if (!item || error) {
+					errorContent.style.display = "block";
+					errorContent.innerHTML = error || "No response item received";
+					return;
+				}
+
+				const stats = [
+					`Input tokens: ${item.meta.input_tokens.toLocaleString()}`,
+					`Output tokens: ${item.meta.output_tokens.toLocaleString()}`,
+					`Duration: ${format_duration(item.meta.end_time - item.meta.start_time)}`,
+					`Cost: $${item.meta.cost}`,
+					`Tokens per second: ${
+						item.meta.output_tokens / (item.meta.end_time - item.meta.start_time)
+					} tok/s`,
+					`Inter chunk latency: ${format_duration(item.meta.inter_chunk_latency)}`,
+					`Time to first chunk: ${format_duration(item.meta.time_to_first_chunk)}`,
+				];
+
+				statsContent.innerHTML = stats.join("<br>");
+				statsContent.style.display = "block";
+
+				for (const c of item.content) {
+					switch (c.type) {
+						case "thinking":
+							thinkingContent.style.display = "block";
+							thinkingContent.innerHTML = frappe.utils.escape_html(c.text);
+							break;
+						case "tool_use":
+							toolUseContent.style.display = "block";
+							toolUseContent.innerHTML = `<pre>${frappe.utils.escape_html(
+								JSON.stringify(
+									{
+										id: c.id,
+										name: c.name,
+										args: c.args,
+									},
+									null,
+									2
+								)
+							)}</pre>`;
+							break;
+						case "text":
+						default:
+							textContent.style.display = "block";
+							textContent.innerHTML = frappe.utils.escape_html(c.text);
+							break;
+					}
+				}
+			}
+
 			frappe.call({
 				method: "ask",
 				doc: frm.doc,
@@ -144,18 +204,7 @@ frappe.ui.form.on("Otto LLM", {
 				},
 				callback({ message }) {
 					dialog.get_primary_btn().prop("disabled", false);
-
-					if (message.error) {
-						frappe.msgprint(message.error, __("Error"));
-					}
-
-					if (message.message === "success") {
-						frappe.toast({
-							title: __("Success"),
-							message: __("Response generation completed"),
-							indicator: "green",
-						});
-					}
+					update_ui(message);
 				},
 			});
 		}
@@ -164,3 +213,15 @@ frappe.ui.form.on("Otto LLM", {
 		frappe.ui.keys.add_shortcut({ shortcut: "shift+a", action: ask_dialog, page: frm.page });
 	},
 });
+
+function format_duration(duration, fixed = 2) {
+	if (duration < 1) {
+		return `${(duration * 1000).toFixed(fixed)}ms`;
+	}
+
+	if (duration < 60) {
+		return `${duration.toFixed(fixed)}s`;
+	}
+
+	return frappe.utils.get_formatted_duration(duration);
+}

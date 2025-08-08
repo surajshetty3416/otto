@@ -54,7 +54,7 @@ UserContent = TextContent | ImageContent | FileContent
 Content = TextContent | ThinkingContent | ToolUseContent | ImageContent | FileContent
 
 
-class SessionMeta(TypedDict):
+class Meta(TypedDict):
 	role: SessionRole
 	model: str | None  # If None then item is a human user
 
@@ -67,13 +67,16 @@ class SessionMeta(TypedDict):
 	end_time: float
 	end_reason: EndReason | None
 
+	time_to_first_chunk: float
+	inter_chunk_latency: float
+
 
 class SessionItem(TypedDict):
 	id: ID
 	next: list[ID]
 	selected_next: int  # Used if multiple next items, default 0
 	content: list[Content]
-	meta: SessionMeta
+	meta: Meta
 
 
 class Session(TypedDict):

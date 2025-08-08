@@ -62,6 +62,7 @@ logger = otto.logger("otto_litellm", "DEBUG")
 class StreamReturn(NamedTuple):
 	chunks: list[ContentChunk]
 	signature: str | None
+	latency: float
 
 
 class InteractReturnTuple(NamedTuple):
@@ -211,10 +212,13 @@ def interact(
 	while True:
 		try:
 			yield next(stream_generator)
+			if item["meta"]["time_to_first_chunk"] == 0:
+				item["meta"]["time_to_first_chunk"] = time.time() - item["meta"]["start_time"]
 		except StopIteration as e:
 			ret = cast(StreamReturn, e.value)
 			chunks = ret.chunks
 			signature = ret.signature
+			item["meta"]["inter_chunk_latency"] = ret.latency
 			break
 
 	logger.debug(
@@ -343,16 +347,18 @@ def _stream(
 	returns a list of ContentChunk
 	"""
 	signature = None
+	timestamps: list[float] = []
 	chunks: list[ContentChunk] = []
 
 	for chunk in completion:
+		timestamps.append(time.time())
 		if cc := _stream_chunk(chunk, item["id"], session_id):
 			logger.debug({"id": item["id"], "content": cc["content"]})
 			chunks.append(cc)
 			yield cc
 
 		signature = signature or _get_signature(chunk)
-	return StreamReturn(chunks, signature)
+	return StreamReturn(chunks, signature, _get_inter_token_latency(timestamps))
 
 
 def _stream_chunk(chunk: ModelResponseStream, item_id: str, session_id: str | None):
@@ -472,3 +478,11 @@ def _get_thinking(thinking_effort: ReasoningEffort | None):
 		return None
 
 	return {"type": "enabled", "budget_tokens": DEFAULT_REASONING_BUDGET_MAP[thinking_effort]}
+
+
+def _get_inter_token_latency(timestamps: list[float]):
+	diffs = []
+	for i in range(1, len(timestamps)):
+		diffs.append(timestamps[i] - timestamps[i - 1])
+
+	return sum(diffs) / len(diffs)
