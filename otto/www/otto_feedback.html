@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feedback for Otto</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f8f9fa;
+      color: #333;
+    }
+
+    .container {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .header h1 {
+      color: #2c3e50;
+      margin-bottom: 10px;
+      font-size: 24px;
+    }
+
+    .task-info {
+      background-color: #f8f9fa;
+      border-left: 4px solid #007bff;
+      padding: 15px;
+      margin-bottom: 30px;
+      border-radius: 4px;
+    }
+
+    .task-info p {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .feedback-section {
+      margin-bottom: 25px;
+    }
+
+    .feedback-section label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 600;
+      color: #495057;
+    }
+
+    .thumb-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .thumb-btn {
+      background: #fff;
+      border: 2px solid #dee2e6;
+      border-radius: 50px;
+      padding: 15px 25px;
+      font-size: 24px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 120px;
+      justify-content: center;
+    }
+
+    .thumb-btn:hover {
+      border-color: #007bff;
+      transform: translateY(-2px);
+    }
+
+    .thumb-btn.selected {
+      background: #007bff;
+      border-color: #007bff;
+      color: white;
+    }
+
+    .thumb-btn.negative.selected {
+      background: #dc3545;
+      border-color: #dc3545;
+    }
+
+    .comment-box {
+      width: 100%;
+      min-height: 100px;
+      padding: 12px;
+      border: 2px solid #dee2e6;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      transition: border-color 0.3s ease;
+    }
+
+    .comment-box:focus {
+      outline: none;
+      border-color: #007bff;
+    }
+
+    .submit-btn {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      width: 100%;
+    }
+
+    .submit-btn:hover {
+      background: #0056b3;
+    }
+
+    .submit-btn:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+    }
+
+    .error-message {
+      background-color: #f8d7da;
+      color: #721c24;
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      border: 1px solid #f5c6cb;
+    }
+
+    .success-message {
+      background-color: #d4edda;
+      color: #155724;
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      border: 1px solid #c3e6cb;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Provide Feedback for Otto</h1>
+    </div>
+
+    {% if task_title and target_doctype and target %}
+    <div class="task-info">
+      <p>You are giving Otto feedback for its performance on the <strong>{{
+          task_title }}</strong> task on <strong>{{ target_doctype }}</strong>
+        <em>{{ target }}</em>.
+      </p>
+    </div>
+    {% endif %}
+
+    <div id="messages"></div>
+
+    <form id="feedbackForm">
+      <div class="feedback-section">
+        <label>How did Otto perform?</label>
+        <div class="thumb-buttons">
+          <button type="button" class="thumb-btn" data-value="1" {% if value==1
+            %}selected{% endif %}>
+            👍 <span>Good</span>
+          </button>
+          <button type="button" class="thumb-btn negative" data-value="-1" {% if
+            value==-1 %}selected{% endif %}>
+            👎 <span>Poor</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="feedback-section">
+        <label for="comment">Additional Comments (optional):</label>
+        <textarea id="comment" name="comment" class="comment-box"
+          placeholder="Please share any specific feedback about Otto's performance on this task...">{% if comment %}{{ comment }}{% endif %}</textarea>
+      </div>
+
+      <button type="submit" class="submit-btn">Submit Feedback</button>
+    </form>
+  </div>
+
+  <!-- Pass context variables to JavaScript -->
+  <script type="application/json" id="context-data">
+        {
+            "value": {% if value is not none %}{{ value }}{% else %}null{% endif %},
+            "session": "{{ session or '' }}",
+            "name": "{{ name or '' }}"
+        }
+    </script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const form = document.getElementById('feedbackForm');
+      const thumbButtons = document.querySelectorAll('.thumb-btn');
+      const messagesDiv = document.getElementById('messages');
+
+      // Get context data
+      const contextData = JSON.parse(document.getElementById('context-data').textContent);
+      let selectedValue = contextData.value || 0;
+
+      // Get URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const session = urlParams.get('session') || contextData.session;
+      const name = contextData.name;
+
+      // Initialize thumb button selection
+      thumbButtons.forEach(button => {
+        if (button.hasAttribute('selected')) {
+          button.classList.add('selected');
+        }
+
+        button.addEventListener('click', function () {
+          const value = parseInt(this.dataset.value);
+
+          // Toggle selection
+          if (selectedValue === value) {
+            selectedValue = 0;
+            this.classList.remove('selected');
+          } else {
+            selectedValue = value;
+            thumbButtons.forEach(btn => btn.classList.remove('selected'));
+            this.classList.add('selected');
+          }
+        });
+      });
+
+      // Handle form submission
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const comment = document.getElementById('comment').value.trim();
+        const submitBtn = form.querySelector('.submit-btn');
+
+        // Build URL parameters
+        const params = new URLSearchParams();
+        if (name) params.append('name', name);
+        if (selectedValue !== 0) params.append('value', selectedValue.toString());
+        if (comment) params.append('comment', comment);
+        if (session) params.append('session', session);
+
+        // Disable submit button
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+
+        // Clear previous messages
+        messagesDiv.innerHTML = '';
+
+        // Submit to API
+        const apiUrl = `/api/method/otto.api.log_feedback?${params.toString()}`;
+
+        fetch(apiUrl, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        })
+          .then(response => response.json())
+          .then(data => {
+            console.log({ message: data });
+            if (data.message === 'success') {
+              showMessage('Feedback submitted successfully! Thank you for helping improve Otto.', 'success');
+              // Optionally disable the form after successful submission
+              setTimeout(() => {
+                window.close(); // Try to close if opened in popup
+              }, 2000);
+            } else {
+              showMessage('Error: ' + (data.reason || 'Unknown error occurred'), 'error');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            showMessage('Error: Failed to submit feedback. Please try again.', 'error');
+          })
+          .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Feedback';
+          });
+      });
+
+      function showMessage(message, type) {
+        const messageClass = type === 'success' ? 'success-message' : 'error-message';
+        messagesDiv.innerHTML = `<div class="${messageClass}">${message}</div>`;
+      }
+    });
+  </script>
+</body>
+
+</html>
