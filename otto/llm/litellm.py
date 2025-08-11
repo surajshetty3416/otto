@@ -19,7 +19,7 @@ import os
 import random
 import threading
 import time
-from typing import TYPE_CHECKING, NamedTuple, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
 import otto
 from otto.llm.format import get_messages
@@ -61,7 +61,6 @@ logger = otto.logger("otto_litellm", "DEBUG")
 
 class StreamReturn(NamedTuple):
 	chunks: list[ContentChunk]
-	signature: str | None
 	latency: float
 
 
@@ -205,7 +204,6 @@ def interact(
 	assert isinstance(completion, litellm.CustomStreamWrapper), "sanity check"
 
 	chunks = []
-	signature = None
 
 	# Iterates over the completion stream and returns a list of ContentChunk
 	stream_generator = _stream(completion, item, session_id)
@@ -217,49 +215,25 @@ def interact(
 		except StopIteration as e:
 			ret = cast("StreamReturn", e.value)
 			chunks = ret.chunks
-			signature = ret.signature
 			item["meta"]["inter_chunk_latency"] = ret.latency
 			break
 
 	logger.debug(
 		{
-			"message": "waiting for stream completion",
+			"message": "stream completed",
 			"id": item["id"],
-			"signature": signature,
 			"chunks": len(chunks),
 		}
 	)
-
-	# Note:
-	#
-	# There is/was a weird bug where if insufficient logging statements were
-	# present then the signature value would not be set.
-	#
-	# This kinda implies that the final callback was being called before the
-	# StopIteration exception was handled and that the logging statements
-	# delayed execution enough for signature to be set.
-	#
-	# Adding the 1ms sleep statement seems to fix the issue, but it is still
-	# vexing because the wait call should not be reached unless and until the
-	# stream, and the StopIteration exception is handled.
 	done.wait()
-	time.sleep(0.001)
 
 	logger.debug(
 		{
-			"message": "after wait",
-			"signature": signature,
+			"message": "success callback called",
 			"content_len": len(item["content"]),
 			"thinking_content": [c for c in item["content"] if c["type"] == "thinking"],
 		}
 	)
-
-	# Rest of the item updation is handled in litellm.success_callback
-	# Thinking signature is required by anthropic
-	if signature:
-		for c in item["content"]:
-			if c["type"] == "thinking":
-				c["signature"] = signature
 
 	logger.debug({"message": "updating session", "id": item["id"]})
 	# Update the update session with the item
@@ -271,46 +245,80 @@ def interact(
 	return InteractReturnTuple(response, None)
 
 
-def _get_content(completion_response: dict):
-	content: list[Content] = []
-	comp = completion_response.get("choices", [])[0]
-	message = comp.get("message", {})
+def _get_content(completion_response: dict) -> list[Content]:
+	message = completion_response.get("choices", [{}])[0].get("message", {})
+	return [
+		*_get_thinking_content(message),
+		*_get_text_content(message),
+		*_get_tool_use_content(message),
+	]
 
-	if message.get("reasoning_content"):
-		content.append(
+
+def _get_thinking_content(message: dict[str, Any]) -> list[ThinkingContent]:
+	thinking_blocks = message.get("thinking_blocks") or []
+	reasoning_content = message.get("reasoning_content")
+
+	if not (thinking_blocks or reasoning_content):
+		return []
+
+	if reasoning_content and not thinking_blocks:
+		assert isinstance(reasoning_content, str), "sanity check"
+		return [
 			ThinkingContent(
 				type="thinking",
-				text=message.get("reasoning_content"),
+				text=reasoning_content,
 				signature=None,
 			)
+		]
+
+	# Thinking blocks are set by litellm only when model is an anthropic one we
+	# don't directly use reasoning_content cause anthropic sends signatures with
+	# thinking which needs to be sent back in the next request.
+	blocks: list[ThinkingContent] = []
+	for block in thinking_blocks:
+		text = block.get("thinking")
+		if not text:
+			continue
+
+		blocks.append(
+			ThinkingContent(
+				type="thinking",
+				text=text,
+				signature=block.get("signature"),
+			)
 		)
 
-	if message.get("content"):
+	return blocks
+
+
+def _get_text_content(message: dict[str, Any]) -> list[TextContent]:
+	if text := message.get("content"):
+		return [TextContent(type="text", text=text)]
+
+	return []
+
+
+def _get_tool_use_content(message: dict[str, Any]) -> list[ToolUseContent]:
+	content: list[ToolUseContent] = []
+	if not message.get("tool_calls"):
+		return content
+
+	for tool_call in message.get("tool_calls", []):
+		func = tool_call.get("function")
 		content.append(
-			TextContent(
-				type="text",
-				text=message.get("content"),
+			ToolUseContent(
+				type="tool_use",
+				id=tool_call.get("id"),
+				name=func.get("name"),
+				args=json.loads(func.get("arguments")),
+				status="pending",
+				result=None,
+				start_time=0,
+				end_time=0,
+				stdout=None,
+				stderr=None,
 			)
 		)
-
-	if message.get("tool_calls"):
-		for tool_call in message.get("tool_calls", []):
-			func = tool_call.get("function")
-			content.append(
-				ToolUseContent(
-					type="tool_use",
-					id=tool_call.get("id"),
-					name=func.get("name"),
-					args=json.loads(func.get("arguments")),
-					status="pending",
-					result=None,
-					start_time=0,
-					end_time=0,
-					stdout=None,
-					stderr=None,
-				)
-			)
-
 	return content
 
 
@@ -346,7 +354,6 @@ def _stream(
 
 	returns a list of ContentChunk
 	"""
-	signature = None
 	timestamps: list[float] = []
 	chunks: list[ContentChunk] = []
 
@@ -357,8 +364,7 @@ def _stream(
 			chunks.append(cc)
 			yield cc
 
-		signature = signature or _get_signature(chunk)
-	return StreamReturn(chunks, signature, _get_inter_token_latency(timestamps))
+	return StreamReturn(chunks, _get_inter_chunk_latency(timestamps))
 
 
 def _stream_chunk(chunk: ModelResponseStream, item_id: str, session_id: str | None):
@@ -431,42 +437,6 @@ def _set_key(model: str) -> str | None:
 	return None
 
 
-def _get_signature(chunk: ModelResponseStream):
-	"""
-	Signature is not passed in the completions object and needs to be extracted
-	from the stream chunk.
-	"""
-	if not (delta := chunk.choices[0].delta):
-		return None
-
-	# Check thinking blocks for signature
-	thinking_blocks = delta.get("thinking_blocks")
-	if signature := _get_signature_from_thinking_blocks(thinking_blocks):
-		return signature
-
-	# Check provider specific fields for signature
-	provider_fields = delta.get("provider_specific_fields") or {}
-	if (signature := provider_fields.get("signature")) and isinstance(signature, str):
-		return signature
-
-	thinking_blocks = provider_fields.get("thinking_blocks")
-	if signature := _get_signature_from_thinking_blocks(thinking_blocks):
-		return signature
-
-	return None
-
-
-def _get_signature_from_thinking_blocks(blocks):
-	if not blocks or not isinstance(blocks, list):
-		return None
-
-	block = blocks[0] or {}
-	if (signature := block.get("signature")) and isinstance(signature, str):
-		return signature
-
-	return None
-
-
 def _should_preserve_thinking(model: str):
 	# reference: https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking?q=thinking#preserving-thinking-blocks
 	return "sonnet" in model or "opus" in model
@@ -480,7 +450,7 @@ def _get_thinking(thinking_effort: ReasoningEffort | None):
 	return {"type": "enabled", "budget_tokens": DEFAULT_REASONING_BUDGET_MAP[thinking_effort]}
 
 
-def _get_inter_token_latency(timestamps: list[float]):
+def _get_inter_chunk_latency(timestamps: list[float]):
 	diffs = []
 	for i in range(1, len(timestamps)):
 		diffs.append(timestamps[i] - timestamps[i - 1])

@@ -126,6 +126,6 @@ def print_stats(statss: list[SessionStats | None]):
 	print(f"Cost: ${total_cost:.6f}", end="\t")
 	print(f"Input: {total_input_tokens}tok", end="\t")
 	print(f"Output: {total_output_tokens}tok", end="\t")
-	print(f"Latency: {sum(latencies) / (len(latencies) or 1):.3f}s", end="\t")
+	print(f"Latency: {(sum(latencies) / (len(latencies) or 1) * 1000):.3f}ms", end="\t")
 	print(f"TTFC: {sum(ttfc) / (len(ttfc) or 1):.3f}s", end="\t")
 	print(f"Duration: {total_duration:.3f}s")
