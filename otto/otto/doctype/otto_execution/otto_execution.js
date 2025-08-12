@@ -22,13 +22,11 @@ frappe.ui.form.on("Otto Execution", {
 			});
 		}
 
-		function open_in_session_viewer() {
-			frappe.set_route("view-otto-session", frm.doc.session);
-		}
-
-		frm.add_custom_button(__("Open in Session Viewer"), open_in_session_viewer);
 		if (frm.doc.status === "Failure") {
 			frm.add_custom_button(__("Retry"), retry);
 		}
+
+		frm.add_web_link(`/otto_feedback?session=${frm.doc.session}`, __("Give Feedback"));
+		frm.add_web_link(`/app/view-otto-session/${frm.doc.session}`, __("Open in Session Viewer"));
 	},
 });

@@ -21,6 +21,14 @@
     task_title }}</strong> task on <strong>{{ target_doctype }}</strong>
   <strong>{{ target }}</strong>.
 </p>
+{% elif task_title and session %}
+<p class="task-info">You are providing feedback for Otto's performance on the
+  <strong>{{ task_title }}</strong> task on session <code>{{ session }}</code>.
+</p>
+{% elif task_title %}
+<p class="task-info">You are providing feedback for Otto's performance on the
+  <strong>{{ task_title }}</strong> task.
+</p>
 {% elif session %}
 <p class="task-info">You are providing feedback for Otto's performance on
   session <code>{{ session }}</code>.</p>

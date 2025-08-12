@@ -16,14 +16,9 @@ frappe.ui.form.on("Otto Session", {
 			});
 		}
 
-		function open_in_session_viewer() {
-			frappe.set_route("view-otto-session", frm.doc.name);
-		}
-
-		frm.add_custom_button(__("Give Feedback"), () => {
-			window.open(`/otto_feedback?session=${frm.doc.name}`, "_blank");
-		});
 		frm.add_custom_button(__("View Stats"), get_stats);
-		frm.add_custom_button(__("Open in Session Viewer"), open_in_session_viewer);
+
+		frm.add_web_link(`/otto_feedback?session=${frm.doc.name}`, __("Give Feedback"));
+		frm.add_web_link(`/app/view-otto-session/${frm.doc.name}`, __("Open in Session Viewer"));
 	},
 });

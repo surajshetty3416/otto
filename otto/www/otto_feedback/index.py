@@ -1,5 +1,7 @@
 import frappe
 
+# See otto.api.log_feedback for more details.
+
 
 def get_context(context):
 	from otto.otto.doctype.otto_feedback.otto_feedback import OttoFeedback, get_value
@@ -13,7 +15,7 @@ def get_context(context):
 
 	# Optimistically log feedback if either of these are set, allows embedding
 	# thumbs up/down buttons into the url itself.
-	if comment or value or session:
+	if comment or value:
 		log = OttoFeedback.log(
 			name=name,
 			session=session,
