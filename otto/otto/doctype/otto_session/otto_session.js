@@ -20,6 +20,9 @@ frappe.ui.form.on("Otto Session", {
 			frappe.set_route("view-otto-session", frm.doc.name);
 		}
 
+		frm.add_custom_button(__("Give Feedback"), () => {
+			window.open(`/otto_feedback?session=${frm.doc.name}`, "_blank");
+		});
 		frm.add_custom_button(__("View Stats"), get_stats);
 		frm.add_custom_button(__("Open in Session Viewer"), open_in_session_viewer);
 	},

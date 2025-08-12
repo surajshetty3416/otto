@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any, Literal, TypedDict, cast
+from urllib.parse import unquote
 
 import frappe
 from frappe.model.document import Document
@@ -41,7 +42,7 @@ class OttoFeedback(Document):
 		doc = cast("OttoFeedback", frappe.get_doc({"doctype": "Otto Feedback"}))
 		doc.session = session
 		doc.value = get_value(value) or 0
-		doc.comment = comment
+		doc.comment = unquote(comment) if comment else None
 		doc.save(ignore_permissions=True, ignore_version=True)
 		return doc
 
@@ -83,13 +84,12 @@ class OttoFeedback(Document):
 			feedback.value = value
 
 		if comment is not None:
-			feedback.comment = comment
+			feedback.comment = unquote(comment)
 
 		if session is not None:
 			feedback.session = session
 
 		feedback.save(ignore_permissions=True)
-		frappe.db.commit()
 		return LogResponse(
 			message="success",
 			feedback=feedback,

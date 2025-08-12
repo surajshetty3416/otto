@@ -12,6 +12,7 @@ def log_feedback():
 		session=frappe.request.args.get("session"),
 		comment=frappe.request.args.get("comment"),
 	)
+	frappe.db.commit()
 
 	return dict(
 		message=res["message"],

@@ -208,7 +208,7 @@ function feedback(session) {
 
 	const field = dialog.get_field("thumb_buttons");
 	const thumbs_html = `
-			<p>Was this task handled correctly?</p>
+			<p>Was Otto helpful?</p>
 			<div class="btn-group" role="group">
 				<button type="button" class="btn btn-default"  name="up">
 					&#128077;

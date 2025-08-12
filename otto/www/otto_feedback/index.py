@@ -13,7 +13,7 @@ def get_context(context):
 
 	# Optimistically log feedback if either of these are set, allows embedding
 	# thumbs up/down buttons into the url itself.
-	if session or comment or name or value is not None:
+	if comment or value or session:
 		log = OttoFeedback.log(
 			name=name,
 			session=session,
@@ -26,10 +26,13 @@ def get_context(context):
 		context.name = feedback.name
 		context.value = feedback.value
 		context.comment = feedback.comment
+		context.session = feedback.session
+		frappe.db.commit()  # ensure that feedback is created before returning
 	else:
 		context.name = None  # Feedback will be created on Submit
 		context.value = value or 0
 		context.comment = comment
+		context.session = session
 
 	if session and (target := get_target(session)):
 		context.task_title = target["task_title"]
