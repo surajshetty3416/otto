@@ -87,7 +87,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Executions",
-   "link_count": 3,
+   "link_count": 4,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -121,9 +121,19 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Otto Feedback",
+   "link_count": 0,
+   "link_to": "Otto Feedback",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2025-07-15 14:36:49.425209",
+ "modified": "2025-08-12 15:09:34.889894",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto",

@@ -16,24 +16,24 @@
 <h1>Feedback for Otto</h1>
 
 {% if task_title and target_doctype and target %}
-<p class="task-info">You are providing feedback for Otto's performance on the
+<p class="task-info">Feedback for Otto's helpfulness on the
   <strong>{{
     task_title }}</strong> task on <strong>{{ target_doctype }}</strong>
   <strong>{{ target }}</strong>.
 </p>
 {% elif task_title and session %}
-<p class="task-info">You are providing feedback for Otto's performance on the
+<p class="task-info">Feedback for Otto's helpfulness on the
   <strong>{{ task_title }}</strong> task on session <code>{{ session }}</code>.
 </p>
 {% elif task_title %}
-<p class="task-info">You are providing feedback for Otto's performance on the
+<p class="task-info">Feedback for Otto's helpfulness on the
   <strong>{{ task_title }}</strong> task.
 </p>
 {% elif session %}
-<p class="task-info">You are providing feedback for Otto's performance on
+<p class="task-info">Feedback for Otto's helpfulness on
   session <code>{{ session }}</code>.</p>
 {% else %}
-<p class="task-info">You are providing feedback for Otto's performance.</p>
+<p class="task-info">General feedback for Otto's helpfulness.</p>
 {% endif %}
 
 
