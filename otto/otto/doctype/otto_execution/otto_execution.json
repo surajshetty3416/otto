@@ -32,7 +32,8 @@
    "label": "Task",
    "options": "Otto Task",
    "read_only": 1,
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "default": "Pending",
@@ -43,7 +44,8 @@
    "label": "Status",
    "options": "Pending\nRunning\nSuccess\nFailure",
    "read_only_depends_on": "eval:doc.status !== \"Running\"",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "depends_on": "eval:doc.reason",
@@ -90,13 +92,14 @@
    "label": "Session",
    "options": "Otto Session",
    "read_only": 1,
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-07-10 13:28:11.570510",
+ "modified": "2025-08-13 12:04:55.844371",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Execution",

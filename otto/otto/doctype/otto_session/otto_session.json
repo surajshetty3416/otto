@@ -36,7 +36,8 @@
    "in_standard_filter": 1,
    "label": "LLM",
    "options": "Otto LLM",
-   "read_only": 1
+   "read_only": 1,
+   "search_index": 1
   },
   {
    "description": "Fetched from Task definition if not specified.",
@@ -136,9 +137,13 @@
   {
    "link_doctype": "Otto Execution",
    "link_fieldname": "session"
+  },
+  {
+   "link_doctype": "Otto Feedback",
+   "link_fieldname": "session"
   }
  ],
- "modified": "2025-07-30 11:50:55.401838",
+ "modified": "2025-08-13 12:04:22.053478",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Session",

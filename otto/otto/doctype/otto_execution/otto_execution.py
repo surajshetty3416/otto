@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 class OttoExecution(Document):
 	# begin: auto-generated types
 	# This code is auto-generated. Do not modify anything in this block.
+
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
@@ -36,6 +37,7 @@ class OttoExecution(Document):
 		target_doctype: DF.Link | None
 		task: DF.Link
 	# end: auto-generated types
+
 	_session: Session | None = None
 
 	@staticmethod
