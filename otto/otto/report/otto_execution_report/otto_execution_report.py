@@ -61,7 +61,7 @@ def get_feedback_cols_and_data(sessions: list[str]) -> tuple[list[dict], dict[st
 	select
 		session,
 		sum(value) as score
-	from `tabotto feedback`
+	from `tabOtto Feedback`
 	where session in %s
 	group by session
 	"""
@@ -81,7 +81,7 @@ def get_tool_counts(sessions: list[str]) -> list[dict]:
 		select
 			osi.parent as session,
 			jt.tool as tool
-		from `tabotto session item ct` osi,
+		from `tabOtto Session Item CT` osi,
 		json_table(
 			osi.content, '$[*]' columns(
 				type text path '$.type',
@@ -356,10 +356,10 @@ def get_data(filters: dict) -> tuple[list[list[Any]], set[str]]:
 		avg(osi.time_to_first_chunk) as ttfc_s,
 		avg(osi.inter_chunk_latency) * 1000 as latency_ms
 	from
-		`tabotto session` as os
-		join `tabotto session item ct` osi on os.name = osi.parent
-		join `tabotto execution` as ex on ex.session = os.name
-		left join `tabotto task` as ot on ex.task = ot.name
+		`tabOtto Session` as os
+		join `tabOtto Session Item CT` osi on os.name = osi.parent
+		join `tabOtto Execution` as ex on ex.session = os.name
+		left join `tabOtto Task` as ot on ex.task = ot.name
 	where
 		osi.role = 'agent'
 		{where_clause}
