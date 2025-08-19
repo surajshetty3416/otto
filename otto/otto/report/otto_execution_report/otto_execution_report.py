@@ -14,18 +14,131 @@ def execute(filters: dict | None = None):
 	dictionary and should return columns and data. It is called by the framework
 	every time the report is refreshed or a filter is updated.
 	"""
-	columns = get_columns()
-	data = get_data(filters or {})
+	filters = filters or {}
+	data, session_set = get_data(filters or {})
+	columns = get_columns(filters)
+
+	if not filters.get("show_stats"):
+		data = [row[:7] for row in data]
+		columns = columns[:7]
+
+	if not filters.get("show_tool_counts"):
+		return columns, data
+
+	sessions = list(session_set)
+	counts = get_tool_counts(sessions)
+	tool_cols, tool_data = get_tool_use_cols_and_data(counts, sessions)
+
+	# columns.extend(tool_cols)
+	# data.extend(tool_data)
+	splice_idx = 5
+	columns = columns[:splice_idx] + tool_cols + columns[splice_idx:]
+	data = [row[:splice_idx] + tool_data[row[0]] + row[splice_idx:] for row in data]
 
 	return columns, data
 
 
-def get_columns() -> list[dict]:
+def get_tool_counts(sessions: list[str]) -> list[dict]:
+	"""Return times tool has been called, per tool per session"""
+	query = """
+	with t as (
+		select
+			osi.parent as session,
+			jt.tool as tool
+		from `tabotto session item ct` osi,
+		json_table(
+			osi.content, '$[*]' columns(
+				type text path '$.type',
+				tool text path '$.name'
+			)
+		) as jt
+		where jt.type = 'tool_use'
+		and osi.parent in %s
+	)
+	select
+		t.session as session,
+		t.tool as tool,
+		count(*) as times_called
+	from t
+	group by t.session, t.tool
+	"""
+	return frappe.db.sql(query, (sessions,), as_dict=True) or []  # type: ignore
+
+
+def get_tool_use_cols_and_data(
+	counts: list[dict], sessions: list[str]
+) -> tuple[list[dict], dict[str, list[int]]]:
+	"""
+	Returns tuple of:
+	- columns for tools used and data for each session
+	- data of the form dict[session_name, list[tool_use_count]]
+	"""
+	# dict[session, dict[tool, times_called]]
+	st_map: dict[str, dict[str, int]] = {}
+
+	# set of tools called
+	tool_set = set()
+
+	for c in counts:
+		if c["session"] not in st_map:
+			st_map[c["session"]] = {}
+		s = st_map[c["session"]]
+		if c["tool"] not in s:
+			s[c["tool"]] = 0
+		s[c["tool"]] += c["times_called"]
+		tool_set.add(c["tool"])
+
+	tools: list[str] = list(tool_set)
+	tools.sort()
+
+	cols = []
+	for tool in tools:
+		cols.append(
+			{
+				"label": tool,
+				"description": f"Times '{tool}' was called in a session",
+				"fieldname": tool,
+				"fieldtype": "Int",
+				"width": 120,
+			}
+		)
+
+	# ensure all sessions have a row for all tools
+	for session in sessions:
+		if session in st_map:
+			continue
+
+		st_map[session] = {}
+		for tool in tools:
+			st_map[session][tool] = 0
+
+	data_map: dict[str, list[int]] = {}
+	for session, st in st_map.items():
+		for t in tools:
+			count = st.get(t, 0)
+			if session not in data_map:
+				data_map[session] = []
+
+			data_map[session].append(count)
+
+	return cols, data_map
+
+
+def get_columns(filters: dict) -> list[dict]:
 	"""Return columns for the report.
 
 	One field definition per column, just like a DocType field definition.
 	"""
-	return [
+
+	columns = [
+		{
+			"label": _("Session"),
+			"fieldname": "session",
+			"fieldtype": "Link",
+			"options": "Otto Session",
+			"width": 150,
+			"hidden": 1,
+		},
 		{
 			"label": _("Execution"),
 			"fieldname": "execution",
@@ -39,6 +152,7 @@ def get_columns() -> list[dict]:
 			"fieldtype": "Link",
 			"options": "Otto Task",
 			"width": 150,
+			"hidden": bool(filters.get("task")),
 		},
 		{
 			"label": _("Target"),
@@ -53,7 +167,7 @@ def get_columns() -> list[dict]:
 			"fieldtype": "Link",
 			"options": "DocType",
 			"width": 120,
-			"hidden": 1,
+			"hidden": bool(filters.get("task")),
 		},
 		{
 			"label": _("Event"),
@@ -141,8 +255,15 @@ def get_columns() -> list[dict]:
 		},
 	]
 
+	if filters.get("task") and (
+		target_doctype := frappe.get_value("Otto Task", filters.get("task"), "target_doctype")
+	):
+		columns[3]["label"] = f"{target_doctype} (Target)"
 
-def get_data(filters: dict) -> list[list[Any]]:
+	return columns
+
+
+def get_data(filters: dict) -> tuple[list[list[Any]], set[str]]:
 	"""Return data for the report.
 
 	The report data is a list of rows, with each row being a list of cell values.
@@ -175,33 +296,35 @@ def get_data(filters: dict) -> list[list[Any]]:
 		where_clause = "AND " + " AND ".join(conditions)
 
 	query = f"""
-	SELECT
+	select
+		os.name as session,
 		ex.name as execution,
 		ex.task as task,
 		ex.target,
 		ex.target_doctype,
 		ex.event,
 		os.llm,
-		SUM(osi.cost) as total_cost,
-		COUNT(*) as llm_calls,
-		SUM(osi.input_tokens) as total_input,
-		SUM(osi.output_tokens) as total_output,
-		MAX(osi.input_tokens) as max_input,
-		MAX(osi.output_tokens) as max_output,
-		TIMESTAMPDIFF(SECOND, MIN(osi.timestamp), MAX(osi.end_time)) as duration_s,
-		AVG(osi.output_tokens / TIMESTAMPDIFF(SECOND, osi.start_time, osi.end_time)) as rate_tps,
-		AVG(osi.time_to_first_chunk) as ttfc_s,
-		AVG(osi.inter_chunk_latency) * 1000 as latency_ms
-	FROM
-		`tabOtto Session` as os
-		JOIN `tabOtto Session Item CT` osi ON os.name = osi.parent
-		JOIN `tabOtto Execution` as ex ON ex.session = os.name
-		LEFT JOIN `tabOtto Task` as ot ON ex.task = ot.name
-	WHERE
+		sum(osi.cost) as total_cost,
+		count(*) as llm_calls,
+		sum(osi.input_tokens) as total_input,
+		sum(osi.output_tokens) as total_output,
+		max(osi.input_tokens) as max_input,
+		max(osi.output_tokens) as max_output,
+		timestampdiff(second, min(osi.timestamp), max(osi.end_time)) as duration_s,
+		avg(osi.output_tokens / timestampdiff(second, osi.start_time, osi.end_time)) as rate_tps,
+		avg(osi.time_to_first_chunk) as ttfc_s,
+		avg(osi.inter_chunk_latency) * 1000 as latency_ms
+	from
+		`tabotto session` as os
+		join `tabotto session item ct` osi on os.name = osi.parent
+		join `tabotto execution` as ex on ex.session = os.name
+		left join `tabotto task` as ot on ex.task = ot.name
+	where
 		osi.role = 'agent'
 		{where_clause}
-	GROUP BY osi.parent
-	ORDER BY os.creation DESC
+	group by osi.parent
+	order by os.creation desc
 	"""
 
-	return frappe.db.sql(query, values, as_list=True) or []  # type: ignore
+	data: list[list[Any]] = frappe.db.sql(query, values, as_list=True) or []  # type: ignore
+	return data, set(i[0] for i in data)

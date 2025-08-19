@@ -61,5 +61,17 @@ frappe.query_reports["Otto Execution Report"] = {
 				},
 			],
 		},
+		{
+			fieldname: "show_tool_counts",
+			label: __("Show Tool Counts"),
+			fieldtype: "Check",
+			default: 0,
+		},
+		{
+			fieldname: "show_stats",
+			label: __("Show Stats"),
+			fieldtype: "Check",
+			default: 1,
+		},
 	],
 };
