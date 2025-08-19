@@ -4,6 +4,7 @@
 from typing import Any
 
 import frappe
+import frappe.utils
 from frappe import _
 
 
@@ -15,27 +16,32 @@ def execute(filters: dict | None = None):
 	every time the report is refreshed or a filter is updated.
 	"""
 	filters = filters or {}
+	if not filters.get("from_date") and not filters.get("to_date"):
+		now = frappe.utils.now_datetime()
+		filters["to_date"] = now
+		filters["from_date"] = frappe.utils.add_days(now, -7)
+
 	data, session_set = get_data(filters or {})
 	columns = get_columns(filters)
 
 	if not filters.get("show_stats"):
-		data = [row[:7] for row in data]
-		columns = columns[:7]
+		data = [row[:8] for row in data]
+		columns = columns[:8]
 
+	#  Show feedback score if enabled
 	sessions = list(session_set)
 	if filters.get("show_feedback"):
 		feedback_cols, feedback_data = get_feedback_cols_and_data(sessions)
-		splice_idx = 2
+		splice_idx = 6
 		columns = columns[:splice_idx] + feedback_cols + columns[splice_idx:]
 		data = [row[:splice_idx] + [feedback_data.get(row[0], 0)] + row[splice_idx:] for row in data]
 
-	if filters.get("show_tool_counts"):
+	#  Show tool counts if enabled
+	if filters.get("show_tool_counts") and filters.get("task"):
 		counts = get_tool_counts(sessions)
 		tool_cols, tool_data = get_tool_use_cols_and_data(counts, sessions)
 
-		# columns.extend(tool_cols)
-		# data.extend(tool_data)
-		splice_idx = 7
+		splice_idx = 7 if filters.get("show_feedback") else 6
 		columns = columns[:splice_idx] + tool_cols + columns[splice_idx:]
 		data = [row[:splice_idx] + tool_data[row[0]] + row[splice_idx:] for row in data]
 
@@ -45,8 +51,8 @@ def execute(filters: dict | None = None):
 def get_feedback_cols_and_data(sessions: list[str]) -> tuple[list[dict], dict[str, int]]:
 	cols = [
 		{
-			"label": _("Feedback"),
-			"fieldname": "feedback_count",
+			"label": _("Feedback Score"),
+			"fieldname": "feedback_score",
 			"fieldtype": "Int",
 		}
 	]
@@ -129,7 +135,7 @@ def get_tool_use_cols_and_data(
 				"description": f"Times '{tool}' was called in a session",
 				"fieldname": tool,
 				"fieldtype": "Int",
-				"width": 120,
+				# "width": 120,
 			}
 		)
 
@@ -168,6 +174,11 @@ def get_columns(filters: dict) -> list[dict]:
 			"options": "Otto Session",
 			"width": 150,
 			"hidden": 1,
+		},
+		{
+			"label": _("Created"),
+			"fieldname": "creation",
+			"fieldtype": "Datetime",
 		},
 		{
 			"label": _("Execution"),
@@ -211,7 +222,6 @@ def get_columns(filters: dict) -> list[dict]:
 			"fieldname": "llm",
 			"fieldtype": "Link",
 			"options": "Otto LLM",
-			"width": 300,
 		},
 		{
 			"label": _("Cost (USD)"),
@@ -328,6 +338,7 @@ def get_data(filters: dict) -> tuple[list[list[Any]], set[str]]:
 	query = f"""
 	select
 		os.name as session,
+		os.creation as creation,
 		ex.name as execution,
 		ex.task as task,
 		ex.target,

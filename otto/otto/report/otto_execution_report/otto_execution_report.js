@@ -66,6 +66,7 @@ frappe.query_reports["Otto Execution Report"] = {
 			label: __("Show Tool Counts"),
 			fieldtype: "Check",
 			default: 0,
+			depends_on: "eval:doc.task",
 		},
 		{
 			fieldname: "show_stats",
@@ -75,12 +76,20 @@ frappe.query_reports["Otto Execution Report"] = {
 		},
 		{
 			fieldname: "show_feedback",
-			label: __("Show Feedback"),
+			label: __("Show Feedback Score"),
 			fieldtype: "Check",
 			default: 0,
 		},
 	],
 	onload: function (report) {
-		console.log(report);
+		// Set default date range to last 7 days if no dates are set
+		const filters = report.get_filter_values();
+		if (!filters.from_date && !filters.to_date) {
+			const now = frappe.datetime.now_datetime();
+			const seven_days_ago = frappe.datetime.add_days(now, -7);
+
+			report.set_filter_value("from_date", seven_days_ago);
+			report.set_filter_value("to_date", now);
+		}
 	},
 };
