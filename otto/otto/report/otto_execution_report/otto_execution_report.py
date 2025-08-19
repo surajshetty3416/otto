@@ -33,8 +33,8 @@ def execute(filters: dict | None = None):
 	if filters.get("show_feedback"):
 		feedback_cols, feedback_data = get_feedback_cols_and_data(sessions)
 		splice_idx = 6
-		columns = columns[:splice_idx] + feedback_cols + columns[splice_idx:]
-		data = [row[:splice_idx] + [feedback_data.get(row[0], 0)] + row[splice_idx:] for row in data]
+		columns = [*columns[:splice_idx], *feedback_cols, *columns[splice_idx:]]
+		data = [[*row[:splice_idx], feedback_data.get(row[0], 0), *row[splice_idx:]] for row in data]
 
 	#  Show tool counts if enabled
 	if filters.get("show_tool_counts") and filters.get("task"):
@@ -42,8 +42,8 @@ def execute(filters: dict | None = None):
 		tool_cols, tool_data = get_tool_use_cols_and_data(counts, sessions)
 
 		splice_idx = 7 if filters.get("show_feedback") else 6
-		columns = columns[:splice_idx] + tool_cols + columns[splice_idx:]
-		data = [row[:splice_idx] + tool_data[row[0]] + row[splice_idx:] for row in data]
+		columns = [*columns[:splice_idx], *tool_cols, *columns[splice_idx:]]
+		data = [[*row[:splice_idx], *tool_data[row[0]], *row[splice_idx:]] for row in data]
 
 	return columns, data
 
