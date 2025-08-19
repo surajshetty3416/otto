@@ -22,20 +22,50 @@ def execute(filters: dict | None = None):
 		data = [row[:7] for row in data]
 		columns = columns[:7]
 
-	if not filters.get("show_tool_counts"):
-		return columns, data
-
 	sessions = list(session_set)
-	counts = get_tool_counts(sessions)
-	tool_cols, tool_data = get_tool_use_cols_and_data(counts, sessions)
+	if filters.get("show_feedback"):
+		feedback_cols, feedback_data = get_feedback_cols_and_data(sessions)
+		splice_idx = 2
+		columns = columns[:splice_idx] + feedback_cols + columns[splice_idx:]
+		data = [row[:splice_idx] + [feedback_data.get(row[0], 0)] + row[splice_idx:] for row in data]
 
-	# columns.extend(tool_cols)
-	# data.extend(tool_data)
-	splice_idx = 5
-	columns = columns[:splice_idx] + tool_cols + columns[splice_idx:]
-	data = [row[:splice_idx] + tool_data[row[0]] + row[splice_idx:] for row in data]
+	if filters.get("show_tool_counts"):
+		counts = get_tool_counts(sessions)
+		tool_cols, tool_data = get_tool_use_cols_and_data(counts, sessions)
+
+		# columns.extend(tool_cols)
+		# data.extend(tool_data)
+		splice_idx = 7
+		columns = columns[:splice_idx] + tool_cols + columns[splice_idx:]
+		data = [row[:splice_idx] + tool_data[row[0]] + row[splice_idx:] for row in data]
 
 	return columns, data
+
+
+def get_feedback_cols_and_data(sessions: list[str]) -> tuple[list[dict], dict[str, int]]:
+	cols = [
+		{
+			"label": _("Feedback"),
+			"fieldname": "feedback_count",
+			"fieldtype": "Int",
+		}
+	]
+
+	query = """
+	select
+		session,
+		sum(value) as score
+	from `tabotto feedback`
+	where session in %s
+	group by session
+	"""
+	res: list[dict] = frappe.db.sql(query, (sessions,), as_dict=True) or []  # type: ignore
+
+	data_map: dict[str, int] = {}
+	for r in res:
+		data_map[r["session"]] = r["score"] or 0
+
+	return cols, data_map
 
 
 def get_tool_counts(sessions: list[str]) -> list[dict]:

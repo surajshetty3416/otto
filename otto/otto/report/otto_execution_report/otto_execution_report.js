@@ -73,5 +73,14 @@ frappe.query_reports["Otto Execution Report"] = {
 			fieldtype: "Check",
 			default: 1,
 		},
+		{
+			fieldname: "show_feedback",
+			label: __("Show Feedback"),
+			fieldtype: "Check",
+			default: 0,
+		},
 	],
+	onload: function (report) {
+		console.log(report);
+	},
 };
