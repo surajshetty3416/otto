@@ -59,8 +59,8 @@ support ticket. We're doing this by using our internal
 
 We find that for simpler support queries its performance is limited by the
 quality and availability of references, and for complex and longer queries it's
-limited by the model's context coherence. Around 40% of handled tickets have
-received positive feedback (not all tickets have received feedback).
+limited by the model's context coherence. Around 40% of provided feedback is
+positive (not all handled tickets receive feedback).
 
 #### Bigger picture
 
