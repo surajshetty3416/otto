@@ -34,6 +34,9 @@ jobs:
         with:
           files: |
             **.py
+          files_ignore: |
+            **.md
+            **.txt
 
       - name: List all changed files
         if: steps.changed-python-files.outputs.any_changed == 'true'
