@@ -26,11 +26,50 @@
 ### Overview
 
 Otto is a [Frappe Framework](https://github.com/frappe/frappe) app which will be
-used for adding intelligent automation capabilities to Frappe apps. It's still a
-work in progress that's being tested out internally.
+used for adding intelligent automation capabilities to Frappe apps.
+We're developing it to be a framework for:
+
+1. Automating task handling using.
+2. Building custom assistants over Frappe apps.
 
 Otto's app features are built on top of it's library. You may use this in your
 Frappe app to handle LLM integrations. ([Docs](./otto/lib/docs/README.md))
+
+### Current State
+
+Otto can currently be used for simple task automation.
+
+If you wish to try it out, here are the following doctypes you can check out:
+
+- **Otto Task**: definition of a task that can be automated. Task execution is triggered manually or by doctype lifecycle events.
+- **Otto Tool**: definition of a tool that can be used for in a task. Tools run in a server-script like environment.
+- **Otto LLM**: available LLMs that can be used for a task. You can check [`otto_llm.json`](https://github.com/frappe/otto/blob/develop/otto/fixtures/otto_llm.json) for available models.
+- **Otto Execution**: record of a task execution, backed by the purpose agnostic `Otto Session` doctype.
+- **Otto Settings**: configure your API keys to use the available models.
+
+Most doctype fields have help text associated with them, you may refer to them
+until proper docs are written.
+
+#### Example internal use case
+
+An internal use case we've applied Otto to is the handling of first response on a
+support ticket. We're doing this by using our internal
+[Helpdesk](https://github.com/frappe/helpdesk) Knowledge Base and
+[docs.frappe.io](https://docs.frappe.io) as data sources.
+
+We find that for simpler support queries its performance is limited by the
+quality and availability of references, and for complex and longer queries it's
+limited by the model's context coherence. Around 40% of handled tickets have
+received positive feedback (not all tickets have received feedback).
+
+#### Bigger picture
+
+This app is part of a larger project in Frappe that aims to explore the best
+ways to apply whatever state of the art artificial intelligence is available.
+
+Another sub-project is [`frappe/mcp`](https://github.com/frappe/mcp).
+
+All of these are still in very early stages of development.
 
 ### Library Examples
 
