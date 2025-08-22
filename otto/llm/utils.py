@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-import base64
 import datetime
 import json
-import mimetypes
 import os
 import time
 import uuid
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, TypeGuard
-from urllib.parse import urlparse
-from urllib.request import urlopen
 
 import frappe
 
@@ -305,50 +301,6 @@ def get_stats(session: Session) -> SessionStats | None:
 	)
 
 
-def get_file_content(file_path_or_url: str) -> dict[str, str]:
-	"""
-	Takes a URL or path to a file and returns a dictionary with the file's
-	contents in base64 (including mime type prefix) and its filename.
-
-	Args:
-		file_path_or_url: A string representing either a local file path or a URL
-
-	Returns:
-		A dictionary containing:
-			- 'filename': The name of the file
-			- 'file_data': The base64-encoded content of the file with mime type prefix
-	"""
-	filename, mime_type, content = _get_content(file_path_or_url)
-	base64_content = base64.b64encode(content).decode("utf-8")
-	return {
-		"name": filename,
-		"data": f"data:{mime_type};base64,{base64_content}",
-	}
-
-
-def _get_content(file_path_or_url: str):
-	parsed_url = urlparse(file_path_or_url)
-
-	if parsed_url.scheme in ("http", "https"):
-		with urlopen(file_path_or_url) as response:
-			content = response.read()
-
-		filename = os.path.basename(parsed_url.path) or "downloaded_file"
-		mime_type = response.info().get_content_type()
-		return filename, mime_type, content
-
-	# Handle local file path
-	with open(file_path_or_url, "rb") as file:
-		content = file.read()
-
-	filename = os.path.basename(file_path_or_url)
-	mime_type, _ = mimetypes.guess_type(file_path_or_url)
-	if mime_type is None:
-		mime_type = "application/octet-stream"
-
-	return filename, mime_type, content
-
-
 def is_user_content(data: Any) -> TypeGuard[UserContent]:
 	if not isinstance(data, dict):
 		return False
@@ -400,8 +352,8 @@ def to_content(query: str | list[Any]) -> list[UserContent]:
 			c = ImageContent(type="image", data=q, url=None)
 
 		elif q.endswith(".pdf"):
-			d = get_file_content(q)
-			c = FileContent(type="file", name=d["name"], data=d["data"])
+			f = utils.get_file(q, get_data_if_url=True)
+			c = FileContent(type="file", name=f.name or "file.pdf", data=f.value)
 
 		elif q.endswith(("png", "jpg", "jpeg")):
 			# Will not work for private frappe files
@@ -409,8 +361,8 @@ def to_content(query: str | list[Any]) -> list[UserContent]:
 				c = ImageContent(type="image", url=q, data=None)
 
 			else:
-				d = get_file_content(q)
-				c = ImageContent(type="image", data=d["data"], url=None)
+				f = utils.get_file(q, get_data_if_url=True)
+				c = ImageContent(type="image", data=f.value, url=None)
 
 		content.append(c)
 	return content

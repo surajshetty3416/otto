@@ -294,7 +294,7 @@ class InteractStreamResponse:
 
 	_stream: SessionInteractStream
 	_item: SessionItem | None
-	_reason: str | None
+	_failure_reason: str | None
 
 	@property
 	def item(self) -> SessionItem | None:
@@ -309,12 +309,12 @@ class InteractStreamResponse:
 
 	@property
 	def failure_reason(self) -> str | None:
-		return self._reason
+		return self._failure_reason
 
 	def __init__(self, stream: SessionInteractStream):
 		self._stream = stream
 		self._item = None
-		self._reason = None
+		self._failure_reason = None
 
 	def __iter__(self):
 		return self
@@ -325,7 +325,7 @@ class InteractStreamResponse:
 		except StopIteration as e:
 			interaction, reason = cast("InteractResponse", e.value)
 			self._item = interaction
-			self._reason = reason
+			self._failure_reason = reason
 			raise StopIteration  # noqa: B904
 
 

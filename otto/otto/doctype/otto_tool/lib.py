@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import json
 from typing import Any
-from urllib.parse import urlparse
 
 import frappe
 
-from otto.utils import json_dumps
+from otto import utils
 
 """
 Code in this is passed as library code to tool session as globals.
@@ -25,7 +24,7 @@ def log(
 	from otto.otto.doctype.otto_scrapbook.otto_scrapbook import OttoScrapbook
 
 	if not isinstance(content, str):
-		content = json_dumps(content)[0]
+		content = utils.json_dumps(content)[0]
 
 	OttoScrapbook.new(content, tool=tool, task=task, session=session)
 
@@ -33,29 +32,8 @@ def log(
 def get_file(url: str):
 	"""If url is private or public Frappe File then returns base64 encoded file data else returns as it is"""
 
-	from otto.llm.utils import get_file_content
-
 	assert isinstance(url, str), "url must be a string"
-	parsed = urlparse(url)
-
-	if parsed.scheme in ("http", "https", "data"):
-		return url
-
-	files = frappe.get_all("File", filters={"file_url": parsed.path}, pluck="name", limit=1)
-	if not files and parsed.query:
-		files = [q.split("=")[1].strip() for q in parsed.query.split("&") if q.startswith("fid=")]
-		files = [f for f in files if f]
-
-	try:
-		from frappe.core.doctype.file.file import File
-
-		import otto
-
-		path = otto.get(File, files[0]).get_full_path()
-		assert isinstance(path, str), "unsafe type check"
-		return get_file_content(path)["data"]
-	except Exception:
-		return url
+	return utils.get_file(url, get_data_if_url=False).value
 
 
 def interpolate_imgs(html: str):
