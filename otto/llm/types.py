@@ -127,7 +127,17 @@ All of the following inputs are converted into list[UserContent]:
 If input is None, it is treated as an empty list. It should be None only if the
 session provided has some update such as a tool result.
 """
-Query = str | list[str] | list[UserContent] | list[str | UserContent]
+Query = (
+	str
+	| list[str]
+	| list[UserContent]
+	| list[str | UserContent]
+	|
+	# Mentioning UseContent directly causes type check errors, hence unfolded
+	TextContent
+	| ImageContent
+	| FileContent
+)
 
 
 class ToolUseUpdate(TypedDict, total=False):

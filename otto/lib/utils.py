@@ -20,7 +20,7 @@ class content:
 	    # Image content from url
 	    content.image("https://example.com/image.png"),
 	    # File content
-	    content.file("base64_encoded_pdf_data", name="document.pdf),
+	    content.file("data:application/pdf;base64,...", name="document.pdf"),
 	    # Image content from data
 	    content.image("data:image/png;base64,..."),
 	]

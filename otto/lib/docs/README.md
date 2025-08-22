@@ -22,6 +22,7 @@ Library for adding LLM capabilities into Frappe apps.
 - [Models](./model.md)
   - [Example](./model.md#example)
   - [Reference](./model.md#reference)
+- [Utilities](./utilities.md)
 
 ## Overview
 
@@ -77,19 +78,14 @@ Quick one off query to summarize a document
 
 ```python
 import otto.lib as otto
+from otto.lib import content
 
 # 1. Get model that matches criteria
 model = otto.get_model(provider="Anthropic", size="Small")
 
 # 2. Use model to summarize document
 response = otto.quick_query(
-    [
-        {
-            "type": "file",
-            "name": "document.pdf",
-            "data": to_base64(document_path)
-        }
-    ],
+    content.file(document_path, name="document.pdf"),
     model=model,
     instruction="Summarize the given document in 2 sentences.",
     stream=False,

@@ -14,7 +14,7 @@ from otto import utils
 from otto.llm.types import SessionStats, SessionToolUseStats
 
 if TYPE_CHECKING:
-	from otto.llm.types import Provider, ReasoningEffort, Session, ToolUseContent
+	from otto.llm.types import Provider, Query, ReasoningEffort, Session, ToolUseContent
 
 MAX_RETRIES = 6
 DEFAULT_INSTRUCTION = "You are a helpful assistant."
@@ -326,7 +326,7 @@ def is_user_content(data: Any) -> TypeGuard[UserContent]:
 	return False
 
 
-def to_content(query: str | list[Any]) -> list[UserContent]:
+def to_content(query: Query) -> list[UserContent]:
 	"""
 	Convenience function to convert list of strings into UserContent, i.e.
 	dicts that pertain to image, text or file types.
@@ -335,6 +335,9 @@ def to_content(query: str | list[Any]) -> list[UserContent]:
 
 	if isinstance(query, str):
 		return [TextContent(type="text", text=query)]
+
+	if not isinstance(query, list):
+		return [query]
 
 	content = []
 	for q in query:

@@ -55,7 +55,7 @@ if response:
   - [`Session.update_tool_use`](#sessionupdate_tool_use): Update the status and result of tool use requests within the session after execution.
   - [`Session.get_last_item`](#sessionget_last_item): Returns the most recent item from the session's interaction history (user message, agent response, or tool result).
   - [`Session.get_last_response`](#sessionget_last_response): Returns the last agent response from the session.
-  - [Miscelaneous](#miscelaneous): Other properties and methods.
+  - [Miscellaneous](#miscellaneous): Other properties and methods.
 - [`quick_query`](#quick_query): Convenience function for one-off LLM queries without session management.
 
 > [!TIP]
@@ -242,7 +242,7 @@ if last_response:
             print(f"Agent said: {content['text']}")
 ```
 
-#### Miscelaneous
+#### Miscellaneous
 
 The Session class provides properties for accessing and modifying session configuration:
 
