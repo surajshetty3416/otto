@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<link rel="icon" type="image/svg+xml" href="/otto.svg" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Otto</title>
+</head>
+
+<body>
+	<div id="app"></div>
+
+	<script>
+		window.csrf_token = '{{ csrf_token }}';
+		window.is_dev_mode = '{{ is_dev_mode }}';
+	</script>
+	<script type="module" src="/src/main.ts"></script>
+</body>
+
+</html>

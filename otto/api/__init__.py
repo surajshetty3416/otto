@@ -1,6 +1,17 @@
 import frappe
 
 
+@frappe.whitelist(allow_guest=True)
+def ping():
+	return "pong"
+
+
+@frappe.whitelist()
+def get_user() -> dict[str, str]:
+	assert isinstance(frappe.session.user, str), "User is not logged in"
+	return {"user": frappe.session.user}
+
+
 @frappe.whitelist(allow_guest=True, methods=["GET"])
 def log_feedback():
 	"""

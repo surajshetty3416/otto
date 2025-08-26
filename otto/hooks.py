@@ -1,7 +1,7 @@
 app_name = "otto"
 app_title = "Otto"
 app_publisher = "Alan Tom"
-app_description = "Test app to validate ideas in Flow"
+app_description = "Automation intelligence for the Frappe ecosystem"
 app_email = "alan@frappe.io"
 app_license = "agpl-3.0"
 
@@ -27,5 +27,9 @@ doc_events = {
 }
 
 export_python_type_annotations = True
+
+website_route_rules = [
+	{"from_route": "/otto/<path:app_path>", "to_route": "otto"},
+]
 
 fixtures = ["Otto LLM"]

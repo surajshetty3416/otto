@@ -1,0 +1,11 @@
+# Lightly refactored variants of Frappe UI components
+# Include only what is strictly necessary
+
+*/
+# */
+/*.vue
+
+!Button/
+!LoadingIndicator.vue
+!ErrorMessage.vue
+!TextInput.vue
