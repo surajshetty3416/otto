@@ -38,7 +38,7 @@ class TestLiteLLMIntegration(unittest.TestCase):
 		assert response is not None  # for type checker
 
 		# Check response structure
-		self.assertIsInstance(response, dict)  # InteractResponse is a TypedDict
+		self.assertIsInstance(response, dict)  # InteractReturn is a TypedDict
 		self.assertIsInstance(response["item"], dict)  # SessionItem is a TypedDict
 		self.assertIsInstance(response["update"], dict)  # Session is a TypedDict
 		self.assertIsInstance(response["chunks"], list)

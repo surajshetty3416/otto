@@ -7,7 +7,6 @@ from otto.llm.types import (
 	EndReason,
 	FileContent,
 	ImageContent,
-	InteractResponse,
 	Meta,
 	ModelSize,
 	Provider,
@@ -26,6 +25,7 @@ from otto.llm.types import (
 	ToolUseUpdate,
 	UserContent,
 )
+from otto.otto.doctype.otto_session.otto_session import InteractResponse
 
 __all__ = [
 	"ID",
@@ -34,8 +34,6 @@ __all__ = [
 	"EndReason",
 	"FileContent",
 	"ImageContent",
-	"InteractResponse",
-	"InteractResponse",
 	"InteractResponse",
 	"Meta",
 	"ModelSize",

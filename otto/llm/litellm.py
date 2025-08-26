@@ -115,12 +115,12 @@ def interact(
 		ContentChunk: Chunks of the response from the LLM as they are generated.
 
 	Returns:
-		InteractReturn:
-			- On success, `InteractReturn.response` contains an `InteractResponse`
+		InteractReturnTuple:
+			- On success, `InteractReturnTuple.response` contains an `InteractReturn`
 			  object with the generated agent response item, the updated session,
-			  and a list of content chunks from the stream. `InteractReturn.reason` is `None`.
-			- On failure (e.g., API key issue), `InteractReturn.response` is `None`
-			  and `InteractReturn.reason` contains reason for failure.
+			  and a list of content chunks from the stream. `InteractReturnTuple.reason` is `None`.
+			- On failure (e.g., API key issue), `InteractReturnTuple.response` is `None` and
+			  and `InteractReturnTuple.reason` contains reason for failure.
 	"""
 	import litellm
 

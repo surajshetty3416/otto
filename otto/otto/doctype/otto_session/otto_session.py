@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 from collections.abc import Generator
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, NamedTuple, cast
 
 import frappe
 from frappe.model.document import Document
 
 import otto
 from otto import llm
-from otto.llm.types import ContentChunk, InteractResponse, Query, Session, ToolSchema
+from otto.llm.types import ContentChunk, Query, Session, ToolSchema
 from otto.llm.utils import get_last_id, get_sequence
 from otto.otto.doctype.otto_session_tool_ct.otto_session_tool_ct import OttoSessionToolCT
 
@@ -19,6 +19,11 @@ if TYPE_CHECKING:
 	from otto.llm.types import SessionItem
 
 logger = otto.logger("otto_session", level="DEBUG")
+
+
+class InteractResponse(NamedTuple):
+	item: SessionItem | None
+	failure_reason: str | None
 
 
 SessionInteractStream = Generator[ContentChunk, None, InteractResponse]

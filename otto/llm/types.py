@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Literal, NamedTuple, TypedDict
+from typing import Any, Literal, TypedDict
 
 Provider = Literal["Anthropic", "OpenAI", "Google"]
 ModelSize = Literal["Very Small", "Small", "Medium", "Large"]
@@ -111,11 +111,6 @@ class InteractReturn(TypedDict):
 	item: SessionItem
 	update: Session
 	chunks: list[ContentChunk]
-
-
-class InteractResponse(NamedTuple):
-	interaction: SessionItem | None
-	reason: str | None
 
 
 """
