@@ -229,3 +229,15 @@ export function assert(condition: unknown, message: string): asserts condition {
 
   throw new Error(message);
 }
+
+export function ui(str: string): string {
+  return `<user>${str.trim()}</user>`;
+}
+
+export function isUi(str: string): boolean {
+  return str.startsWith("<user>") && str.endsWith("</user>");
+}
+
+export function deUi(str: string): string {
+  return str.replace("<user>", "").replace("</user>", "");
+}
