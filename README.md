@@ -122,7 +122,7 @@ if response:
     print(response["content"])
 ```
 
-### Local Installation
+### Local Installation and Usage
 
 You can install this app using the [bench](https://github.com/frappe/bench) CLI, first setup a Frappe bench directory and create a new site then:
 
@@ -131,6 +131,24 @@ You can install this app using the [bench](https://github.com/frappe/bench) CLI,
 bench get-app otto --branch develop
 bench --site site-name install-app otto
 ```
+
+#### Usage
+
+It is not recommended to use Otto, but should you be curious enough here are
+some steps you can try out.
+
+1. Set API keys in the **Otto Settings** doctype.
+2. Navigate to **Otto LLM** select an available model for the key you've provided.
+3. Click on the **Ask** action under **Otto LLM** to test that the LLM is being called.
+4. Navigate to **Otto Session** to view the previous interaction.
+5. Navigate to **Otto Task** and create a new task:
+   - Select a DocType and an event you want to trigger on, for testing you can select **ToDo** and **Manual**.
+   - Fill out _Instruction_ for what you want your task to do.
+   - Fill out _Get Context_ with transformation of the Doc into context info selected.
+   - Add tools if require (when creating a new tool, you can check the _Mock Tool_ option)
+6. Click on the _Execute Task_ button to test out the task you've created.
+7. Click on the _Otto Execution_ link in the dialog and click on Open in Session Viewer (in the right panel)
+8. Complete output will only be visible after the task has completed executing.
 
 ## Links
 
