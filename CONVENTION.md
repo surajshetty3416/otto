@@ -15,4 +15,11 @@ Frontend conventions:
 - no direct exposure of backend shapes and schemas to the frontend
 - frontend is not the logic layer, just the presentation
 - `otto/api` readies the backend data for the frontend
+
+not all applications built on Frappe Framework are and ERP and so your schema
+design is not what should be shipped to the user. trying to construct schema for
+user consumption, convenience, app interface will leads to sub par decisions.
+
+and so by using otto/api, we separate the concerns of user interface and schema
+api shapes the schema for the interface. this is swe 201.
 -->

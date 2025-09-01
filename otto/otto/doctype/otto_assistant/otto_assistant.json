@@ -9,7 +9,7 @@
   "column_break_roim",
   "llm",
   "definition_section",
-  "system",
+  "instruction",
   "context_section",
   "get_context"
  ],
@@ -46,16 +46,16 @@
    "options": "Python"
   },
   {
-   "description": "System prompt that describes the Assistant. Supports Jinja Template format to add in context.",
-   "fieldname": "system",
+   "description": "Instruction instructs the assistant on how it should assist the user, use the tools it has, etc. Supports Jinja Template format to add in context.",
+   "fieldname": "instruction",
    "fieldtype": "Code",
-   "label": "System"
+   "label": "Instruction"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-01 13:09:22.026862",
+ "modified": "2025-09-01 13:22:16.237068",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Assistant",

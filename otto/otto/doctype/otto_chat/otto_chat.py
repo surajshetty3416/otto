@@ -5,7 +5,7 @@
 from frappe.model.document import Document
 
 
-class OttoAssistant(Document):
+class OttoChat(Document):
 	# begin: auto-generated types
 	# This code is auto-generated. Do not modify anything in this block.
 
@@ -14,13 +14,9 @@ class OttoAssistant(Document):
 	if TYPE_CHECKING:
 		from frappe.types import DF
 
-		get_context: DF.Code | None
-		instruction: DF.Code | None
-		llm: DF.Link | None
+		assistant: DF.Link | None
+		session: DF.Link | None
 		title: DF.Data | None
 	# end: auto-generated types
 
 	pass
-
-	@staticmethod
-	def chat(session: str | None = None, message: str | None = None): ...
