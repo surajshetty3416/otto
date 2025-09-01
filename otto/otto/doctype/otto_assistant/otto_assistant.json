@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "hash",
  "creation": "2025-09-01 12:59:27.289099",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -17,6 +18,7 @@
   {
    "fieldname": "title",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Title"
   },
   {
@@ -26,6 +28,8 @@
   {
    "fieldname": "llm",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "LLM",
    "options": "Otto LLM"
   },
@@ -49,16 +53,18 @@
    "description": "Instruction instructs the assistant on how it should assist the user, use the tools it has, etc. Supports Jinja Template format to add in context.",
    "fieldname": "instruction",
    "fieldtype": "Code",
+   "in_list_view": 1,
    "label": "Instruction"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-01 13:22:16.237068",
+ "modified": "2025-09-01 15:21:25.341381",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Assistant",
+ "naming_rule": "Random",
  "owner": "Administrator",
  "permissions": [
   {
@@ -77,5 +83,6 @@
  "row_format": "Dynamic",
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "title_field": "title"
 }

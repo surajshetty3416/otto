@@ -14,9 +14,12 @@ class OttoChat(Document):
 	if TYPE_CHECKING:
 		from frappe.types import DF
 
-		assistant: DF.Link | None
-		session: DF.Link | None
+		assistant: DF.Link
+		session: DF.Link
 		title: DF.Data | None
 	# end: auto-generated types
 
-	pass
+	@staticmethod
+	def chat(session: str | None = None, message: str | None = None): ...
+
+	def get_instruction(self): ...

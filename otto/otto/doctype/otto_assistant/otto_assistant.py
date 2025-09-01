@@ -2,7 +2,11 @@
 # For license information, please see license.txt
 
 # import frappe
+import frappe
 from frappe.model.document import Document
+from jinja2 import Template
+
+from otto.llm.utils import DEFAULT_INSTRUCTION
 
 
 class OttoAssistant(Document):
@@ -20,7 +24,46 @@ class OttoAssistant(Document):
 		title: DF.Data | None
 	# end: auto-generated types
 
-	pass
+	def before_save(self):
+		if not self.instruction:
+			self.instruction = DEFAULT_INSTRUCTION
 
-	@staticmethod
-	def chat(session: str | None = None, message: str | None = None): ...
+	@frappe.whitelist()
+	def get_instruction(self):
+		context = self.run_get_context()
+		if not self.instruction:
+			return DEFAULT_INSTRUCTION
+
+		template = Template(self.instruction)
+		return template.render(context)
+
+	@frappe.whitelist()
+	def run_get_context(self):
+		if not self.get_context:
+			return {}
+
+		from datetime import datetime
+
+		from otto.utils import execute
+
+		context = execute.execute(
+			script=self.get_context,
+			args={},
+			arg_names=[],
+			globals={},
+			function_name="get_context",
+		)
+
+		result = context["result"]
+		now = datetime.now()
+		common = {
+			"user": frappe.session.user,
+			"date": now.date().isoformat(),
+			"time": now.time().isoformat(),
+		}
+
+		if not isinstance(result, dict):
+			# TODO: indicate that get_context should return a dict always
+			return common
+
+		return {**common, **result}

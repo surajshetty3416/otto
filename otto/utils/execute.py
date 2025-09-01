@@ -7,15 +7,10 @@ import io
 import json
 import sys
 from contextlib import contextmanager, suppress
-from typing import TYPE_CHECKING, Any, Literal, TypedDict, cast
+from typing import Any, Literal, TypedDict, cast
 
 from frappe.utils.safe_exec import safe_exec
 from RestrictedPython import PrintCollector
-
-from otto.utils import json_dumps
-
-if TYPE_CHECKING:
-	from frappe.model.document import Document
 
 """
 Server Script session task implies that Python code is executed in a Frappe
@@ -28,7 +23,6 @@ All constraints of a server script apply.
 
 __all__ = [
 	"execute",
-	"run_get_context",
 	"validate",
 ]
 
@@ -44,8 +38,14 @@ def execute(
 	arg_names: list[str],
 	args: Args,
 	globals: dict[str, Any] | None = None,
+	function_name: str | None = None,
 ) -> SessionResult:
-	script, _globals = get_script_and_globals(script, args, arg_names)
+	script, _globals = get_script_and_globals(
+		script,
+		args,
+		arg_names,
+		function_name=function_name or "main",
+	)
 
 	if globals is not None:
 		_globals.update(globals)
@@ -61,49 +61,6 @@ def execute(
 		stdout=stdout.getvalue(),
 		stderr=stderr.getvalue(),
 	)
-
-
-def run_get_context(
-	get_context: str,
-	doc: Document | None,
-	event: str,
-	globals: dict[str, Any] | None = None,
-):
-	if not get_context and doc:
-		return doc.as_json()
-
-	assert get_context, "sanity check, get_context should not be empty if no target"
-	script, _globals = get_script_and_globals(
-		get_context,
-		{"doc": doc, "event": event},
-		["doc", "event"],
-		function_name="get_context",
-	)
-
-	if globals is not None:
-		_globals.update(globals)
-
-	stdout = io.StringIO()
-	stderr = io.StringIO()
-	with capture_output(stdout, stderr):
-		result = safe_exec(script, _globals)
-	result = result[0][OUT_VAR_NAME]
-	if isinstance(result, str):
-		return result
-
-	if not isinstance(result, list):
-		return json_dumps(result)[0]
-
-	from otto.llm.utils import is_user_content
-
-	content = []
-	for r in result:
-		if is_user_content(r) or isinstance(r, str):
-			content.append(r)
-		else:
-			content.append(json_dumps(r)[0])
-
-	return content
 
 
 def get_script_and_globals(
