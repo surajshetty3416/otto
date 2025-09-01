@@ -6,7 +6,11 @@ import frappe
 from frappe.model.document import Document
 from jinja2 import Template
 
-from otto.llm.utils import DEFAULT_INSTRUCTION
+from otto.llm.utils import DEFAULT_INSTRUCTION, DEFAULT_MODEL
+
+# TODO:
+# - tools
+# - re-render instruction on every message
 
 
 class OttoAssistant(Document):
@@ -21,12 +25,16 @@ class OttoAssistant(Document):
 		get_context: DF.Code | None
 		instruction: DF.Code | None
 		llm: DF.Link | None
+		reasoning_effort: DF.Literal["None", "Low", "Medium", "High"]
 		title: DF.Data | None
 	# end: auto-generated types
 
 	def before_save(self):
 		if not self.instruction:
 			self.instruction = DEFAULT_INSTRUCTION
+
+		if not self.llm:
+			self.llm = DEFAULT_MODEL
 
 	@frappe.whitelist()
 	def get_instruction(self):

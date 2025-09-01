@@ -9,6 +9,7 @@
   "title",
   "column_break_roim",
   "llm",
+  "reasoning_effort",
   "definition_section",
   "instruction",
   "context_section",
@@ -55,12 +56,20 @@
    "fieldtype": "Code",
    "in_list_view": 1,
    "label": "Instruction"
+  },
+  {
+   "default": "None",
+   "description": "Valid only if selected LLM supports reasoning.",
+   "fieldname": "reasoning_effort",
+   "fieldtype": "Select",
+   "label": "Reasoning Effort",
+   "options": "None\nLow\nMedium\nHigh"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-01 15:21:25.341381",
+ "modified": "2025-09-01 15:50:05.712387",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Assistant",

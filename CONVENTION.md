@@ -15,6 +15,7 @@ Frontend conventions:
 - no direct exposure of backend shapes and schemas to the frontend
 - frontend is not the logic layer, just the presentation
 - `otto/api` readies the backend data for the frontend
+- keyboard first UI, everything should be accessible via keyboard
 
 not all applications built on Frappe Framework are and ERP and so your schema
 design is not what should be shipped to the user. trying to construct schema for
