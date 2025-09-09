@@ -93,13 +93,13 @@ def get_columns(filters: dict) -> list[dict]:
 			"fieldtype": "Int",
 		},
 		{
-			"label": _("Has Comment"),
-			"fieldname": "num_has_comment",
+			"label": _("Has Session"),
+			"fieldname": "num_has_session",
 			"fieldtype": "Int",
 		},
 		{
-			"label": _("Has Session"),
-			"fieldname": "num_has_session",
+			"label": _("Has Comment"),
+			"fieldname": "num_has_comment",
 			"fieldtype": "Int",
 		},
 	]
