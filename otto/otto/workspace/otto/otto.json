@@ -136,7 +136,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Reports",
-   "link_count": 1,
+   "link_count": 2,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -150,9 +150,19 @@
    "link_type": "Report",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Otto Session Stats",
+   "link_count": 0,
+   "link_to": "Otto Session Stats",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2025-08-14 19:15:05.807810",
+ "modified": "2025-09-09 12:14:17.612158",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto",

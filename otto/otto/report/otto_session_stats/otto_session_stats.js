@@ -3,11 +3,104 @@
 
 frappe.query_reports["Otto Session Stats"] = {
 	filters: [
+		{
+			fieldname: "task",
+			label: __("Task"),
+			fieldtype: "Link",
+			options: "Otto Task",
+		},
+		{
+			fieldname: "from_date",
+			label: __("From Date"),
+			fieldtype: "Datetime",
+		},
+		{
+			fieldname: "to_date",
+			label: __("To Date"),
+			fieldtype: "Datetime",
+		},
+		{
+			fieldname: "periodicity",
+			label: __("Periodicity"),
+			fieldtype: "Select",
+			default: "Weekly",
+			options: [
+				{
+					label: __("Weekly"),
+					value: "Weekly",
+				},
+				{
+					label: __("Monthly"),
+					value: "Monthly",
+				},
+				{
+					label: __("Quarterly"),
+					value: "Quarterly",
+				},
+				{
+					label: __("Half-Yearly"),
+					value: "Half-Yearly",
+				},
+				{
+					label: __("Yearly"),
+					value: "Yearly",
+				},
+			],
+		},
+		{
+			fieldname: "llm",
+			label: __("LLM"),
+			fieldtype: "Link",
+			options: "Otto LLM",
+		},
+		{
+			fieldname: "event",
+			label: __("Event"),
+			fieldtype: "Select",
+			default: "",
+			options: [
+				{
+					label: __("All"),
+					value: "",
+				},
+				{
+					label: __("On Create"),
+					value: "On Create",
+				},
+				{
+					label: __("On Update"),
+					value: "On Update",
+				},
+				{
+					label: __("On Delete"),
+					value: "On Delete",
+				},
+				{
+					label: __("On Submit"),
+					value: "On Submit",
+				},
+				{
+					label: __("On Cancel"),
+					value: "On Cancel",
+				},
+				{
+					label: __("Manual"),
+					value: "Manual",
+				},
+			],
+		},
 		// {
-		// 	"fieldname": "my_filter",
-		// 	"label": __("My Filter"),
-		// 	"fieldtype": "Data",
-		// 	"reqd": 1,
+		// 	fieldname: "show_tool_counts",
+		// 	label: __("Show Tool Counts"),
+		// 	fieldtype: "Check",
+		// 	default: 0,
+		// 	depends_on: "eval:doc.task",
+		// },
+		// {
+		// 	fieldname: "show_feedback",
+		// 	label: __("Show Feedback Score"),
+		// 	fieldtype: "Check",
+		// 	default: 0,
 		// },
 	],
 };
