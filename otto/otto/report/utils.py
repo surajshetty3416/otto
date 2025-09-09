@@ -8,3 +8,37 @@ def set_periodicity(filters: dict):
 	filters["periodicity"] = filters.get("span", "Week") + "ly"
 	filters["to_date"] = frappe.utils.now_datetime()
 	filters["from_date"] = frappe.utils.add_days(filters["to_date"], -filters.get("duration", 4) * 7)
+
+
+def get_group_by_and_period(filters: dict, table: str):
+	periodicity = filters.get("periodicity", "Weekly")
+	if periodicity == "Weekly":
+		group_by = f"YEARWEEK({table}.creation, 1)"
+		period = f"DATE_FORMAT({table}.creation, '%%Y-W%%u')"
+		return group_by, period
+
+	if periodicity == "Monthly":
+		group_by = f"YEAR({table}.creation), MONTH({table}.creation)"
+		period = f"DATE_FORMAT({table}.creation, '%%Y-%%m')"
+		return group_by, period
+
+	if periodicity == "Quarterly":
+		group_by = f"YEAR({table}.creation), QUARTER({table}.creation)"
+		period = f"CONCAT(YEAR({table}.creation), '-Q', QUARTER({table}.creation))"
+		return group_by, period
+
+	if periodicity == "Half-Yearly":
+		group_by = f"YEAR({table}.creation), CASE WHEN MONTH({table}.creation) <= 6 THEN 1 ELSE 2 END"
+		period = (
+			f"CONCAT(YEAR({table}.creation), '-H', CASE WHEN MONTH({table}.creation) <= 6 THEN 1 ELSE 2 END)"
+		)
+		return group_by, period
+
+	if periodicity == "Yearly":
+		group_by = f"YEAR({table}.creation)"
+		period = f"YEAR({table}.creation)"
+		return group_by, period
+
+	group_by = "1"
+	period = "'All'"
+	return group_by, period

@@ -133,11 +133,11 @@
    "type": "Link"
   },
   {
-   "description": "Otto Execution Report shows stats per session/execution, remaining reports show aggregate stats grouped by periodicity.",
+   "description": "Otto Execution Report shows stats per session/execution. Remaining reports show aggregate stats grouped by periodicity.",
    "hidden": 0,
    "is_query_report": 0,
    "label": "Reports",
-   "link_count": 3,
+   "link_count": 4,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -171,9 +171,19 @@
    "link_type": "Report",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Otto Feedback Report",
+   "link_count": 0,
+   "link_to": "Otto Feedback Report",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2025-09-09 15:40:43.195772",
+ "modified": "2025-09-09 16:05:56.648331",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto",
