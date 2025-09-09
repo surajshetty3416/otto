@@ -5,9 +5,27 @@ def set_periodicity(filters: dict):
 	if filters.get("based_on") == "Period":
 		return
 
+	to_date = frappe.utils.now_datetime()
+
 	filters["periodicity"] = filters.get("span", "Week") + "ly"
-	filters["to_date"] = frappe.utils.now_datetime()
-	filters["from_date"] = frappe.utils.add_days(filters["to_date"], -filters.get("duration", 4) * 7)
+	filters["to_date"] = to_date
+
+	duration = filters.get("duration", 4)
+
+	if filters.get("span") == "Week":
+		filters["from_date"] = frappe.utils.add_days(to_date, -duration * 7)
+
+	elif filters.get("span") == "Month":
+		filters["from_date"] = frappe.utils.add_months(to_date, -duration)
+
+	elif filters.get("span") == "Quarter":
+		filters["from_date"] = frappe.utils.add_months(to_date, -duration * 3)
+
+	elif filters.get("span") == "Half-Year":
+		filters["from_date"] = frappe.utils.add_months(to_date, -duration * 6)
+
+	else:
+		filters["from_date"] = frappe.utils.add_years(to_date, -duration)
 
 
 def get_group_by_and_period(filters: dict, table: str):

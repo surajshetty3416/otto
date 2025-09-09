@@ -86,7 +86,8 @@ def get_columns(filters: dict) -> list[dict]:
 			"label": _("Avg. LLM Calls"),
 			"description": "Average number of LLM calls per session",
 			"fieldname": "avg_llm_calls",
-			"fieldtype": "Int",
+			"fieldtype": "Float",
+			"precision": 2,
 			"width": 90,
 		},
 		{
@@ -100,14 +101,16 @@ def get_columns(filters: dict) -> list[dict]:
 			"label": _("Avg. Input Tokens"),
 			"description": "Average number of tokens input per session",
 			"fieldname": "avg_input",
-			"fieldtype": "Int",
+			"fieldtype": "Float",
+			"precision": 2,
 			"width": 130,
 		},
 		{
 			"label": _("Avg. Output Tokens"),
 			"description": "Average number of tokens output per session",
 			"fieldname": "avg_output",
-			"fieldtype": "Int",
+			"fieldtype": "Float",
+			"precision": 2,
 			"width": 130,
 		},
 		{
