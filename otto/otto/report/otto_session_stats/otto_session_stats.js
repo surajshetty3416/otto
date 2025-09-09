@@ -4,20 +4,68 @@
 frappe.query_reports["Otto Session Stats"] = {
 	filters: [
 		{
-			fieldname: "task",
-			label: __("Task"),
-			fieldtype: "Link",
-			options: "Otto Task",
+			fieldname: "based_on",
+			label: __("Based On"),
+			fieldtype: "Select",
+			default: "Duration",
+			options: [
+				{
+					label: __("Period"),
+					value: "Period",
+				},
+				{
+					label: __("Duration"),
+					value: "Duration",
+				},
+			],
 		},
 		{
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Datetime",
+			depends_on: "eval:doc.based_on === 'Period'",
 		},
 		{
 			fieldname: "to_date",
 			label: __("To Date"),
 			fieldtype: "Datetime",
+			depends_on: "eval:doc.based_on === 'Period'",
+		},
+		{
+			fieldname: "duration",
+			label: __("Duration"),
+			fieldtype: "Int",
+			default: 4,
+			depends_on: "eval:doc.based_on === 'Duration'",
+		},
+		{
+			fieldname: "span",
+			label: __("Span"),
+			fieldtype: "Select",
+			default: "Week",
+			options: [
+				{
+					label: __("Weeks"),
+					value: "Week",
+				},
+				{
+					label: __("Months"),
+					value: "Month",
+				},
+				{
+					label: __("Quarters"),
+					value: "Quarter",
+				},
+				{
+					label: __("Half-Years"),
+					value: "Half-Year",
+				},
+				{
+					label: __("Years"),
+					value: "Year",
+				},
+			],
+			depends_on: "eval:doc.based_on === 'Duration'",
 		},
 		{
 			fieldname: "periodicity",
@@ -46,6 +94,13 @@ frappe.query_reports["Otto Session Stats"] = {
 					value: "Yearly",
 				},
 			],
+			depends_on: "eval:doc.based_on === 'Period'",
+		},
+		{
+			fieldname: "task",
+			label: __("Task"),
+			fieldtype: "Link",
+			options: "Otto Task",
 		},
 		{
 			fieldname: "llm",

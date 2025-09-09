@@ -4,8 +4,9 @@
 from typing import Any
 
 import frappe
-import frappe.utils
 from frappe import _
+
+from otto.otto.report.utils import set_periodicity
 
 
 def execute(filters: dict | None = None):
@@ -16,6 +17,8 @@ def execute(filters: dict | None = None):
 	every time the report is refreshed or a filter is updated.
 	"""
 	filters = filters or {}
+	set_periodicity(filters)
+
 	data = get_data(filters or {})
 	columns = get_columns(filters)
 	return columns, data
@@ -75,6 +78,7 @@ def get_columns(filters: dict) -> list[dict]:
 			"description": "Total duration per session",
 			"fieldname": "total_duration_s",
 			"fieldtype": "Float",
+			"precision": 3,
 			"width": 100,
 		},
 		# Averages
@@ -112,6 +116,7 @@ def get_columns(filters: dict) -> list[dict]:
 			"fieldname": "avg_duration_s",
 			"fieldtype": "Float",
 			"width": 100,
+			"precision": 3,
 		},
 		{
 			"label": _("Avg. Rate (TPS)"),
@@ -119,6 +124,7 @@ def get_columns(filters: dict) -> list[dict]:
 			"fieldname": "avg_rate_tps",
 			"fieldtype": "Float",
 			"width": 100,
+			"precision": 3,
 		},
 		{
 			"label": _("Avg. TTFC (s)"),
@@ -126,6 +132,7 @@ def get_columns(filters: dict) -> list[dict]:
 			"fieldname": "avg_ttfc_s",
 			"fieldtype": "Float",
 			"width": 100,
+			"precision": 3,
 		},
 		{
 			"label": _("Avg. Latency (ms)"),
@@ -133,6 +140,7 @@ def get_columns(filters: dict) -> list[dict]:
 			"fieldname": "avg_latency_ms",
 			"fieldtype": "Float",
 			"width": 100,
+			"precision": 3,
 		},
 	]
 

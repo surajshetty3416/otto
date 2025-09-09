@@ -4,8 +4,9 @@
 from typing import Any
 
 import frappe
-import frappe.utils
 from frappe import _
+
+from otto.otto.report.utils import set_periodicity
 
 
 def execute(filters: dict | None = None):
@@ -16,6 +17,8 @@ def execute(filters: dict | None = None):
 	every time the report is refreshed or a filter is updated.
 	"""
 	filters = filters or {}
+	set_periodicity(filters)
+
 	data = get_data(filters or {})
 	columns = get_columns(filters)
 	return columns, data
@@ -37,13 +40,7 @@ def get_columns(filters: dict) -> list[dict]:
 			"label": _("Tool"),
 			"fieldname": "tool",
 			"fieldtype": "Data",
-			"width": 150,
-		},
-		{
-			"label": _("Creation"),
-			"fieldname": "creation",
-			"fieldtype": "Datetime",
-			"width": 140,
+			"width": 170,
 		},
 		{
 			"label": _("Times Called"),
@@ -194,7 +191,6 @@ def get_data(filters: dict) -> list[list[Any]]:
 		select
 		{period} as period,
 		jt.tool as tool,
-		min(jt.creation) as creation,
 		count(*) as times_called,
 		avg(duration) as avg_duration,
 		sum(duration) as total_duration,
@@ -204,10 +200,10 @@ def get_data(filters: dict) -> list[list[Any]]:
 		sum(is_error) as num_error,
 		sum(is_empty) as num_empty,
 		-- percents
-		sum(is_success) / count(*) as percent_success,
-		sum(is_pending) / count(*) as percent_pending,
-		sum(is_error) / count(*) as percent_error,
-		sum(is_empty) / count(*) as percent_empty
+		100 * sum(is_success) / count(*) as percent_success,
+		100 * sum(is_pending) / count(*) as percent_pending,
+		100 * sum(is_error) / count(*) as percent_error,
+		100 * sum(is_empty) / count(*) as percent_empty
 		from jt
 		group by {group_by}, tool
 		order by {group_by} desc, tool
