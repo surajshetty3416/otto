@@ -35,7 +35,7 @@ frappe.query_reports["Otto Feedback Report"] = {
 			fieldname: "duration",
 			label: __("Duration"),
 			fieldtype: "Int",
-			default: 4,
+			default: 16,
 			depends_on: "eval:doc.based_on === 'Duration'",
 		},
 		{

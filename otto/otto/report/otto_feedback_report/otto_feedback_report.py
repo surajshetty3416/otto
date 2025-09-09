@@ -21,7 +21,32 @@ def execute(filters: dict | None = None):
 
 	data = get_data(filters or {})
 	columns = get_columns(filters)
-	return columns, data
+	return (
+		columns,
+		data,
+		None,
+		get_chart_data(data),
+		None,
+		None,
+	)
+
+
+def get_chart_data(data: list[list[Any]]):
+	if not data:
+		return None
+
+	positive_values = [float(row[2]) if row[2] is not None else 0 for row in data]
+	negative_values = [float(row[3]) if row[3] is not None else 0 for row in data]
+	return {
+		"data": {
+			"labels": [str(row[0]) for row in data],
+			"datasets": [
+				{"name": "% Positive", "values": positive_values, "chartType": "line"},
+				{"name": "% Negative", "values": negative_values, "chartType": "line"},
+			],
+		},
+		"type": "line",
+	}
 
 
 def get_columns(filters: dict) -> list[dict]:
@@ -41,29 +66,27 @@ def get_columns(filters: dict) -> list[dict]:
 			"fieldtype": "Int",
 		},
 		{
-			"label": _("% 👍"),
+			"label": _("% Positive"),
 			"fieldname": "percent_positive",
-			"fieldtype": "Float",
-			"precision": 2,
+			"fieldtype": "Percent",
 		},
 		{
-			"label": _("% 👎"),
+			"label": _("% Negative"),
 			"fieldname": "percent_negative",
-			"fieldtype": "Float",
-			"precision": 2,
+			"fieldtype": "Percent",
 		},
 		{
-			"label": _("👍"),
+			"label": _("Positive"),
 			"fieldname": "num_positive",
 			"fieldtype": "Int",
 		},
 		{
-			"label": _("👎"),
+			"label": _("Negative"),
 			"fieldname": "num_negative",
 			"fieldtype": "Int",
 		},
 		{
-			"label": _("🤷"),
+			"label": _("Indifferent"),
 			"fieldname": "num_indifferent",
 			"fieldtype": "Int",
 		},
