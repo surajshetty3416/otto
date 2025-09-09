@@ -89,18 +89,5 @@ frappe.query_reports["Otto Session Stats"] = {
 				},
 			],
 		},
-		// {
-		// 	fieldname: "show_tool_counts",
-		// 	label: __("Show Tool Counts"),
-		// 	fieldtype: "Check",
-		// 	default: 0,
-		// 	depends_on: "eval:doc.task",
-		// },
-		// {
-		// 	fieldname: "show_feedback",
-		// 	label: __("Show Feedback Score"),
-		// 	fieldtype: "Check",
-		// 	default: 0,
-		// },
 	],
 };

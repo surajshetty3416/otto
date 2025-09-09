@@ -18,7 +18,6 @@ def execute(filters: dict | None = None):
 	filters = filters or {}
 	data = get_data(filters or {})
 	columns = get_columns(filters)
-
 	return columns, data
 
 
@@ -189,27 +188,27 @@ def get_data(filters: dict) -> list[list[Any]]:
 	periodicity = filters.get("periodicity", "Weekly")
 	if periodicity == "Weekly":
 		group_by = "YEARWEEK(os.creation, 1)"
-		date_format = "DATE_FORMAT(os.creation, '%%Y-W%%u')"
+		period = "DATE_FORMAT(os.creation, '%%Y-W%%u')"
 
 	elif periodicity == "Monthly":
 		group_by = "YEAR(os.creation), MONTH(os.creation)"
-		date_format = "DATE_FORMAT(os.creation, '%%Y-%%m')"
+		period = "DATE_FORMAT(os.creation, '%%Y-%%m')"
 
 	elif periodicity == "Quarterly":
 		group_by = "YEAR(os.creation), QUARTER(os.creation)"
-		date_format = "CONCAT(YEAR(os.creation), '-Q', QUARTER(os.creation))"
+		period = "CONCAT(YEAR(os.creation), '-Q', QUARTER(os.creation))"
 
 	elif periodicity == "Half-Yearly":
 		group_by = "YEAR(os.creation), CASE WHEN MONTH(os.creation) <= 6 THEN 1 ELSE 2 END"
-		date_format = "CONCAT(YEAR(os.creation), '-H', CASE WHEN MONTH(os.creation) <= 6 THEN 1 ELSE 2 END)"
+		period = "CONCAT(YEAR(os.creation), '-H', CASE WHEN MONTH(os.creation) <= 6 THEN 1 ELSE 2 END)"
 
 	elif periodicity == "Yearly":
 		group_by = "YEAR(os.creation)"
-		date_format = "YEAR(os.creation)"
+		period = "YEAR(os.creation)"
 
 	else:
 		group_by = "1"
-		date_format = "'All'"
+		period = "'All'"
 
 	query = f"""
 	with os as (
@@ -235,7 +234,7 @@ def get_data(filters: dict) -> list[list[Any]]:
 		order by creation desc
 	)
 	select
-		{date_format} as period,
+		{period} as period,
 		-- Totals
 		count(*) as total_sessions,
 		sum(os.llm_calls) as total_llm_calls,
