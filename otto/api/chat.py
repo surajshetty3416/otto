@@ -2,12 +2,27 @@ import frappe
 
 
 @frappe.whitelist()
-def chat(message: str, session: str | None = None):
+def test():
+	return "success"
+
+
+@frappe.whitelist()
+# def chat(query: str, session: str | None = None):
+def chat(query: str):
+	from otto.api.dummy import chat
+
 	"""
 	Use to resume or start a new chat session, if session is provided then
 	resume, else new.
 	"""
-	pass
+	frappe.enqueue(
+		# TODO: wrap chat in a try catch; on error always communicate
+		chat,
+		timeout=300,
+		at_front=True,
+		query=query,
+	)
+	return {"status": "Success"}
 
 
 @frappe.whitelist()
@@ -21,7 +36,7 @@ def load(session: str):
 @frappe.whitelist()
 def list_chats():
 	"""
-	    List sessions for the sidebar, on clicking load will be called and the user
+		List sessions for the sidebar, on clicking load will be called and the user
 	can then resume a chat
 
 	List should pull up the sessions along with assistant that was used to create
