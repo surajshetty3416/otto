@@ -6,6 +6,7 @@ Considering that the author is NOT omniscient, they may be prone to making daft
 mistakes. If you find any convention to not be in good taste, please
 [raise an issue](https://github.com/frappe/otto/issues/new).
 
+
 <!--
 
 Frontend conventions:

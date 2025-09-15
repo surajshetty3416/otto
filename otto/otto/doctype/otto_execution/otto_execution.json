@@ -42,7 +42,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Pending\nRunning\nSuccess\nFailure",
+   "options": "Pending\nWaiting\nRunning\nSuccess\nFailure",
    "read_only_depends_on": "eval:doc.status !== \"Running\"",
    "reqd": 1,
    "search_index": 1
@@ -99,7 +99,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-08-13 12:04:55.844371",
+ "modified": "2025-09-15 11:06:20.987976",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Execution",

@@ -7,10 +7,11 @@
  "engine": "InnoDB",
  "field_order": [
   "slug",
-  "mock_tool",
+  "requires_permission",
   "log_usage",
   "column_break_byai",
   "group",
+  "mock_tool",
   "mock_return_value",
   "definition_section",
   "code",
@@ -125,6 +126,13 @@
    "fieldname": "log_usage",
    "fieldtype": "Check",
    "label": "Log Usage"
+  },
+  {
+   "default": "0",
+   "description": "Tool requires permission to execute.\n\nIf checked an Otto Permission entry will be created during task execution when this tool is called by the LLM.",
+   "fieldname": "requires_permission",
+   "fieldtype": "Check",
+   "label": "Requires Permission"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -134,7 +142,7 @@
    "link_fieldname": "tool"
   }
  ],
- "modified": "2025-06-18 13:31:49.934101",
+ "modified": "2025-09-15 10:59:05.078604",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Tool",

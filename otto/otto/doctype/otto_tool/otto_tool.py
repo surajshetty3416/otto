@@ -48,6 +48,7 @@ class OttoTool(Document):
 		mock_return_value: DF.Data | None
 		mock_tool: DF.Check
 		reason: DF.SmallText | None
+		requires_permission: DF.Check
 		slug: DF.Data
 	# end: auto-generated types
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, NamedTuple, cast
 
 import frappe
 from frappe.model.document import Document
@@ -27,6 +27,12 @@ EVENT_MAP = {
 	"on_cancel": "On Cancel",
 	"manual": "Manual",
 }
+
+
+class ToolMapItem(NamedTuple):
+	tool_name: str | None
+	env_str: str | None
+	requires_permission: bool
 
 
 class OttoTask(Document):
@@ -372,15 +378,16 @@ def get_tools(task: str):
 	return tools
 
 
-def get_tool_map(task: str) -> dict[str, tuple[str | None, str | None]]:
+def get_tool_map(task: str) -> dict[str, ToolMapItem]:
 	"""
-	returns dict[slug, (tool_name, env_str)]
+	returns dict[slug, (tool_name, env_str, requires_permission)]
 
 	returned map does not contain meta tools
 
 	slug: slug name given to the session (i.e. overriden name or actual if present)
 	tool_name: name of the Otto Tool doc
 	env_str: env string on the Task Tool CT item used during execution
+	requires_permission: whether the tool requires permission
 	"""
 	task_tools = frappe.get_all(
 		"Otto Task Tool CT",
@@ -388,9 +395,12 @@ def get_tool_map(task: str) -> dict[str, tuple[str | None, str | None]]:
 		fields=["tool", "slug", "env"],
 	)
 	tool_slugs = frappe.get_all(
-		"Otto Tool", filters={"name": ("in", [t.tool for t in task_tools])}, fields=["name", "slug"]
+		"Otto Tool",
+		filters={"name": ("in", [t.tool for t in task_tools])},
+		fields=["name", "slug", "requires_permission"],
 	)
 	tool_slug_map = {t.name: t.slug for t in tool_slugs}
+	permission_map = {t.name: t.requires_permission for t in tool_slugs}
 
 	tool_map = {}
 	for tool in task_tools:
@@ -399,7 +409,11 @@ def get_tool_map(task: str) -> dict[str, tuple[str | None, str | None]]:
 		if not slug:
 			continue
 
-		tool_map[slug] = (tool.get("tool"), tool.get("env"))
+		tool_map[slug] = ToolMapItem(
+			tool_name=tool.get("tool"),
+			env_str=tool.get("env"),
+			requires_permission=permission_map.get(tool.tool, False),
+		)
 	return tool_map
 
 

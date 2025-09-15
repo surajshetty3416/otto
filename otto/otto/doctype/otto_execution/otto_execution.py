@@ -32,7 +32,7 @@ class OttoExecution(Document):
 		event: DF.Data | None
 		reason: DF.SmallText | None
 		session: DF.Link
-		status: DF.Literal["Pending", "Running", "Success", "Failure"]
+		status: DF.Literal["Pending", "Waiting", "Running", "Success", "Failure"]
 		target: DF.DynamicLink | None
 		target_doctype: DF.Link | None
 		task: DF.Link
@@ -129,8 +129,10 @@ class OttoExecution(Document):
 		if item is None:
 			return self.set_status("Failure", reason)
 
+		set_waiting = False
+
 		try:
-			self.run_tools(session)
+			set_waiting = self.run_tools(session)
 		except Exception as e:
 			otto.log_error(title="run_tools error", doc=self)
 			return self.set_status("Failure", f"Error in run_tools: {e}")
@@ -138,27 +140,47 @@ class OttoExecution(Document):
 		if self.should_stop(session):
 			return self.set_status("Success")
 
+		if set_waiting:
+			return self.set_status("Waiting")
+
 		self.loop(None)
 		return None
 
-	def run_tools(self, session: Session):
+	def resume(self):
+		# TODO:
+		# - lock resume
+		# - verify status is waiting
+		# - verify if no tools in assert
+		# - call loop with None
+		pass
+
+	def run_tools(self, session: Session) -> bool:
 		"""Executes tool use requests from the last LLM response.
 
 		This method inspects the last `SessionItem`. If it contains `tool_use`
 		content, it executes the requested tools and appends the results to the
 		session. It also handles special meta tools, like `end_task`.
 		"""
+		from otto.otto.doctype.otto_permission.otto_permission import OttoPermission
 		from otto.otto.doctype.otto_task.otto_task import get_tool_map
 
 		if not (pending := session.get_pending_tool_use()):
-			return
+			return False
 
+		set_waiting = False
 		updates: list[ToolUseUpdate] = []
 		tool_map = get_tool_map(self.task)
 		for tool in pending:
 			# Used if meta tool
 			update = ToolUseUpdate(id=tool.id)
-			tool_name, env_str = tool_map.get(tool.name, (None, None))
+			tool_name, env_str, requires_permission = tool_map.get(tool.name, (None, None, False))
+			set_waiting = set_waiting or requires_permission
+
+			if requires_permission:
+				assert self.name is not None, "type check"
+				OttoPermission.new(session=self.session, tool_use_id=tool.id)
+				continue
+
 			if not is_meta_tool(tool.name):
 				assert tool_name is not None, "sanity check"
 				update = self._execute_tool(tool_name, tool.args, tool.id, env_str)
@@ -166,6 +188,7 @@ class OttoExecution(Document):
 			updates.append(update)
 
 		session.update_tool_use(updates)
+		return set_waiting
 
 	def _execute_tool(
 		self, tool_name: str, args: dict, tool_use_id: str, env_str: str | None
@@ -260,7 +283,7 @@ class OttoExecution(Document):
 
 	def set_status(
 		self,
-		status: Literal["Pending", "Running", "Success", "Failure"],
+		status: Literal["Pending", "Waiting", "Running", "Success", "Failure"],
 		reason: str | None = None,
 		skip_save: bool = False,  # used in before save to prevent recursion
 	):
