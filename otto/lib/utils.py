@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import json
+
+import frappe
+
 from otto import utils
-from otto.lib.types import FileContent, ImageContent, TextContent
+from otto.lib.types import FileContent, ImageContent, TextContent, ToolUseContent
 
 
 class content:
@@ -77,3 +81,66 @@ class content:
 			name=name or f.name or "file.pdf",
 			data=f.value,
 		)
+
+
+def get_tool_use(session_id: str, tool_use_id: str) -> ToolUseContent | None:
+	"""Get a specific ToolUseContent by its ID from a Session."""
+	query = """
+		SELECT
+			jt.id,
+			jt.type,
+			jt.name,
+			jt.args,
+			jt.status,
+			jt.result,
+			jt.start_time,
+			jt.end_time,
+			jt.stdout,
+			jt.stderr
+		FROM `tabOtto Session Item CT` osi,
+		JSON_TABLE(
+			osi.content, '$[*]' COLUMNS(
+				id TEXT PATH '$.id',
+				type TEXT PATH '$.type',
+				name TEXT PATH '$.name',
+				args JSON PATH '$.args',
+				status TEXT PATH '$.status',
+				result TEXT PATH '$.result',
+				start_time FLOAT PATH '$.start_time',
+				end_time FLOAT PATH '$.end_time',
+				stdout TEXT PATH '$.stdout',
+				stderr TEXT PATH '$.stderr'
+			)
+		) AS jt
+		WHERE osi.parent = %s
+		AND jt.type = 'tool_use'
+		AND jt.id = %s
+		LIMIT 1
+	"""
+
+	result: list[dict] = frappe.db.sql(
+		query,
+		[session_id, tool_use_id],
+		as_dict=True,
+	)  # pyright: ignore[reportAssignmentType]
+
+	if not result:
+		return None
+
+	row = result[0]
+	args = {}
+	if row["args"]:
+		args = json.loads(row["args"])
+
+	return ToolUseContent(
+		type="tool_use",
+		id=row["id"],
+		name=row["name"],
+		args=args,
+		status=row["status"],
+		result=row["result"],
+		start_time=row["start_time"] or 0.0,
+		end_time=row["end_time"] or 0.0,
+		stdout=row["stdout"],
+		stderr=row["stderr"],
+	)

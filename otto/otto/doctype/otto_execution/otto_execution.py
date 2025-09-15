@@ -116,8 +116,9 @@ class OttoExecution(Document):
 			self.set_status("Failure", "\n".join(reasons), skip_save=True)
 
 	def loop(self, context: str | list[str] | None = None):
+		session = self.get_session()
+
 		try:
-			session = self.get_session()
 			item, reason = session.interact(context, stream=False)
 		except Exception as e:
 			otto.log_error(title="interact error", doc=self)
@@ -129,32 +130,34 @@ class OttoExecution(Document):
 		if item is None:
 			return self.set_status("Failure", reason)
 
-		set_waiting = False
+		return self._run_tools_and_loop(session)
 
+	def _run_tools_and_loop(self, session: Session):
+		set_waiting = False
 		try:
-			set_waiting = self.run_tools(session)
+			set_waiting = self._run_tools(session)
 		except Exception as e:
 			otto.log_error(title="run_tools error", doc=self)
 			return self.set_status("Failure", f"Error in run_tools: {e}")
 
-		if self.should_stop(session):
-			return self.set_status("Success")
-
 		if set_waiting:
 			return self.set_status("Waiting")
 
-		self.loop(None)
-		return None
+		if self.should_stop(session):
+			return self.set_status("Success")
+
+		return self.loop(None)
 
 	def resume(self):
-		# TODO:
-		# - lock resume
-		# - verify status is waiting
-		# - verify if no tools in assert
-		# - call loop with None
-		pass
+		# TODO: lock resume
+		if self.status != "Waiting":
+			return
 
-	def run_tools(self, session: Session) -> bool:
+		self.set_status("Running")
+		session = self.get_session()
+		self._run_tools_and_loop(session)
+
+	def _run_tools(self, session: Session) -> bool:
 		"""Executes tool use requests from the last LLM response.
 
 		This method inspects the last `SessionItem`. If it contains `tool_use`
@@ -170,20 +173,27 @@ class OttoExecution(Document):
 		set_waiting = False
 		updates: list[ToolUseUpdate] = []
 		tool_map = get_tool_map(self.task)
-		for tool in pending:
-			# Used if meta tool
-			update = ToolUseUpdate(id=tool.id)
-			tool_name, env_str, requires_permission = tool_map.get(tool.name, (None, None, False))
-			set_waiting = set_waiting or requires_permission
+		permission_map = self.get_permission_map()
 
-			if requires_permission:
+		for tool in pending:
+			tool_name, env_str, requires_permission = tool_map.get(tool.name, (None, None, False))
+
+			if requires_permission and tool.id not in permission_map:
 				assert self.name is not None, "type check"
 				OttoPermission.new(session=self.session, tool_use_id=tool.id)
+
+			if requires_permission and permission_map.get(tool.id, "Pending") == "Pending":
+				set_waiting = True
 				continue
 
+			permission_granted = True
+			if requires_permission:
+				permission_granted = permission_map.get(tool.id, "Pending") == "Granted"
+
+			update = ToolUseUpdate(id=tool.id)  # Used if meta tool
 			if not is_meta_tool(tool.name):
 				assert tool_name is not None, "sanity check"
-				update = self._execute_tool(tool_name, tool.args, tool.id, env_str)
+				update = self._execute_tool(tool_name, tool.args, tool.id, env_str, permission_granted)
 
 			updates.append(update)
 
@@ -191,14 +201,23 @@ class OttoExecution(Document):
 		return set_waiting
 
 	def _execute_tool(
-		self, tool_name: str, args: dict, tool_use_id: str, env_str: str | None
+		self,
+		tool_name: str,
+		args: dict,
+		tool_use_id: str,
+		env_str: str | None,
+		permission_granted: bool,
 	) -> ToolUseUpdate:
 		"""Executes tool and returns tuple of (result, is_error)"""
 		from otto.otto.doctype.otto_tool.otto_tool import OttoTool
 
-		tool_doc = otto.get(OttoTool, tool_name)
 		update = ToolUseUpdate(id=tool_use_id, start_time=time.time(), end_time=time.time())
+		if not permission_granted:
+			update["is_error"] = True
+			update["result"] = "Permission to use tool denied by user"
+			return update
 
+		tool_doc = otto.get(OttoTool, tool_name)
 		try:
 			env = json.loads(env_str) if env_str else None
 			result = tool_doc.execute(
@@ -323,6 +342,15 @@ class OttoExecution(Document):
 		)
 
 		return session.id
+
+	def get_permission_map(self) -> dict[str, str]:
+		"""Returns a map of tool use IDs to their status."""
+		permissions = frappe.get_all(
+			"Otto Permission",
+			filters={"execution": self.name, "status": "Pending"},
+			fields=["tool_use_id", "status"],
+		)
+		return {p["tool_use_id"]: p["status"] for p in permissions}
 
 
 @frappe.whitelist()
