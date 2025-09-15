@@ -57,5 +57,6 @@ jspm_packages/
 temp_*
 
 # Frontend build
+otto/www/otto/index.html
 otto/public/frontend
 **/api/**/dummy.py
