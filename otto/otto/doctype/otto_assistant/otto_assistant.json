@@ -1,0 +1,97 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "hash",
+ "creation": "2025-09-01 12:59:27.289099",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "column_break_roim",
+  "llm",
+  "reasoning_effort",
+  "definition_section",
+  "instruction",
+  "context_section",
+  "get_context"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title"
+  },
+  {
+   "fieldname": "column_break_roim",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "llm",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "LLM",
+   "options": "Otto LLM"
+  },
+  {
+   "fieldname": "definition_section",
+   "fieldtype": "Section Break",
+   "label": "Definition"
+  },
+  {
+   "fieldname": "context_section",
+   "fieldtype": "Section Break",
+   "label": "Context"
+  },
+  {
+   "fieldname": "get_context",
+   "fieldtype": "Code",
+   "label": "Get Context",
+   "options": "Python"
+  },
+  {
+   "description": "Instruction instructs the assistant on how it should assist the user, use the tools it has, etc. Supports Jinja Template format to add in context.",
+   "fieldname": "instruction",
+   "fieldtype": "Code",
+   "in_list_view": 1,
+   "label": "Instruction"
+  },
+  {
+   "default": "None",
+   "description": "Valid only if selected LLM supports reasoning.",
+   "fieldname": "reasoning_effort",
+   "fieldtype": "Select",
+   "label": "Reasoning Effort",
+   "options": "None\nLow\nMedium\nHigh"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-09-01 15:50:05.712387",
+ "modified_by": "Administrator",
+ "module": "Otto",
+ "name": "Otto Assistant",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title"
+}

@@ -323,8 +323,8 @@ class InteractStreamResponse:
 		try:
 			return next(self._stream)
 		except StopIteration as e:
-			interaction, reason = cast("InteractResponse", e.value)
-			self._item = interaction
+			item, reason = cast("InteractResponse", e.value)
+			self._item = item
 			self._failure_reason = reason
 			raise StopIteration  # noqa: B904
 

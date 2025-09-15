@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import Chat from "./components/pages/Chat/Chat.vue";
+// import Chat from "./components/pages/Chat/Chat.vue";
 import Desktop from "./components/pages/Desktop.vue";
 import Login from "./components/pages/Login.vue";
 import { isLoggedIn, toLogin } from "./client/utils";
@@ -11,11 +11,11 @@ const routes = [
     name: "Desktop",
     component: Desktop,
     children: [
-      {
-        path: "chat",
-        name: "Chat",
-        component: Chat,
-      },
+      // {
+      //   path: "chat",
+      //   name: "Chat",
+      //   component: Chat,
+      // },
     ],
   },
   {

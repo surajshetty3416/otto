@@ -58,3 +58,4 @@ temp_*
 
 # Frontend build
 otto/public/frontend
+**/api/**/dummy.py

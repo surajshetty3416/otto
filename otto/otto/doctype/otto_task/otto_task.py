@@ -490,12 +490,35 @@ def import_task(data: str):
 
 
 def run_get_context(get_context: str, doc: Document | None, event: str):
-	from otto.otto.doctype.otto_tool.lib import get_lib
-	from otto.utils import execute
+	if not get_context and doc:
+		return doc.as_json()
 
-	return execute.run_get_context(
-		get_context=get_context,
-		doc=doc,
-		event=event,
+	from otto.otto.doctype.otto_tool.lib import get_lib
+	from otto.utils import execute, json_dumps
+
+	context = execute.execute(
+		script=get_context,
+		args=dict(doc=doc, event=event),
+		arg_names=["doc", "event"],
 		globals=dict(otto=get_lib()),
+		function_name="get_context",
 	)
+
+	result = context["result"]
+
+	if isinstance(result, str):
+		return result
+
+	if not isinstance(result, list):
+		return json_dumps(result)[0]
+
+	from otto.llm.utils import is_user_content
+
+	content = []
+	for r in result:
+		if is_user_content(r) or isinstance(r, str):
+			content.append(r)
+		else:
+			content.append(json_dumps(r)[0])
+
+	return content
