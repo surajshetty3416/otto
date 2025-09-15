@@ -173,6 +173,7 @@ class OttoExecution(Document):
 		"""
 		from otto.otto.doctype.otto_permission.otto_permission import OttoPermission
 		from otto.otto.doctype.otto_task.otto_task import get_tool_map
+		from otto.utils.notify import Subject
 
 		if not (pending := session.get_pending_tool_use()):
 			return False
@@ -181,13 +182,29 @@ class OttoExecution(Document):
 		updates: list[ToolUseUpdate] = []
 		tool_map = get_tool_map(self.task)
 		permission_map = self.get_permission_map()
+		new_perms: list[Subject] = []
 
 		for tool in pending:
 			tool_name, env_str, requires_permission = tool_map.get(tool.name, (None, None, False))
 
 			if requires_permission and tool.id not in permission_map:
 				assert self.name is not None, "type check"
-				OttoPermission.new(session=self.session, tool_use_id=tool.id)
+				permission = OttoPermission.new(session=self.session, tool_use_id=tool.id)
+
+				assert permission.name is not None, "type check"
+				new_perms.append(
+					Subject(
+						task=self.task,
+						permission=permission.name,
+						tool_use_id=tool.id,
+						execution=self.name,
+						session=self.session,
+						target=self.target,
+						target_doctype=self.target_doctype,
+						tool=tool_name,
+						args=tool.args,
+					)
+				)
 
 			if requires_permission and permission_map.get(tool.id, "Pending") == "Pending":
 				set_waiting = True
@@ -211,6 +228,14 @@ class OttoExecution(Document):
 			updates.append(update)
 
 		session.update_tool_use(updates)
+
+		if new_perms:
+			self.get_assigned_users()
+			frappe.enqueue(
+				method="otto.utils.notify.notify",
+				perms=new_perms,
+			)
+
 		return set_waiting
 
 	def _execute_tool(
