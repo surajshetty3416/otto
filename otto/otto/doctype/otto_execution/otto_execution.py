@@ -12,6 +12,7 @@ from frappe.model.document import Document
 import otto
 from otto.llm.types import ReasoningEffort, ToolUseUpdate
 from otto.otto.doctype.otto_task.tools import is_meta_tool
+from otto.utils.lock import lock_doc
 
 logger = otto.logger("otto_execution")
 DEFAULT_MAX_LLM_CALLS = 30
@@ -149,11 +150,17 @@ class OttoExecution(Document):
 		return self.loop(None)
 
 	def resume(self):
-		# TODO: lock resume
-		if self.status != "Waiting":
-			return
+		"""
+		Resume is invoked after a permission is granted or denied.
 
-		self.set_status("Running")
+		Multiple permissions can be acknowledged at once for a single execution,
+		lock is used to ensure that only one of the multiple calls runs.
+		"""
+		with lock_doc(self, lock_name="waiting_check"):
+			if self.status != "Waiting":
+				return
+			self.set_status("Running")
+
 		session = self.get_session()
 		self._run_tools_and_loop(session)
 
