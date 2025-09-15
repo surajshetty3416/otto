@@ -200,7 +200,13 @@ class OttoExecution(Document):
 			update = ToolUseUpdate(id=tool.id)  # Used if meta tool
 			if not is_meta_tool(tool.name):
 				assert tool_name is not None, "sanity check"
-				update = self._execute_tool(tool_name, tool.args, tool.id, env_str, permission_granted)
+				update = self._execute_tool(
+					tool_name=tool_name,
+					args=tool.args,
+					tool_use_id=tool.id,
+					env_str=env_str,
+					permission_granted=permission_granted,
+				)
 
 			updates.append(update)
 
@@ -209,6 +215,7 @@ class OttoExecution(Document):
 
 	def _execute_tool(
 		self,
+		*,
 		tool_name: str,
 		args: dict,
 		tool_use_id: str,
@@ -323,6 +330,22 @@ class OttoExecution(Document):
 		frappe.db.commit()
 
 	@frappe.whitelist()
+	def get_permission_map(self, only_pending: bool = False) -> dict[str, str]:
+		"""Returns a map of tool use IDs to their status."""
+		filters = {"session": self.session}
+
+		if only_pending:
+			filters["status"] = "Pending"
+
+		permissions = frappe.get_all(
+			"Otto Permission",
+			filters=filters,
+			fields=["tool_use_id", "status"],
+		)
+
+		return {p["tool_use_id"]: p["status"] for p in permissions}
+
+	@frappe.whitelist()
 	def retry(self):
 		import otto.lib as lib
 		from otto.otto.doctype.otto_task.otto_task import get_timeout, get_tools
@@ -350,14 +373,16 @@ class OttoExecution(Document):
 
 		return session.id
 
-	def get_permission_map(self) -> dict[str, str]:
-		"""Returns a map of tool use IDs to their status."""
-		permissions = frappe.get_all(
-			"Otto Permission",
-			filters={"execution": self.name, "status": "Pending"},
-			fields=["tool_use_id", "status"],
+	@frappe.whitelist()
+	def enqueue_resume(self):
+		from otto.otto.doctype.otto_task.otto_task import get_timeout
+
+		frappe.enqueue_doc(
+			doctype="Otto Execution",
+			name=self.name,
+			method="resume",
+			timeout=get_timeout(),
 		)
-		return {p["tool_use_id"]: p["status"] for p in permissions}
 
 
 @frappe.whitelist()

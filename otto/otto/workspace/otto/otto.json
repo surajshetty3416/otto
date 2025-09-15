@@ -1,7 +1,7 @@
 {
  "app": "otto",
  "charts": [],
- "content": "[{\"id\":\"4eVkcmtiVn\",\"type\":\"card\",\"data\":{\"card_name\":\"Definitions\",\"col\":4}},{\"id\":\"OMj0VoZNL6\",\"type\":\"card\",\"data\":{\"card_name\":\"Executions\",\"col\":4}},{\"id\":\"lmh9Z242qd\",\"type\":\"card\",\"data\":{\"card_name\":\"Configs\",\"col\":4}},{\"id\":\"jyxJ06Ba8C\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
+ "content": "[{\"id\":\"4eVkcmtiVn\",\"type\":\"card\",\"data\":{\"card_name\":\"Definitions\",\"col\":4}},{\"id\":\"OMj0VoZNL6\",\"type\":\"card\",\"data\":{\"card_name\":\"Executions\",\"col\":4}},{\"id\":\"lmh9Z242qd\",\"type\":\"card\",\"data\":{\"card_name\":\"Configs\",\"col\":4}},{\"id\":\"jyxJ06Ba8C\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"NaFHRr9umu\",\"type\":\"card\",\"data\":{\"card_name\":\"Management\",\"col\":4}}]",
  "creation": "2025-06-04 10:38:24.349553",
  "custom_blocks": [],
  "docstatus": 0,
@@ -181,9 +181,28 @@
    "link_type": "Report",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Management",
+   "link_count": 1,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Otto Permission",
+   "link_count": 0,
+   "link_to": "Otto Permission",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2025-09-09 16:05:56.648331",
+ "modified": "2025-09-15 14:41:01.557216",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto",

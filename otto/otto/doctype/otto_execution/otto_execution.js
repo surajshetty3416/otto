@@ -22,11 +22,40 @@ frappe.ui.form.on("Otto Execution", {
 			});
 		}
 
+		function resume() {
+			frappe.call({
+				method: "enqueue_resume",
+				doc: frm.doc,
+			});
+		}
+
+		function show_pending() {
+			frappe.call({
+				method: "get_permission_map",
+				args: { only_pending: true },
+				doc: frm.doc,
+				callback(r) {
+					frappe.msgprint(
+						`<pre>${JSON.stringify(r.message || "No stats", null, 2)}</pre>`,
+						__("Stats")
+					);
+				},
+			});
+		}
+
 		if (frm.doc.status === "Failure") {
 			frm.add_custom_button(__("Retry"), retry);
 		}
 
+		if (frm.doc.status === "Waiting") {
+			frm.add_custom_button(__("Resume"), resume, __("Actions"));
+			frm.add_custom_button(__("Show Pending"), show_pending, __("Actions"));
+		}
+
 		frm.add_web_link(`/otto_feedback?session=${frm.doc.session}`, __("Give Feedback"));
-		frm.add_web_link(`/app/view-otto-session/${frm.doc.session}`, __("Open in Session Viewer"));
+		frm.add_web_link(
+			`/app/view-otto-session/${frm.doc.session}`,
+			__("Open in Session Viewer")
+		);
 	},
 });

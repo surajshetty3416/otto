@@ -141,9 +141,13 @@
   {
    "link_doctype": "Otto Feedback",
    "link_fieldname": "session"
+  },
+  {
+   "link_doctype": "Otto Permission",
+   "link_fieldname": "session"
   }
  ],
- "modified": "2025-08-13 12:04:22.053478",
+ "modified": "2025-09-15 14:08:21.149805",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Session",

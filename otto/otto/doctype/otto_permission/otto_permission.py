@@ -76,18 +76,22 @@ class OttoPermission(Document):
 
 	@frappe.whitelist()
 	def grant(self):
-		self.set_status("Granted")
-		self.resume()
+		self.acknowledge("Granted")
 
 	@frappe.whitelist()
 	def deny(self):
-		self.set_status("Denied")
+		self.acknowledge("Denied")
+
+	def acknowledge(self, status: Literal["Granted", "Denied"]):
+		if self.status != "Pending":
+			return
+
+		self.set_status(status)
 		self.resume()
 
 	def set_status(self, status: Literal["Granted", "Denied"]):
 		self.status = status
 		self.save()
-		# frappe.db.commit()
 
 	def resume(self):
 		from otto.otto.doctype.otto_task.otto_task import get_timeout
