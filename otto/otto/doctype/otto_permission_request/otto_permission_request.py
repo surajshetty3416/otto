@@ -25,7 +25,48 @@ class OttoPermissionRequest(Document):
 		tool_use_id: DF.Data
 	# end: auto-generated types
 
+	_tool: dict[str, str] | None = None
+	_execution: dict[str, str] | None = None
 	_tool_use: ToolUseContent | None = None
+
+	@property
+	def execution_(self) -> dict[str, str]:
+		if not self._execution:
+			execs = frappe.get_list(
+				"Otto Execution",
+				filters={"session": self.session},
+				fields=["name", "task", "target", "target_doctype"],
+				limit=1,
+			)
+			self._execution = execs[0] if execs else None
+
+		return self._execution or {}
+
+	@property
+	def tool_(self) -> dict[str, str]:
+		from otto.otto.doctype.otto_task.otto_task import get_tool_name
+
+		if self._tool:
+			return self._tool
+
+		if not self.tool_use_ or not self.task:
+			return {}
+
+		tool_name = get_tool_name(self.task, self.tool_use_["name"])
+		if not tool_name:
+			return {}
+
+		tool = frappe.get_all(
+			"Otto Tool",
+			filters={"name": tool_name},
+			fields=["name", "slug", "title"],
+			limit=1,
+		)
+
+		if tool:
+			self._tool = tool[0]
+
+		return self._tool or {}
 
 	@property
 	def tool_use_(self) -> ToolUseContent | None:
@@ -33,18 +74,21 @@ class OttoPermissionRequest(Document):
 			self._tool_use = get_tool_use(self.session, self.tool_use_id)
 		return self._tool_use
 
-	@staticmethod
-	def new(
-		*,
-		session: str,
-		tool_use_id: str,
-	):
-		doc = cast("OttoPermissionRequest", frappe.get_doc({"doctype": "Otto Permission Request"}))
-		doc.session = session
-		doc.tool_use_id = tool_use_id
-		doc.status = "Pending"
-		doc.save(ignore_permissions=True, ignore_version=True)
-		return doc
+	@property
+	def execution(self) -> str | None:
+		return self.execution_.get("name")
+
+	@property
+	def task(self) -> str | None:
+		return self.execution_.get("task")
+
+	@property
+	def target(self) -> str | None:
+		return self.execution_.get("target")
+
+	@property
+	def target_doctype(self) -> str | None:
+		return self.execution_.get("target_doctype")
 
 	@property
 	def tool_status(self):
@@ -54,7 +98,11 @@ class OttoPermissionRequest(Document):
 		return self.tool_use_["status"]
 
 	@property
-	def tool_name(self) -> str:
+	def tool_name(self) -> str | None:
+		return self.tool_.get("name")
+
+	@property
+	def tool_slug(self) -> str:
 		if not self.tool_use_:
 			return "unknown"
 
@@ -73,6 +121,19 @@ class OttoPermissionRequest(Document):
 			return None
 
 		return self.tool_use_["result"]
+
+	@staticmethod
+	def new(
+		*,
+		session: str,
+		tool_use_id: str,
+	):
+		doc = cast("OttoPermissionRequest", frappe.get_doc({"doctype": "Otto Permission Request"}))
+		doc.session = session
+		doc.tool_use_id = tool_use_id
+		doc.status = "Pending"
+		doc.save(ignore_permissions=True, ignore_version=True)
+		return doc
 
 	@frappe.whitelist()
 	def grant(self):

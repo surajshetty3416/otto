@@ -2,22 +2,25 @@ from typing import TypedDict
 
 import frappe
 
+import otto
+
 
 class Subject(TypedDict):
-	# Target
-	target: str | None
-	target_doctype: str | None
-
-	# DocType names
+	# Context
 	task: str
 	execution: str
 	session: str
 	permission: str
-	tool: str | None
 
-	# Values
+	# Target
+	target: str | None
+	target_doctype: str | None
+
+	# Tool
+	tool: str | None  # Otto Tool doc name
+	tool_slug: str | None
 	tool_use_id: str
-	args: dict
+	tool_args: dict
 
 
 def notify(perms: list[Subject]):
@@ -39,10 +42,7 @@ def notify(perms: list[Subject]):
 		# _send_notification(assigned, perm)
 
 	for user, perms in assigned_users_map.items():
-		_send_notification(user, perms)
-
-
-def _send_notification(user: str, perms: list[Subject]): ...
+		_create_notification_logs(user, perms)
 
 
 def _get_assigned_users(
@@ -83,3 +83,48 @@ def _get_assigned_users(
 		assignment_map.setdefault((user.reference_type, user.reference_name), set()).add(user.allocated_to)
 
 	return assignment_map
+
+
+def _create_notification_logs(user: str, perms: list[Subject]):
+	"""Create single notification log for each tool use request"""
+
+	tool_map: dict[str, list[Subject]] = {}
+	for perm in perms:
+		tool_map.setdefault(perm["tool_use_id"], []).append(perm)
+
+	for _, perms in tool_map.items():
+		_create_notification_log(user, perms)
+
+
+def _create_notification_log(user: str, perm: list[Subject]):
+	from frappe.desk.doctype.notification_log.notification_log import NotificationLog
+
+	subject = Subject(**perm[0])
+	for p in perm:
+		for key, value in p.items():
+			if not subject.get(key):
+				subject[key] = value
+
+	log = otto.new(NotificationLog)
+	log.for_user = user
+	log.type = "Alert"
+
+	log.document_type = "Otto Permission Request"
+	log.document_name = subject["permission"]
+
+	tool_title = subject["tool_slug"]
+	if subject["tool"]:
+		tool_title = frappe.get_cached_value("Otto Tool", subject["tool"], "title") or subject["tool_slug"]
+	task_title = frappe.get_cached_value("Otto Task", subject["task"], "title") or subject["task"]
+
+	log.subject = f"Request to use Tool <bold>{tool_title}</bold> for Task <bold>{task_title}</bold>"
+	if subject["target"] and subject["target_doctype"]:
+		log.subject += f" on <bold>{subject['target_doctype']} - {subject['target']}</bold>"
+	log.email_content = _get_email_content(subject)
+
+	log.insert(ignore_permissions=True)
+
+
+def _get_email_content(subject: Subject) -> str:
+	raise NotImplementedError
+	return ""

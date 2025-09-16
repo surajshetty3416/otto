@@ -5,7 +5,7 @@ import json
 from typing import Any, Literal
 
 __version__ = "0.0.1"
-__all__ = ["get", "log_error", "logger"]
+__all__ = ["get", "log_error", "logger", "new"]
 
 from typing import TypeVar, cast
 
@@ -69,16 +69,32 @@ classname_doctype_map: dict[str, str] = {}
 D = TypeVar("D", bound=Document)
 
 
-def get(Doc: type[D], name: str, *, cached: bool = False) -> D:
+def new(Doc: type[D]) -> D:
 	"""
-	Custom `get_doc` implementation for flow. Invocation uses class instead of doctype.
+	Custom `new_doc` implementation for otto. Invocation uses class instead of doctype.
 
 	This allows static type checking without having to manually cast to the
 	specific document type.
 
 	Example:
 	```
-	doc = get(FLScriptTask, task_name)
+	doc = otto.new(NotificationLog)
+	```
+	"""
+	doctype = get_doctype_name(Doc)
+	return cast("D", frappe.new_doc(doctype))
+
+
+def get(Doc: type[D], name: str, *, cached: bool = False) -> D:
+	"""
+	Custom `get_doc` implementation for otto. Invocation uses class instead of doctype.
+
+	This allows static type checking without having to manually cast to the
+	specific document type.
+
+	Example:
+	```
+	doc = otto.get(FLScriptTask, task_name)
 	```
 	"""
 

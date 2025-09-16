@@ -6,13 +6,13 @@ Considering that the author is NOT omniscient, they may be prone to making daft
 mistakes. If you find any convention to not be in good taste, please
 [raise an issue](https://github.com/frappe/otto/issues/new).
 
-
 ## Index
+
 - [`DocType.new`](#doctypenew)
+- [`otto.new`](#ottonew)
 - [`otto.get`](#ottoget)
 - [Avoid raising exceptions](#avoid-raising-exceptions)
 - [Otto and CT DocType prefix and suffix](#otto-and-ct-doctype-prefix-and-suffix)
-
 
 <!--
 
@@ -43,6 +43,16 @@ uses it instead. Every `new` method saves the doc before returning it.
 
 - Allows explicit control over doc creation (i.e. valid and invalid create invocations)
 - Allows typing the returned doc
+
+## `otto.new`
+
+Instead of using `frappe.new_doc`, `otto.new` is used. Example:
+
+```python
+log = otto.new(NotificationLog)
+```
+
+**Reason**: allows typing the returned doc
 
 ## `otto.get`
 

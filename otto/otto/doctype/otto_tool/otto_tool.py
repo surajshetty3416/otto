@@ -50,6 +50,7 @@ class OttoTool(Document):
 		reason: DF.SmallText | None
 		requires_permission: DF.Check
 		slug: DF.Data
+		title: DF.Data | None
 	# end: auto-generated types
 
 	@staticmethod
@@ -89,6 +90,7 @@ class OttoTool(Document):
 			raise frappe.ValidationError(f'Slug cannot be named "{self.slug}" as it is a meta tool')
 
 	def before_save(self):
+		self.set_title_or_slug()
 		reasons, args_def = execute.validate(self.code, self.slug)
 		if reasons:
 			return self.set_reason("\n".join(reasons))
@@ -100,6 +102,15 @@ class OttoTool(Document):
 		self.validate_arg_types()
 		self.validate_descriptions()
 		return None
+
+	def set_title_or_slug(self):
+		if self.title and not self.slug:
+			parts = [w.lower() for w in self.title.split() if w.isalpha()]
+			self.slug = "_".join(parts)
+
+		if self.slug and not self.title:
+			parts = [w.capitalize() for w in self.slug.split("_")]
+			self.title = " ".join(parts)
 
 	def set_args(self, args_def: list[execute.ArgDefinition]):
 		prev_meta = {a.arg_name: (a.type, a.description) for a in (self.args or [])}

@@ -536,3 +536,28 @@ def run_get_context(get_context: str, doc: Document | None, event: str):
 			content.append(json_dumps(r)[0])
 
 	return content
+
+
+@utils.cache(ttl=60)
+def get_tool_name(task: str, slug: str) -> str | None:
+	tool = frappe.get_all(
+		"Otto Task Tool CT",
+		filters={"parent": task, "slug": slug},
+		fields=["tool"],
+		pluck="tool",
+		limit=1,
+	)
+	if tool:
+		return tool[0]
+
+	tool = frappe.get_all(
+		"Otto Tool",
+		filters={"slug": slug},
+		fields=["name"],
+		pluck="name",
+		limit=1,
+	)
+	if tool:
+		return tool[0]
+
+	return None

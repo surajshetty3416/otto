@@ -6,6 +6,7 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "title",
   "slug",
   "requires_permission",
   "log_usage",
@@ -133,6 +134,11 @@
    "fieldname": "requires_permission",
    "fieldtype": "Check",
    "label": "Requires Permission"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "Title"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -142,7 +148,7 @@
    "link_fieldname": "tool"
   }
  ],
- "modified": "2025-09-15 10:59:05.078604",
+ "modified": "2025-09-16 11:39:12.319272",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Tool",
@@ -167,6 +173,6 @@
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
- "title_field": "slug",
+ "title_field": "title",
  "track_changes": 1
 }

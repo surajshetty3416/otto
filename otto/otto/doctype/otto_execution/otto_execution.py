@@ -194,15 +194,19 @@ class OttoExecution(Document):
 				assert permission.name is not None, "type check"
 				new_perms.append(
 					Subject(
+						# Context
 						task=self.task,
 						permission=permission.name,
-						tool_use_id=tool.id,
 						execution=self.name,
 						session=self.session,
+						# Target
 						target=self.target,
 						target_doctype=self.target_doctype,
+						# Tool
 						tool=tool_name,
-						args=tool.args,
+						tool_use_id=tool.id,
+						tool_slug=tool.name,
+						tool_args=tool.args,
 					)
 				)
 
@@ -363,7 +367,7 @@ class OttoExecution(Document):
 			filters["status"] = "Pending"
 
 		permissions = frappe.get_all(
-			"Otto Permission",
+			"Otto Permission Request",
 			filters=filters,
 			fields=["tool_use_id", "status"],
 		)
