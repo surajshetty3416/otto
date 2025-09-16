@@ -42,7 +42,6 @@ class OttoTool(Document):
 		args: DF.Table[OttoToolArgCT]
 		code: DF.Code
 		description: DF.LongText | None
-		group: DF.Link | None
 		is_valid: DF.Check
 		log_usage: DF.Check
 		mock_return_value: DF.Data | None

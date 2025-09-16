@@ -7,11 +7,10 @@
  "engine": "InnoDB",
  "field_order": [
   "title",
-  "slug",
   "requires_permission",
   "log_usage",
   "column_break_byai",
-  "group",
+  "slug",
   "mock_tool",
   "mock_return_value",
   "definition_section",
@@ -112,15 +111,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "group",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Group",
-   "options": "Otto Tool Group",
-   "search_index": 1
-  },
-  {
    "default": "0",
    "depends_on": "eval:!doc.mock_tool",
    "description": "Log args and return value as a Scrapbook entry.",
@@ -148,7 +138,7 @@
    "link_fieldname": "tool"
   }
  ],
- "modified": "2025-09-16 11:39:12.319272",
+ "modified": "2025-09-16 11:53:00.684940",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Tool",
