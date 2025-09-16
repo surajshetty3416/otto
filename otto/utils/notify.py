@@ -107,7 +107,7 @@ def _create_notification_log(user: str, perm: list[Subject]):
 
 	log = otto.new(NotificationLog)
 	log.for_user = user
-	log.type = "Alert"
+	log.type = ""  # Alert notifications are not sent via email
 
 	log.document_type = "Otto Permission Request"
 	log.document_name = subject["permission"]
