@@ -2,7 +2,6 @@
 # For license information, please see license.txt
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING, NamedTuple, cast
 
 import frappe
@@ -209,80 +208,6 @@ class OttoTask(Document):
 		assert self.name is not None, "type check"
 		return get_tools(self.name)
 
-	@frappe.whitelist()
-	def export_task(self):
-		# TODO: update this to match refactor
-		llm = frappe.get_all(
-			"Otto LLM",
-			filters={"name": self.llm},
-			fields=["name", "title", "provider", "is_reasoning"],
-		)[0]
-		data: dict = dict(
-			title=self.title,
-			llm=llm,
-			event=self.event,
-			condition=self.condition,
-			get_context=self.get_context,
-			instruction=self.instruction,
-			target_doctype=self.target_doctype,
-			reasoning_effort=self.reasoning_effort,
-			tools=[],
-			groups=[],
-		)
-
-		tool_names = [tool.tool for tool in self.tools if tool.is_enabled]
-		tools = frappe.get_all(
-			"Otto Tool",
-			filters={"name": ("in", tool_names)},
-			fields=[
-				"name",
-				"slug",
-				"description",
-				"code",
-				"group",
-				"is_valid",
-				"mock_tool",
-				"mock_return_value",
-			],
-		)
-		tool_map = {tool.name: tool for tool in tools}
-
-		args = frappe.get_all(
-			"Otto Tool Arg CT",
-			filters={"parent": ("in", tool_names)},
-			fields=["parent", "arg_name", "type", "is_required", "description"],
-		)
-		for arg in args:
-			tool_map.get(arg.parent, {}).setdefault("args", []).append(
-				{
-					"arg_name": arg.arg_name,
-					"type": arg.type,
-					"is_required": arg.is_required,
-					"description": arg.description,
-				}
-			)
-
-		slug_map = {t.name: t.slug for t in tools}
-		for tool in tools:
-			if not tool.get("is_valid"):
-				raise frappe.ValidationError(f"Tool {tool.get('slug')} is not valid")
-
-			del tool["name"]
-			del tool["is_valid"]
-			data["tools"].append(tool)
-
-		groups = list(set([tool.group for tool in tools if tool.group]))
-		data["groups"] = frappe.get_all(
-			"Otto Tool Group",
-			filters={"name": ("in", groups)},
-			fields=["name", "description"],
-		)
-
-		# (actual slug, override slug)
-		data["task_tools"] = [(slug_map.get(t.tool), t.slug or None) for t in self.tools if t.is_enabled]
-
-		return data
-
 
 def common_handler(doctype: Document, event: str | None = None):
 	try:
@@ -449,58 +374,6 @@ def test_condition(task: str, condition: str, doc: Document) -> bool:
 		)
 
 	return False
-
-
-@frappe.whitelist()
-def import_task(data: str):
-	# TODO: update this to match refactor
-	_data = json.loads(data)
-
-	from otto.otto.doctype.otto_tool.otto_tool import OttoTool
-	from otto.otto.doctype.otto_tool_group.otto_tool_group import OttoToolGroup
-
-	llm = _data["llm"]
-	if not frappe.db.exists("Otto LLM", llm["name"]):
-		from otto.otto.doctype.otto_llm.otto_llm import OttoLLM
-
-		OttoLLM.new(
-			name=llm["name"],
-			title=llm["title"],
-			provider=llm["provider"],
-			size=llm["size"],
-			is_reasoning=llm.get("is_reasoning", False),
-		)
-
-	for group in _data["groups"]:
-		if not frappe.db.exists("Otto Tool Group", group["name"]):
-			OttoToolGroup.new(group["name"], group["description"])
-
-	slug_map = {}  # dict[tool_name, tool_slug]
-	for t in _data["tools"]:
-		tool = OttoTool.new(
-			t["slug"],
-			t["description"],
-			t["code"],
-			group=t.get("group", None),
-			args=t.get("args", []),
-			mock_tool=t.get("mock_tool", False),
-			mock_return_value=t.get("mock_return_value", None),
-		)
-		slug_map[tool.slug] = tool.name
-
-	task = OttoTask.new(
-		_data["title"],
-		_data["event"],
-		_data["target_doctype"],
-		reasoning_effort=_data.get("reasoning_effort", "None"),
-		llm=_data["llm"]["name"],
-		condition=_data["condition"],
-		get_context=_data["get_context"],
-		instruction=_data["instruction"],
-		tools=[{"tool": slug_map[a], "slug": o} for a, o in _data["task_tools"]],
-	)
-
-	return task.name
 
 
 def run_get_context(get_context: str, doc: Document | None, event: str):

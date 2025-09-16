@@ -145,31 +145,9 @@ frappe.ui.form.on("Otto Task", {
 			});
 		}
 
-		function export_task() {
-			frappe.call({
-				method: "export_task",
-				doc: frm.doc,
-				callback: function (r) {
-					if (!r.message) return;
-
-					const blob = new Blob([JSON.stringify(r.message, null, 2)], {
-						type: "application/json",
-					});
-
-					const filename = `Otto Task - ${frm.doc.title}.json`;
-					const a = document.createElement("a");
-					a.href = URL.createObjectURL(blob);
-					a.download = filename;
-					a.click();
-					URL.revokeObjectURL(a.href);
-				},
-			});
-		}
-
 		frm.add_custom_button("Execute Task", execute_task);
 		frm.add_custom_button("Test Get Context", test_get_context, "Utilities");
 		frm.add_custom_button("List Tool Schemas", list_tools, "Utilities");
-		// frm.add_custom_button("Export Task", export_task, "Utilities");
 
 		frappe.ui.keys.add_shortcut({ shortcut: "shift+e", action: execute_task, page: frm.page });
 		frappe.ui.keys.add_shortcut({
