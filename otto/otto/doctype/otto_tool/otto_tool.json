@@ -8,7 +8,6 @@
  "field_order": [
   "title",
   "requires_permission",
-  "log_usage",
   "column_break_byai",
   "slug",
   "mock_tool",
@@ -112,14 +111,6 @@
   },
   {
    "default": "0",
-   "depends_on": "eval:!doc.mock_tool",
-   "description": "Log args and return value as a Scrapbook entry.",
-   "fieldname": "log_usage",
-   "fieldtype": "Check",
-   "label": "Log Usage"
-  },
-  {
-   "default": "0",
    "description": "Tool requires permission to execute.\n\nIf checked an Otto Permission entry will be created during task execution when this tool is called by the LLM.",
    "fieldname": "requires_permission",
    "fieldtype": "Check",
@@ -138,7 +129,7 @@
    "link_fieldname": "tool"
   }
  ],
- "modified": "2025-09-16 11:53:00.684940",
+ "modified": "2025-09-16 11:54:03.387921",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Tool",
