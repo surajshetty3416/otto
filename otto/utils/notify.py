@@ -40,7 +40,6 @@ def notify(perms: list[Subject]):
 
 		for user in assigned:
 			assigned_users_map.setdefault(user, []).append(perm)
-		# _send_notification(assigned, perm)
 
 	for user, perms in assigned_users_map.items():
 		_create_notification_logs(user, perms)
@@ -143,12 +142,15 @@ def _notify(user: str, perm: list[Subject]):
 	log.email_content = to_html(message)
 	log.insert(ignore_permissions=True)
 
-	frappe.sendmail(
-		recipients=[user],
-		subject=log.subject,
-		template="otto_permission_request",
-		args={
-			"message": message,
-			"link": f"/app/otto-permission-request/{subject['permission']}",
-		},
-	)
+	try:
+		frappe.sendmail(
+			recipients=[user],
+			subject=log.subject,
+			template="otto_permission_request",
+			args={
+				"message": message,
+				"link": f"/app/otto-permission-request/{subject['permission']}",
+			},
+		)
+	except Exception:
+		otto.log_error("error sending email", recipient=user)
