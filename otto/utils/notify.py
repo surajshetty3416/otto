@@ -3,6 +3,7 @@ from typing import TypedDict
 import frappe
 
 import otto
+from otto.utils import to_html
 
 
 class Subject(TypedDict):
@@ -93,10 +94,10 @@ def _create_notification_logs(user: str, perms: list[Subject]):
 		tool_map.setdefault(perm["tool_use_id"], []).append(perm)
 
 	for _, perms in tool_map.items():
-		_create_notification_log(user, perms)
+		_notify(user, perms)
 
 
-def _create_notification_log(user: str, perm: list[Subject]):
+def _notify(user: str, perm: list[Subject]):
 	from frappe.desk.doctype.notification_log.notification_log import NotificationLog
 
 	subject = Subject(**perm[0])
@@ -105,100 +106,49 @@ def _create_notification_log(user: str, perm: list[Subject]):
 			if not subject.get(key):
 				subject[key] = value
 
-	log = otto.new(NotificationLog)
-	log.for_user = user
-	log.type = ""  # Alert notifications are not sent via email
-
-	log.document_type = "Otto Permission Request"
-	log.document_name = subject["permission"]
-
 	tool_title = subject["tool_slug"]
 	if subject["tool"]:
-		tool_title = frappe.get_cached_value("Otto Tool", subject["tool"], "title") or subject["tool_slug"]
-	task_title = frappe.get_cached_value("Otto Task", subject["task"], "title") or subject["task"]
-
-	log.subject = f"Permission required to use tool <strong>{tool_title}</strong> for task <strong>{task_title}</strong>"
-	# if subject["target"] and subject["target_doctype"]:
-	# 	log.subject += f" on target <strong>{subject['target_doctype']} - {subject['target']}</strong>"
-
-	log.email_content = _get_email_content(
-		subject=subject,
-		task_title=task_title,
-		tool_title=tool_title,
+		tool_title = (
+			frappe.get_cached_value(
+				"Otto Tool",
+				subject["tool"],
+				"title",
+			)
+			or subject["tool_slug"]
+		)
+	task_title = (
+		frappe.get_cached_value(
+			"Otto Task",
+			subject["task"],
+			"title",
+		)
+		or subject["task"]
 	)
 
+	message = (
+		f"Permission requested to use tool <strong>{tool_title}</strong> "
+		f"for task <strong>{task_title}</strong>"
+	)
+	if subject["target"] and subject["target_doctype"]:
+		message += f" on target <strong>{subject['target_doctype']} - {subject['target']}</strong>"
+
+	# Alert logs do not send emails
+	# hence emails need to be manually sent
+	log = otto.new(NotificationLog)
+	log.for_user = user
+	log.type = "Alert"
+	log.document_type = "Otto Permission Request"
+	log.document_name = subject["permission"]
+	log.subject = f"Otto Permission Request - {tool_title} for task {task_title}"
+	log.email_content = to_html(message)
 	log.insert(ignore_permissions=True)
 
-
-def _get_email_content(
-	*,
-	subject: Subject,
-	task_title: str | None,
-	tool_title: str,
-) -> str:
-	from frappe.utils import escape_html, get_url
-
-	from otto.utils import to_html
-
-	base_url = get_url()
-	if subject["tool"]:
-		message = (
-			f"Permission required to use tool **[{tool_title}]({base_url}/app/otto-tool/{subject['tool']}])** "
-			f"for task **[{task_title}]({base_url}/app/otto-task/{subject['task']})**"
-		)
-	else:
-		message = (
-			f"Permission required to use tool **{tool_title}** "
-			f"for task **[{task_title}]({base_url}/app/otto-task/{subject['task']})**"
-		)
-
-	if subject["target"] and subject["target_doctype"]:
-		doc_slug = subject["target_doctype"].lower().replace(" ", "-")
-		target_url = f"{base_url}/app/{doc_slug}/{subject['target']}"
-		message += f" on target **[{subject['target_doctype']} - {subject['target']}]({target_url})**"
-
-	req_url = f"{base_url}/app/otto-permission-request/{subject['permission']}"
-	md_parts = [
-		message,
-		"",
-		f"[Click here to view permission request]({req_url})",
-		"",
-		"---",
-		"",
-	]
-
-	args = subject["tool_args"].items()
-
-	if len(args) > 0:
-		md_parts.extend(
-			[
-				"### Tool Arguments",
-				"",
-			]
-		)
-	for name, value in args:
-		if name == "explanation":
-			continue
-
-		md_parts.extend(
-			[
-				f"**{name.replace('_', ' ').title()}:**",
-				f"```markdown\n{escape_html(value)}\n```",
-				"",
-			]
-		)
-
-	if explanation := subject["tool_args"].get("explanation"):
-		md_parts.extend(
-			[
-				f"_**Usage reason:** {escape_html(explanation)}_",
-				"",
-			]
-		)
-
-	md_parts.append(
-		f"[View Session]({base_url}app/view-otto-session/{subject['session']})",
+	frappe.sendmail(
+		recipients=[user],
+		subject=log.subject,
+		template="otto_permission_request",
+		args={
+			"message": message,
+			"link": f"/app/otto-permission-request/{subject['permission']}",
+		},
 	)
-
-	md_content = "\n\n".join(md_parts)
-	return to_html(md_content)
