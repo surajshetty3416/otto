@@ -159,22 +159,27 @@ class OttoPermissionRequest(Document):
 
 	@frappe.whitelist()
 	def grant(self, override_args: dict | None = None):
-		if override_args:
-			set_override(self.session, self.tool_use_id, override_args)
-			self.args_updated = True
-
-		self.acknowledge("Granted")
+		return self.acknowledge("Granted", override_args)
 
 	@frappe.whitelist()
 	def deny(self):
-		self.acknowledge("Denied")
+		return self.acknowledge("Denied")
 
-	def acknowledge(self, status: Literal["Granted", "Denied"]):
+	def acknowledge(
+		self,
+		status: Literal["Granted", "Denied"],
+		override_args: dict | None = None,
+	):
 		if self.status != "Pending":
-			return
+			return {"message": "Request already acknowledged"}
+
+		if override_args and status == "Granted":
+			set_override(self.session, self.tool_use_id, override_args)
+			self.args_updated = True
 
 		self.set_status(status)
 		self.resume()
+		return {"message": f"Request {status.lower()}"}
 
 	def set_status(self, status: Literal["Granted", "Denied"]):
 		self.status = status

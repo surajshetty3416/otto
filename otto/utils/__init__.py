@@ -48,3 +48,21 @@ def drain(generator: Generator[Any, None, Any]) -> Any:
 			next(generator)
 		except StopIteration as e:
 			return e.value
+
+
+def to_html(content: str):
+	"""Converts provided markdown to HTML"""
+	from markdown2 import markdown
+
+	extras = {
+		"fenced-code-blocks": None,
+		"tables": None,
+		"strike": None,
+		"cuddled-lists": None,
+		"footnotes": None,
+		"header-ids": None,
+		"target-blank-links": None,
+		"html-classes": {"table": "table table-bordered", "img": "screenshot"},
+	}
+
+	return markdown(content, extras=extras)

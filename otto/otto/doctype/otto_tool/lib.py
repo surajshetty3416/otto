@@ -80,20 +80,9 @@ def get_env(env: dict | None = None):
 
 def to_html(content: str):
 	"""Converts provided markdown to HTML"""
-	from markdown2 import markdown
+	from otto.utils import to_html
 
-	extras = {
-		"fenced-code-blocks": None,
-		"tables": None,
-		"strike": None,
-		"cuddled-lists": None,
-		"footnotes": None,
-		"header-ids": None,
-		"target-blank-links": None,
-		"html-classes": {"table": "table table-bordered", "img": "screenshot"},
-	}
-
-	return markdown(content, extras=extras)
+	return to_html(content)
 
 
 def set_user(user: str):

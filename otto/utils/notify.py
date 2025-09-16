@@ -18,13 +18,13 @@ class Subject(TypedDict):
 
 	# Tool
 	tool: str | None  # Otto Tool doc name
-	tool_slug: str | None
+	tool_slug: str
 	tool_use_id: str
 	tool_args: dict
 
 
 def notify(perms: list[Subject]):
-	"""Sends notification to all assigned users"""
+	"""Sends notification to all assigned users for tool use request"""
 
 	assigned_users = _get_assigned_users(perms)
 	assigned_users_map: dict[str, list[Subject]] = {}
@@ -117,14 +117,88 @@ def _create_notification_log(user: str, perm: list[Subject]):
 		tool_title = frappe.get_cached_value("Otto Tool", subject["tool"], "title") or subject["tool_slug"]
 	task_title = frappe.get_cached_value("Otto Task", subject["task"], "title") or subject["task"]
 
-	log.subject = f"Request to use Tool <bold>{tool_title}</bold> for Task <bold>{task_title}</bold>"
-	if subject["target"] and subject["target_doctype"]:
-		log.subject += f" on <bold>{subject['target_doctype']} - {subject['target']}</bold>"
-	log.email_content = _get_email_content(subject)
+	log.subject = f"Permission required to use tool <strong>{tool_title}</strong> for task <strong>{task_title}</strong>"
+	# if subject["target"] and subject["target_doctype"]:
+	# 	log.subject += f" on target <strong>{subject['target_doctype']} - {subject['target']}</strong>"
+
+	log.email_content = _get_email_content(
+		subject=subject,
+		task_title=task_title,
+		tool_title=tool_title,
+	)
 
 	log.insert(ignore_permissions=True)
 
 
-def _get_email_content(subject: Subject) -> str:
-	raise NotImplementedError
-	return ""
+def _get_email_content(
+	*,
+	subject: Subject,
+	task_title: str | None,
+	tool_title: str,
+) -> str:
+	from frappe.utils import escape_html, get_url
+
+	from otto.utils import to_html
+
+	base_url = get_url()
+	if subject["tool"]:
+		message = (
+			f"Permission required to use tool **[{tool_title}]({base_url}/app/otto-tool/{subject['tool']}])** "
+			f"for task **[{task_title}]({base_url}/app/otto-task/{subject['task']})**"
+		)
+	else:
+		message = (
+			f"Permission required to use tool **{tool_title}** "
+			f"for task **[{task_title}]({base_url}/app/otto-task/{subject['task']})**"
+		)
+
+	if subject["target"] and subject["target_doctype"]:
+		doc_slug = subject["target_doctype"].lower().replace(" ", "-")
+		target_url = f"{base_url}/app/{doc_slug}/{subject['target']}"
+		message += f" on target **[{subject['target_doctype']} - {subject['target']}]({target_url})**"
+
+	req_url = f"{base_url}/app/otto-permission-request/{subject['permission']}"
+	md_parts = [
+		message,
+		"",
+		f"[Click here to view permission request]({req_url})",
+		"",
+		"---",
+		"",
+	]
+
+	args = subject["tool_args"].items()
+
+	if len(args) > 0:
+		md_parts.extend(
+			[
+				"### Tool Arguments",
+				"",
+			]
+		)
+	for name, value in args:
+		if name == "explanation":
+			continue
+
+		md_parts.extend(
+			[
+				f"**{name.replace('_', ' ').title()}:**",
+				f"```markdown\n{escape_html(value)}\n```",
+				"",
+			]
+		)
+
+	if explanation := subject["tool_args"].get("explanation"):
+		md_parts.extend(
+			[
+				f"_**Usage reason:** {escape_html(explanation)}_",
+				"",
+			]
+		)
+
+	md_parts.append(
+		f"[View Session]({base_url}app/view-otto-session/{subject['session']})",
+	)
+
+	md_content = "\n\n".join(md_parts)
+	return to_html(md_content)
