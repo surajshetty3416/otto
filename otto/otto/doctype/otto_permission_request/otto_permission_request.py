@@ -11,7 +11,7 @@ from otto.lib.types import ToolUseContent
 from otto.lib.utils import get_tool_use
 
 
-class OttoPermission(Document):
+class OttoPermissionRequest(Document):
 	# begin: auto-generated types
 	# This code is auto-generated. Do not modify anything in this block.
 
@@ -39,7 +39,7 @@ class OttoPermission(Document):
 		session: str,
 		tool_use_id: str,
 	):
-		doc = cast("OttoPermission", frappe.get_doc({"doctype": "Otto Permission"}))
+		doc = cast("OttoPermissionRequest", frappe.get_doc({"doctype": "Otto Permission Request"}))
 		doc.session = session
 		doc.tool_use_id = tool_use_id
 		doc.status = "Pending"

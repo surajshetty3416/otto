@@ -171,7 +171,7 @@ class OttoExecution(Document):
 		content, it executes the requested tools and appends the results to the
 		session. It also handles special meta tools, like `end_task`.
 		"""
-		from otto.otto.doctype.otto_permission.otto_permission import OttoPermission
+		from otto.otto.doctype.otto_permission_request.otto_permission_request import OttoPermissionRequest
 		from otto.otto.doctype.otto_task.otto_task import get_tool_map
 		from otto.utils.notify import Subject
 
@@ -189,7 +189,7 @@ class OttoExecution(Document):
 
 			if requires_permission and tool.id not in permission_map:
 				assert self.name is not None, "type check"
-				permission = OttoPermission.new(session=self.session, tool_use_id=tool.id)
+				permission = OttoPermissionRequest.new(session=self.session, tool_use_id=tool.id)
 
 				assert permission.name is not None, "type check"
 				new_perms.append(

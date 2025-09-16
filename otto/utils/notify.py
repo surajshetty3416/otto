@@ -22,26 +22,9 @@ class Subject(TypedDict):
 
 def notify(perms: list[Subject]):
 	"""Sends notification to all assigned users"""
-	targets: list[tuple[str, str]] = list(
-		set(
-			(perm["target_doctype"], perm["target"])
-			for perm in perms
-			if perm["target"] and perm["target_doctype"]
-		)
-	)
 
-	execs = list(set(perm["execution"] for perm in perms))
-	sessions = list(set(perm["session"] for perm in perms))
-	tasks = list(set(perm["task"] for perm in perms))
-	tools = list(set(perm["tool"] for perm in perms if perm["tool"]))
-
-	assigned_users = _get_assigned_users(
-		targets=targets,
-		tasks=tasks,
-		tools=tools,
-		executions=execs,
-		sessions=sessions,
-	)
+	assigned_users = _get_assigned_users(perms)
+	assigned_users_map: dict[str, list[Subject]] = {}
 
 	for perm in perms:
 		target_assigned = assigned_users.get((perm["target_doctype"] or "", perm["target"] or ""), set())
@@ -50,19 +33,33 @@ def notify(perms: list[Subject]):
 		exec_assigned = assigned_users.get(("Otto Execution", perm["execution"]), set())
 		session_assigned = assigned_users.get(("Otto Session", perm["session"]), set())
 		assigned = target_assigned | task_assigned | tool_assigned | exec_assigned | session_assigned
-		_send_notification(assigned, perm)
+
+		for user in assigned:
+			assigned_users_map.setdefault(user, []).append(perm)
+		# _send_notification(assigned, perm)
+
+	for user, perms in assigned_users_map.items():
+		_send_notification(user, perms)
 
 
-def _send_notification(assigned: set[str], subject: Subject): ...
+def _send_notification(user: str, perms: list[Subject]): ...
 
 
 def _get_assigned_users(
-	targets: list[tuple[str, str]],
-	tasks: list[str],
-	tools: list[str],
-	executions: list[str],
-	sessions: list[str],
+	perms: list[Subject],
 ):
+	targets: list[tuple[str, str]] = list(
+		set(
+			(perm["target_doctype"], perm["target"])
+			for perm in perms
+			if perm["target"] and perm["target_doctype"]
+		)
+	)
+	executions = list(set(perm["execution"] for perm in perms))
+	sessions = list(set(perm["session"] for perm in perms))
+	tasks = list(set(perm["task"] for perm in perms))
+	tools = list(set(perm["tool"] for perm in perms if perm["tool"]))
+
 	# Implementation from doc.get_assigned_users
 	reference_types = ["Otto Task", "Otto Tool", "Otto Execution", "Otto Session"]
 	reference_names = [*tasks, *tools, *executions, *sessions]

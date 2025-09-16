@@ -11,9 +11,9 @@ EXTRA_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 IGNORE_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 
 
-class IntegrationTestOttoPermission(IntegrationTestCase):
+class IntegrationTestOttoPermissionRequest(IntegrationTestCase):
 	"""
-	Integration tests for OttoPermission.
+	Integration tests for OttoPermissionRequest.
 	Use this class for testing interactions between multiple components.
 	"""
 
