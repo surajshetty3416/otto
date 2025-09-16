@@ -76,6 +76,18 @@ const show = ref(false);
 				<ContentViewer :value="call.args" class="content-viewer" />
 			</div>
 
+			<!-- Override -->
+			<div class="row-body-item" v-if="call.override">
+				<div
+					class="label"
+					title="Arg overrides provided by the user. Click to copy."
+					@click="copy_to_clipboard(call.override)"
+				>
+					Overrides
+				</div>
+				<ContentViewer :value="call.override" class="content-viewer" />
+			</div>
+
 			<!-- Result -->
 			<div class="row-body-item">
 				<div

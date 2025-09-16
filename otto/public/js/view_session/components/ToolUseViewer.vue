@@ -16,6 +16,7 @@ const lengths = reactive({
 
 const show = ref({
 	args: showDefault("args"),
+	override: showDefault("override"),
 	result: showDefault("result") && props.content.name !== "end_task",
 });
 
@@ -99,6 +100,24 @@ const isMetaTool = computed(() => {
 				</div>
 			</div>
 			<ContentViewer v-if="show.args" class="content-viewer" :value="content.args" />
+		</div>
+
+		<!-- Args -->
+		<div v-if="content.override" class="tool-use-section">
+			<div
+				title="Toggle Override. Arg overrides are provided by the user"
+				class="tool-use-section-header"
+				@click="show.override = !show.override"
+			>
+				<p>Override</p>
+				<div class="chevron-container">
+					<p :title="`Length of override when stringified ${lengths.override}`">
+						{{ lengths.override }}
+					</p>
+					<div v-html="get_chevron(show.override)"></div>
+				</div>
+			</div>
+			<ContentViewer v-if="show.override" class="content-viewer" :value="content.override" />
 		</div>
 
 		<!-- Results -->

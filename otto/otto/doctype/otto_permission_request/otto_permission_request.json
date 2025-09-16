@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "hash",
  "creation": "2025-09-16 09:55:23.434319",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -9,8 +10,11 @@
   "tool_use_id",
   "column_break_ncdl",
   "status",
+  "args_updated",
   "section_break_dkux",
   "tool_use_args",
+  "descriptions",
+  "section_break_qiok",
   "tool_use_result",
   "section_break_zulo",
   "tool_name",
@@ -85,9 +89,10 @@
    "fieldtype": "Column Break"
   },
   {
+   "description": "To change the args, edit them before granting permission.",
    "fieldname": "section_break_dkux",
    "fieldtype": "Section Break",
-   "label": "Content"
+   "label": "Args"
   },
   {
    "depends_on": "eval:doc.tool_status !== \"pending\"",
@@ -150,15 +155,36 @@
    "fieldtype": "Data",
    "is_virtual": 1,
    "label": "Tool Slug"
+  },
+  {
+   "fieldname": "section_break_qiok",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "descriptions",
+   "fieldtype": "JSON",
+   "hidden": 1,
+   "is_virtual": 1,
+   "label": "Descriptions"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.args_updated",
+   "description": "If set then <b>Args</b> were updated before granting permission.",
+   "fieldname": "args_updated",
+   "fieldtype": "Check",
+   "label": "Args Updated",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-16 11:45:18.284413",
+ "modified": "2025-09-16 13:56:25.889740",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Permission Request",
+ "naming_rule": "Random",
  "owner": "Administrator",
  "permissions": [
   {

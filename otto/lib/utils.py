@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from contextlib import suppress
 
 import frappe
 
@@ -91,6 +92,7 @@ def get_tool_use(session_id: str, tool_use_id: str) -> ToolUseContent | None:
 			jt.type,
 			jt.name,
 			jt.args,
+			jt.override,
 			jt.status,
 			jt.result,
 			jt.start_time,
@@ -104,6 +106,7 @@ def get_tool_use(session_id: str, tool_use_id: str) -> ToolUseContent | None:
 				type TEXT PATH '$.type',
 				name TEXT PATH '$.name',
 				args JSON PATH '$.args',
+				override JSON PATH '$.override',
 				status TEXT PATH '$.status',
 				result TEXT PATH '$.result',
 				start_time FLOAT PATH '$.start_time',
@@ -129,14 +132,20 @@ def get_tool_use(session_id: str, tool_use_id: str) -> ToolUseContent | None:
 
 	row = result[0]
 	args = {}
+	override = None
 	if row["args"]:
 		args = json.loads(row["args"])
+
+	if row["override"]:
+		with suppress(json.JSONDecodeError):
+			override = json.loads(row["override"])
 
 	return ToolUseContent(
 		type="tool_use",
 		id=row["id"],
 		name=row["name"],
 		args=args,
+		override=override,
 		status=row["status"],
 		result=row["result"],
 		start_time=row["start_time"] or 0.0,

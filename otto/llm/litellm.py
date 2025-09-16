@@ -311,6 +311,7 @@ def _get_tool_use_content(message: dict[str, Any]) -> list[ToolUseContent]:
 				id=tool_call.get("id"),
 				name=func.get("name"),
 				args=json.loads(func.get("arguments")),
+				override=None,
 				status="pending",
 				result=None,
 				start_time=0,

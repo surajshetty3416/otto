@@ -237,6 +237,7 @@ def set_tool_use_info(info: dict[str, Any]):
 				"index": (i, j),  # session item index, content index
 				"result": result,
 				"args": c.get("args", {}),
+				"override": c.get("override", {}),
 				"status": status,
 				"start_time": c.get("start_time", 0),
 				"end_time": c.get("end_time", 0),

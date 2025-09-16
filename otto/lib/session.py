@@ -14,6 +14,7 @@ from otto.lib.types import (
 	SessionItem,
 	SessionStats,
 	ToolSchema,
+	ToolUseContent,
 	ToolUseUpdate,
 )
 from otto.llm import utils
@@ -215,7 +216,7 @@ class Session:
 					PendingToolUse(
 						id=content["id"],
 						name=content["name"],
-						args=content["args"],
+						args=_get_args_from_tool_use_content(content),
 					)
 				)
 
@@ -437,3 +438,10 @@ def load(id: str) -> Session:
 		A `Session` instance corresponding to the given ID.
 	"""
 	return Session.load(id)
+
+
+def _get_args_from_tool_use_content(content: ToolUseContent) -> dict:
+	if not content["override"]:
+		return content["args"]
+
+	return {**content["args"], **content["override"]}

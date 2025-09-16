@@ -20,11 +20,13 @@ class OttoPermissionRequest(Document):
 	if TYPE_CHECKING:
 		from frappe.types import DF
 
+		args_updated: DF.Check
 		session: DF.Link
 		status: DF.Literal["Pending", "Granted", "Denied"]
 		tool_use_id: DF.Data
 	# end: auto-generated types
 
+	_descriptions: dict[str, str] | None = None
 	_tool: dict[str, str] | None = None
 	_execution: dict[str, str] | None = None
 	_tool_use: ToolUseContent | None = None
@@ -67,6 +69,22 @@ class OttoPermissionRequest(Document):
 			self._tool = tool[0]
 
 		return self._tool or {}
+
+	@property
+	def descriptions(self) -> dict[str, str]:
+		if not self.tool_name:
+			return {}
+
+		if self._descriptions:
+			return self._descriptions
+
+		desc = frappe.get_all(
+			"Otto Tool Arg CT",
+			filters={"parent": self.tool_name},
+			fields=["arg_name", "description"],
+		)
+		self._descriptions = {d.arg_name: d.description for d in desc}
+		return self._descriptions
 
 	@property
 	def tool_use_(self) -> ToolUseContent | None:
@@ -113,7 +131,11 @@ class OttoPermissionRequest(Document):
 		if not self.tool_use_:
 			return "{}"
 
-		return json.dumps(self.tool_use_["args"], indent=2)
+		args = self.tool_use_["args"]
+		if self.tool_use_["override"]:
+			args = {**args, **self.tool_use_["override"]}
+
+		return json.dumps(args, indent=2)
 
 	@property
 	def tool_use_result(self) -> str | None:
@@ -136,7 +158,11 @@ class OttoPermissionRequest(Document):
 		return doc
 
 	@frappe.whitelist()
-	def grant(self):
+	def grant(self, override_args: dict | None = None):
+		if override_args:
+			set_override(self.session, self.tool_use_id, override_args)
+			self.args_updated = True
+
 		self.acknowledge("Granted")
 
 	@frappe.whitelist()
@@ -172,4 +198,29 @@ class OttoPermissionRequest(Document):
 			name=execs[0],
 			method="resume",
 			timeout=get_timeout(),
+			enqueue_after_commit=True,
 		)
+
+
+def set_override(session: str, tool_use_id: str, override_args: dict):
+	items = frappe.db.get_all(
+		"Otto Session Item CT",
+		filters={"parent": session, "role": "agent"},
+		fields=["name", "content"],
+	)
+
+	for item in items:
+		content = json.loads(item["content"])
+
+		for content_item in content:
+			if content_item["type"] != "tool_use" or content_item["id"] != tool_use_id:
+				continue
+
+			content_item["override"] = override_args
+			frappe.db.set_value(
+				"Otto Session Item CT",
+				item["name"],
+				"content",
+				json.dumps(content),
+			)
+			break
