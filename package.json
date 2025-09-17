@@ -7,7 +7,7 @@
     "postinstall": "cd frontend && npm install",
     "build": "npm run build-app && npm run build-email-css",
     "build-app": "cd frontend && npm run build",
-    "build-email-css": "npx tailwindcss -i ./otto/templates/emails/style.css -o ./otto/templates/emails/email.css --config ./otto/templates/emails/tailwind.config.js"
+    "build-email-css": "npx tailwindcss -i ./otto/templates/emails/style.css -o ./otto/public/css/email.css --config ./otto/templates/emails/tailwind.config.js"
   },
   "devDependencies": {
     "tailwindcss": "^3.2"
