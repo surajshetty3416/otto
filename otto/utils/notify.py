@@ -4,7 +4,6 @@ import frappe
 
 import otto
 from otto import utils
-from otto.utils import to_html
 
 logger = otto.logger("otto.utils.notify", level="DEBUG")
 
@@ -30,8 +29,10 @@ class PermissionRequest(TypedDict):
 def notify(perms: list[PermissionRequest]):
 	"""Sends notification to all assigned users for tool use request"""
 
-	assigned_users = _get_assigned_users(perms)
 	users_map: dict[tuple[str, str], list[PermissionRequest]] = {}
+
+	assigned_users = _get_assigned_users(perms)
+	user_assignments: dict[str, dict[str, set[tuple[str, str]]]] = {}
 
 	for perm in perms:
 		target_assigned = assigned_users.get((perm["target_doctype"] or "", perm["target"] or ""), set())
@@ -42,10 +43,27 @@ def notify(perms: list[PermissionRequest]):
 		assigned = target_assigned | task_assigned | tool_assigned | exec_assigned | session_assigned
 
 		for user in assigned:
+			assignments = []
+			if user in target_assigned and perm["target_doctype"] and perm["target"]:
+				assignments.append((perm["target_doctype"], perm["target"]))
+			if user in task_assigned:
+				assignments.append(("Otto Task", perm["task"]))
+			if user in tool_assigned:
+				assignments.append(("Otto Tool", perm["tool"] or ""))
+			if user in exec_assigned:
+				assignments.append(("Otto Execution", perm["execution"]))
+			if user in session_assigned:
+				assignments.append(("Otto Session", perm["session"]))
+
+			user_assignments.setdefault(user, {}).setdefault(perm["permission"], set()).update(assignments)
 			users_map.setdefault((user, perm["permission"]), []).append(perm)
 
 	for (user, _), perms in users_map.items():
-		_notify(user, perms)
+		_notify(
+			user=user,
+			perms=perms,
+			assignments=user_assignments.get(user, {}).get(perms[0]["permission"], set()),
+		)
 
 
 def _get_assigned_users(
@@ -88,9 +106,15 @@ def _get_assigned_users(
 	return assignment_map
 
 
-def _notify(user: str, perms: list[PermissionRequest]):
+def _notify(
+	user: str,
+	perms: list[PermissionRequest],
+	assignments: set[tuple[str, str]],
+):
 	"""Send notification to user for permission request"""
 	from frappe.desk.doctype.notification_log.notification_log import NotificationLog
+
+	assignments_str = ", ".join([f"{doctype} - {name}" for doctype, name in assignments])
 
 	perm = PermissionRequest(**perms[0])
 	for p in perms:
@@ -100,7 +124,13 @@ def _notify(user: str, perms: list[PermissionRequest]):
 			perm[key] = value
 
 	if _skip_notification(user, perm["permission"]):
-		logger.info({"message": "notification skipped", "user": user, "perm_req": perm["permission"]})
+		logger.info(
+			{
+				"message": "notification skipped",
+				"user": user,
+				"perm_req": perm["permission"],
+			}
+		)
 		return
 
 	tool_title = perm["tool_slug"]
@@ -137,7 +167,7 @@ def _notify(user: str, perms: list[PermissionRequest]):
 	log.document_type = "Otto Permission Request"
 	log.document_name = perm["permission"]
 	log.subject = f"Otto Permission Request - {tool_title} for task {task_title}"
-	log.email_content = to_html(message)
+	log.email_content = message
 	log.insert(ignore_permissions=True)
 
 	try:
@@ -150,7 +180,14 @@ def _notify(user: str, perms: list[PermissionRequest]):
 				"link": f"/app/otto-permission-request/{perm['permission']}",
 			},
 		)
-		logger.info({"message": "notification sent", "user": user, "perm_req": perm["permission"]})
+		logger.info(
+			{
+				"message": "notification sent",
+				"user": user,
+				"perm_req": perm["permission"],
+				"assignments": assignments_str,
+			}
+		)
 	except Exception:
 		otto.log_error("error sending email", recipient=user)
 
