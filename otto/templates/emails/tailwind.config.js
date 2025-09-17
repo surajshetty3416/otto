@@ -1,7 +1,7 @@
 import config from "../../../frontend/tailwind.config";
 
 export default {
-	content: ["./press/templates/emails/*.html"],
+	content: ["./otto/templates/emails/*.html"],
 	important: true,
 	theme: Object.assign(config.theme, {
 		screens: {
