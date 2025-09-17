@@ -173,7 +173,7 @@ class OttoExecution(Document):
 		"""
 		from otto.otto.doctype.otto_permission_request.otto_permission_request import OttoPermissionRequest
 		from otto.otto.doctype.otto_task.otto_task import get_tool_map
-		from otto.utils.notify import Subject
+		from otto.utils.notify import PermissionRequest
 
 		if not (pending := session.get_pending_tool_use()):
 			return False
@@ -182,7 +182,7 @@ class OttoExecution(Document):
 		updates: list[ToolUseUpdate] = []
 		tool_map = get_tool_map(self.task)
 		permission_map = self.get_permission_map()
-		new_perms: list[Subject] = []
+		new_perms: list[PermissionRequest] = []
 
 		for tool in pending:
 			tool_name, env_str, requires_permission = tool_map.get(tool.name, (None, None, False))
@@ -193,7 +193,7 @@ class OttoExecution(Document):
 
 				assert permission.name is not None, "type check"
 				new_perms.append(
-					Subject(
+					PermissionRequest(
 						# Context
 						task=self.task,
 						permission=permission.name,
