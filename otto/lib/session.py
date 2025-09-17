@@ -441,7 +441,7 @@ def load(id: str) -> Session:
 
 
 def _get_args_from_tool_use_content(content: ToolUseContent) -> dict:
-	if not content["override"]:
-		return content["args"]
+	if o := content.get("override"):
+		return {**content["args"], **o}
 
-	return {**content["args"], **content["override"]}
+	return content["args"]

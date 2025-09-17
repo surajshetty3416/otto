@@ -136,9 +136,9 @@ def get_tool_use(session_id: str, tool_use_id: str) -> ToolUseContent | None:
 	if row["args"]:
 		args = json.loads(row["args"])
 
-	if row["override"]:
+	if o := row.get("override"):
 		with suppress(json.JSONDecodeError):
-			override = json.loads(row["override"])
+			override = json.loads(o)
 
 	return ToolUseContent(
 		type="tool_use",

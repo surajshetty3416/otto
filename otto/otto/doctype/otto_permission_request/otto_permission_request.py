@@ -21,14 +21,8 @@ class OttoPermissionRequest(Document):
 		from frappe.types import DF
 
 		args_updated: DF.Check
-		execution: DF.Link | None
 		session: DF.Link
 		status: DF.Literal["Pending", "Granted", "Denied"]
-		target: DF.DynamicLink | None
-		target_doctype: DF.Link | None
-		task: DF.Link | None
-		tool_name: DF.Link | None
-		tool_use_args: DF.Code | None
 		tool_use_id: DF.Data
 	# end: auto-generated types
 
