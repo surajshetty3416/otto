@@ -33,3 +33,4 @@ website_route_rules = [
 ]
 
 fixtures = ["Otto LLM"]
+email_css = ["/assets/otto/css/email.css"]
