@@ -1,14 +1,18 @@
 # Copyright (c) 2025, Alan Tom and contributors
 # For license information, please see license.txt
 
+from __future__ import annotations
+
 import json
-from typing import Literal, cast
+from typing import TYPE_CHECKING, Literal, cast
 
 import frappe
 from frappe.model.document import Document
 
-from otto.lib.types import ToolUseContent
 from otto.lib.utils import get_tool_use
+
+if TYPE_CHECKING:
+	from otto.lib.types import ToolUseContent
 
 
 class OttoPermissionRequest(Document):
@@ -93,19 +97,19 @@ class OttoPermissionRequest(Document):
 		return self._tool_use
 
 	@property
-	def execution(self) -> str | None:
+	def execution(self) -> DF.Link | None:
 		return self.execution_.get("name")
 
 	@property
-	def task(self) -> str | None:
+	def task(self) -> DF.Link | None:
 		return self.execution_.get("task")
 
 	@property
-	def target(self) -> str | None:
+	def target(self) -> DF.DynamicLink | None:
 		return self.execution_.get("target")
 
 	@property
-	def target_doctype(self) -> str | None:
+	def target_doctype(self) -> DF.Link | None:
 		return self.execution_.get("target_doctype")
 
 	@property
@@ -116,7 +120,7 @@ class OttoPermissionRequest(Document):
 		return self.tool_use_["status"]
 
 	@property
-	def tool_name(self) -> str | None:
+	def tool_name(self) -> DF.Link | None:
 		return self.tool_.get("name")
 
 	@property
@@ -127,7 +131,7 @@ class OttoPermissionRequest(Document):
 		return self.tool_use_["name"]
 
 	@property
-	def tool_use_args(self) -> str:
+	def tool_use_args(self) -> DF.Code | None:
 		if not self.tool_use_:
 			return "{}"
 

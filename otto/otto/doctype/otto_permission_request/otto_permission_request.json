@@ -183,9 +183,10 @@
   }
  ],
  "grid_page_length": 50,
+ "in_create": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-16 17:13:05.319812",
+ "modified": "2025-09-17 16:08:12.705138",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Permission Request",
