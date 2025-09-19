@@ -190,6 +190,13 @@ def _notify(
 				"link": f"/app/otto-permission-request/{perm['permission']}",
 			},
 		)
+		logger.debug(
+			{
+				"message": "email sent",
+				"user": user,
+				"perm_req": perm["permission"],
+			}
+		)
 	except Exception:
 		otto.log_error("error sending email", recipient=user)
 
