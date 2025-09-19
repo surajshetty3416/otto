@@ -36,7 +36,7 @@ def notify(perms: list[PermissionRequest]):
 	user_assignments: dict[str, dict[str, set[tuple[str, str]]]] = {}
 
 	for perm in perms:
-		target_assigned = assigned_users.get((perm["target_doctype"] or "", perm["target"] or ""), set())
+		target_assigned = assigned_users.get((perm["target_doctype"] or "", str(perm["target"] or "")), set())
 		task_assigned = assigned_users.get(("Otto Task", perm["task"]), set())
 		tool_assigned = assigned_users.get(("Otto Tool", perm["tool"] or ""), set())
 		exec_assigned = assigned_users.get(("Otto Execution", perm["execution"]), set())
@@ -103,7 +103,9 @@ def _get_assigned_users(
 
 	assignment_map: dict[tuple[str, str], set[str]] = {}
 	for user in assigned_users:
-		assignment_map.setdefault((user.reference_type, user.reference_name), set()).add(user.allocated_to)
+		assignment_map.setdefault((user.reference_type, str(user.reference_name)), set()).add(
+			user.allocated_to
+		)
 
 	return assignment_map
 
@@ -181,7 +183,7 @@ def _notify(
 	)
 
 	try:
-		frappe.sendmail(
+		eq = frappe.sendmail(
 			recipients=[user],
 			subject=log.subject,
 			template="otto_permission_request",
@@ -195,6 +197,7 @@ def _notify(
 				"message": "email sent",
 				"user": user,
 				"perm_req": perm["permission"],
+				"email_queue": eq.name if eq else None,
 			}
 		)
 	except Exception:
