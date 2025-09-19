@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 	from otto.llm.litellm import InteractReturnTuple
 	from otto.llm.types import SessionItem
 
-logger = otto.logger("otto_session", level="DEBUG")
+logger = otto.logger("otto.doctype.otto_session", level="DEBUG")
 
 
 class InteractResponse(NamedTuple):

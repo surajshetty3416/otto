@@ -14,7 +14,7 @@ from otto.llm.types import ReasoningEffort, ToolUseUpdate
 from otto.otto.doctype.otto_task.tools import is_meta_tool
 from otto.utils.lock import lock_doc
 
-logger = otto.logger("otto_execution")
+logger = otto.logger("otto.doctype.otto_execution")
 DEFAULT_MAX_LLM_CALLS = 30
 
 if TYPE_CHECKING:

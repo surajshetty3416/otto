@@ -15,7 +15,7 @@ from otto.otto.doctype.otto_task.tools import is_meta_tool, meta_tools
 if TYPE_CHECKING:
 	from otto.llm.types import ReasoningEffort
 
-logger = otto.logger("otto_task", "DEBUG")
+logger = otto.logger("otto.doctype.otto_task", "DEBUG")
 
 DEFAULT_TIMEOUT = 30
 EVENT_MAP = {

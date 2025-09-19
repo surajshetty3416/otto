@@ -56,7 +56,7 @@ if TYPE_CHECKING:
 	from litellm.types.utils import ModelResponseStream
 
 
-logger = otto.logger("otto_litellm", "ERROR")
+logger = otto.logger("otto.llm.litellm", "ERROR")
 
 
 class StreamReturn(NamedTuple):

@@ -27,7 +27,8 @@
    "description": "System prompt given to Otto to handle some task. It should contain the task definition and how Otto should handle it.",
    "fieldname": "instruction",
    "fieldtype": "Code",
-   "label": "Instruction"
+   "label": "Instruction",
+   "options": "Markdown"
   },
   {
    "fieldname": "trigger_section",
@@ -143,7 +144,7 @@
    "link_fieldname": "task"
   }
  ],
- "modified": "2025-07-15 14:31:15.708603",
+ "modified": "2025-09-18 14:41:02.933332",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Task",

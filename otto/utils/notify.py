@@ -28,6 +28,7 @@ class PermissionRequest(TypedDict):
 
 def notify(perms: list[PermissionRequest]):
 	"""Sends notification to all assigned users for tool use request"""
+	logger.debug({"message": "notifying", "perms": perms})
 
 	users_map: dict[tuple[str, str], list[PermissionRequest]] = {}
 
@@ -85,7 +86,7 @@ def _get_assigned_users(
 	reference_types = ["Otto Task", "Otto Tool", "Otto Execution", "Otto Session"]
 	reference_names = [*tasks, *tools, *executions, *sessions]
 
-	for target, target_doctype in targets:
+	for target_doctype, target in targets:
 		reference_names.append(target)
 		reference_types.append(target_doctype)
 
@@ -98,6 +99,7 @@ def _get_assigned_users(
 			"status": ("!=", "Cancelled"),
 		},
 	)
+	logger.debug({"message": "getting assigned", "assigned_users": assigned_users})
 
 	assignment_map: dict[tuple[str, str], set[str]] = {}
 	for user in assigned_users:
@@ -124,7 +126,7 @@ def _notify(
 			perm[key] = value
 
 	if _skip_notification(user, perm["permission"]):
-		logger.info(
+		logger.debug(
 			{
 				"message": "notification skipped",
 				"user": user,
@@ -169,6 +171,14 @@ def _notify(
 	log.subject = f"Otto Permission Request - {tool_title} for task {task_title}"
 	log.email_content = message
 	log.insert(ignore_permissions=True)
+	logger.debug(
+		{
+			"message": "notification logged",
+			"user": user,
+			"perm_req": perm["permission"],
+			"assignments": assignments_str,
+		}
+	)
 
 	try:
 		frappe.sendmail(
@@ -179,14 +189,6 @@ def _notify(
 				"message": message,
 				"link": f"/app/otto-permission-request/{perm['permission']}",
 			},
-		)
-		logger.info(
-			{
-				"message": "notification sent",
-				"user": user,
-				"perm_req": perm["permission"],
-				"assignments": assignments_str,
-			}
 		)
 	except Exception:
 		otto.log_error("error sending email", recipient=user)
