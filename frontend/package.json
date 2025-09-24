@@ -6,32 +6,34 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.23",
+    "@tailwindcss/forms": "^0.5.10",
+    "@tailwindcss/typography": "^0.5.16",
+    "@vitejs/plugin-vue": "^5.0.0",
     "@vueuse/core": "^12.7.0",
+    "autoprefixer": "^10.4.20",
     "highlight.js": "^11.11.1",
     "lucide-vue-next": "^0.474.0",
     "marked": "^15.0.7",
     "marked-highlight": "^2.2.1",
     "monaco-editor": "^0.52.2",
+    "postcss": "^8.5.1",
     "radix-vue": "^1.9.15",
     "socket.io-client": "^4.8.1",
+    "tailwindcss": "^3.4.0",
+    "vite": "^6.1.0",
     "vue": "^3.5.13",
-    "vue-router": "^4.5.0"
+    "vue-router": "^4.5.0",
+    "vue-tsc": "^2.2.0"
   },
   "devDependencies": {
-    "@tailwindcss/forms": "^0.5.10",
-    "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^22.10.8",
-    "@vitejs/plugin-vue": "^5.0.0",
     "@vue/tsconfig": "^0.7.0",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.5.1",
-    "tailwindcss": "^3.4.0",
     "typescript": "~5.6.2",
-    "vite": "^6.1.0",
-    "vue-tsc": "^2.2.0"
+    "undici-types": "^6.19.8"
   }
 }
