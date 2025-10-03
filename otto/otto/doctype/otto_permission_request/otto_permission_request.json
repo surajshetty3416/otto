@@ -74,7 +74,8 @@
    "label": "Session",
    "options": "Otto Session",
    "read_only": 1,
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "depends_on": "eval:doc.tool_name",
@@ -186,7 +187,7 @@
  "in_create": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-19 19:56:55.694482",
+ "modified": "2025-10-03 12:37:17.661729",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Permission Request",
@@ -202,6 +203,16 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Otto Permission Granter",
    "share": 1,
    "write": 1
   }
