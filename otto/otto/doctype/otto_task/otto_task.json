@@ -144,7 +144,7 @@
    "link_fieldname": "task"
   }
  ],
- "modified": "2025-09-18 14:41:02.933332",
+ "modified": "2025-10-06 17:37:37.393377",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Task",
@@ -162,6 +162,15 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Otto Permission Granter",
+   "share": 1
   }
  ],
  "row_format": "Dynamic",

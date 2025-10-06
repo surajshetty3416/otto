@@ -100,7 +100,7 @@
  "in_create": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-17 16:07:29.976580",
+ "modified": "2025-10-06 17:35:47.261471",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Execution",
@@ -117,6 +117,15 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Otto Permission Granter",
+   "share": 1
   }
  ],
  "row_format": "Dynamic",

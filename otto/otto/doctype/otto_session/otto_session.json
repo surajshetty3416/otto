@@ -147,7 +147,7 @@
    "link_fieldname": "session"
   }
  ],
- "modified": "2025-09-16 11:18:44.933257",
+ "modified": "2025-10-06 17:37:21.267114",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Session",
@@ -165,6 +165,15 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Otto Permission Granter",
+   "share": 1
   }
  ],
  "row_format": "Dynamic",
