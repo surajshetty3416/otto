@@ -146,7 +146,7 @@ def _get_requests(names: list[str], tool_slug: str | None, tool_name: str | None
 		request.pop("docstatus", None)
 		request.pop("idx", None)
 		request.pop("tool_use_result", None)
-
 		requests.append(request)
+		opr.add_viewed()
 
 	return requests
