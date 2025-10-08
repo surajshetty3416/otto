@@ -131,8 +131,6 @@ def get_pending_requests(
 def _get_requests(names: list[str], tool_slug: str | None, tool_name: str | None):
 	from otto.otto.doctype.otto_permission_request.otto_permission_request import OttoPermissionRequest
 
-	frappe.flags.ignore_permissions = True
-
 	requests: list[dict] = []
 
 	for name in names:

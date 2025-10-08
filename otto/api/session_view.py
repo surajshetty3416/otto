@@ -137,7 +137,7 @@ def set_execution_info(session_name: str, info: dict[str, Any]):
 def set_tools_info(session_name: str, info: dict[str, Any]):
 	"""Return task relevant info for a Task session view."""
 	# FIXME: do this for non execution linked sessions
-	# session_tools = frappe.db.get_all(
+	# session_tools = frappe.get_all(
 	# 	"Otto Session Tool CT",
 	# 	filters={"parent": session_name},
 	# 	fields=["tool", "slug"],
@@ -147,13 +147,13 @@ def set_tools_info(session_name: str, info: dict[str, Any]):
 	if not task:
 		return
 
-	session_tools = frappe.db.get_all(
+	session_tools = frappe.get_all(
 		"Otto Task Tool CT",
 		filters={"parent": task},
 		fields=["tool", "slug"],
 	)
 
-	tools = frappe.db.get_all(
+	tools = frappe.get_all(
 		"Otto Tool",
 		filters={"name": ["in", [t.tool for t in session_tools]]},
 		fields=["name", "slug", "description"],
@@ -250,7 +250,7 @@ def set_tool_use_info(info: dict[str, Any]):
 
 
 def set_scrapbook_info(session_name: str, info: dict[str, Any]):
-	scrapbooks = frappe.db.get_all(
+	scrapbooks = frappe.get_all(
 		"Otto Scrapbook",
 		filters={"session": session_name},
 		fields=["name", "content", "tool", "creation"],

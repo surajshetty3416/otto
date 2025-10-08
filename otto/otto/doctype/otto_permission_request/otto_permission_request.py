@@ -38,7 +38,7 @@ class OttoPermissionRequest(Document):
 	@property
 	def execution_(self) -> dict[str, str]:
 		if not self._execution:
-			execs = frappe.get_list(
+			execs = frappe.get_all(
 				"Otto Execution",
 				filters={"session": self.session},
 				fields=["name", "task", "target", "target_doctype"],
@@ -192,7 +192,7 @@ class OttoPermissionRequest(Document):
 	def resume(self):
 		from otto.otto.doctype.otto_task.otto_task import get_timeout
 
-		execs = frappe.db.get_list(
+		execs = frappe.get_all(
 			"Otto Execution",
 			filters={"session": self.session},
 			fields=["name"],
@@ -212,7 +212,7 @@ class OttoPermissionRequest(Document):
 
 
 def set_override(session: str, tool_use_id: str, override_args: dict):
-	items = frappe.db.get_all(
+	items = frappe.get_all(
 		"Otto Session Item CT",
 		filters={"parent": session, "role": "agent"},
 		fields=["name", "content"],

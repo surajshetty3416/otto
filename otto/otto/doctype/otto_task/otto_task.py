@@ -266,7 +266,7 @@ def _common_handler(doctype: Document, event: str | None = None):
 
 @utils.cache(ttl=60)
 def _get_all_tasks(target_doctype: str, event: str):
-	return frappe.db.get_all(
+	return frappe.get_all(
 		"Otto Task",
 		filters={"target_doctype": target_doctype, "event": event, "is_enabled": True},
 		fields=["name", "condition"],
