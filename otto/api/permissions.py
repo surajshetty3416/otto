@@ -6,6 +6,13 @@ import otto
 
 
 @frappe.whitelist(methods=["POST"])
+def add_viewed(name: str):
+	from otto.otto.doctype.otto_permission_request.otto_permission_request import OttoPermissionRequest
+
+	otto.get(OttoPermissionRequest, name).add_viewed()
+
+
+@frappe.whitelist(methods=["POST"])
 def acknowledge(
 	name: str,
 	type: Literal["grant", "deny"],
@@ -38,10 +45,9 @@ def acknowledge(
 
 	status = "Granted" if type == "grant" else "Denied"
 
-	otto.get(OttoPermissionRequest, name).acknowledge(
-		status,
-		override_args,
-	)
+	opr = otto.get(OttoPermissionRequest, name)
+	opr.add_viewed()
+	opr.acknowledge(status, override_args)
 
 
 @frappe.whitelist(methods=["POST"])
@@ -147,6 +153,5 @@ def _get_requests(names: list[str], tool_slug: str | None, tool_name: str | None
 		request.pop("idx", None)
 		request.pop("tool_use_result", None)
 		requests.append(request)
-		opr.add_viewed()
 
 	return requests
