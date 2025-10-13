@@ -5,6 +5,17 @@ from typing import Any, Literal, TypedDict
 Provider = Literal["Anthropic", "OpenAI", "Google"]
 ModelSize = Literal["Very Small", "Small", "Medium", "Large"]
 
+
+class ModelDetails(TypedDict):
+	name: str
+	provider: Provider
+	size: ModelSize
+	is_reasoning: bool
+	supports_vision: bool
+	title: str
+	is_enabled: bool
+
+
 ID = str
 SessionRole = Literal["user", "agent"]
 EndReason = Literal["turn_end", "tool_use"]

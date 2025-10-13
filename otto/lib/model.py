@@ -1,13 +1,14 @@
-from typing import Any
+from typing import Any, Literal, overload
 
 import frappe
 
-from otto.lib.types import ModelSize, Provider
+from otto.lib.types import ModelDetails, ModelSize, Provider
 from otto.llm import utils
 from otto.utils import cache
 
 __all__ = [
 	"create_model",
+	"get_keys_set",
 	"get_model",
 	"get_models",
 	"is_model_available",
@@ -16,6 +17,14 @@ __all__ = [
 ]
 
 
+@frappe.whitelist()
+def get_keys_set() -> dict[str, bool]:
+	"""Returns a dictionary of providers and their API key status."""
+	providers: list[Provider] = ["OpenAI", "Anthropic", "Google"]
+	return {provider: is_provider_available(provider) for provider in providers}
+
+
+@frappe.whitelist()
 def set_api_key(provider: Provider, value: str) -> None:
 	"""Sets the API key for a provider.
 
@@ -29,6 +38,7 @@ def set_api_key(provider: Provider, value: str) -> None:
 	frappe.set_value("Otto Settings", "Otto Settings", key.lower(), value)
 
 
+@frappe.whitelist()
 @cache(ttl=60)
 def is_model_available(model: str, exact: bool = True) -> bool:
 	"""Checks if a given model name is available in Otto LLM.
@@ -66,6 +76,7 @@ def is_model_available(model: str, exact: bool = True) -> bool:
 	return False
 
 
+@frappe.whitelist()
 def is_provider_available(provider: Provider) -> bool:
 	"""Returns `True` if the provider is available.
 
@@ -79,6 +90,7 @@ def is_provider_available(provider: Provider) -> bool:
 	return bool(key and value)
 
 
+@frappe.whitelist()
 def create_model(
 	*,
 	title: str,
@@ -129,6 +141,31 @@ def create_model(
 	return llm.name
 
 
+@overload
+def get_model(
+	*,
+	provider: Provider | None = ...,
+	size: ModelSize | None = ...,
+	is_reasoning: bool | None = ...,
+	supports_vision: bool | None = ...,
+	preference: str | None = ...,
+	get_details: Literal[False] = False,
+) -> str | None: ...
+
+
+@overload
+def get_model(
+	*,
+	provider: Provider | None = ...,
+	size: ModelSize | None = ...,
+	is_reasoning: bool | None = ...,
+	supports_vision: bool | None = ...,
+	preference: str | None = ...,
+	get_details: Literal[True] = True,
+) -> ModelDetails | None: ...
+
+
+@frappe.whitelist()
 def get_model(
 	*,
 	provider: Provider | None = None,
@@ -136,7 +173,8 @@ def get_model(
 	is_reasoning: bool | None = None,
 	supports_vision: bool | None = None,
 	preference: str | None = None,
-) -> str | None:
+	get_details: bool = False,
+) -> str | ModelDetails | None:
 	"""Returns the first available model matching the given criteria.
 
 	`preference` can be used to specify a model name that is preferred, if
@@ -162,26 +200,59 @@ def get_model(
 		is_reasoning: Filter by whether model supports reasoning
 		supports_vision: Filter by whether model supports image input
 		preference: Optional model name preference - will try to match this first
+		get_details: If True, returns ModelDetails object; if False, returns model name string
 
 	Returns:
-		Name of first matching model, or None if no models match criteria
+		If get_details is True, returns ModelDetails object of first matching model or None.
+		If get_details is False, returns name of first matching model or None if no models match criteria.
 	"""
 	models = get_models(
 		provider=provider,
 		size=size,
 		is_reasoning=is_reasoning,
 		supports_vision=supports_vision,
+		get_details=get_details,  # type: ignore
 	)
 
 	if not models:
 		return None
 
 	if preference:
-		models = [model for model in models if preference.lower() in model.lower()] or models
+		if get_details:
+			models = [
+				model
+				for model in models
+				if preference.lower() in model.get("name", "").lower()  # type: ignore
+			] or models
+		else:
+			models = [model for model in models if preference.lower() in model.lower()] or models  # type: ignore
 
 	return models[0]
 
 
+@overload
+def get_models(
+	*,
+	provider: Provider | None = ...,
+	size: ModelSize | None = ...,
+	is_reasoning: bool | None = ...,
+	supports_vision: bool | None = ...,
+	get_details: Literal[False] = False,
+) -> list[str]: ...
+
+
+@overload
+def get_models(
+	*,
+	provider: Provider | None = ...,
+	size: ModelSize | None = ...,
+	is_reasoning: bool | None = ...,
+	supports_vision: bool | None = ...,
+	get_details: Literal[True] = True,
+) -> list[ModelDetails]: ...
+
+
+@frappe.whitelist()
 @cache(ttl=60)
 def get_models(
 	*,
@@ -189,7 +260,8 @@ def get_models(
 	size: ModelSize | None = None,
 	is_reasoning: bool | None = None,
 	supports_vision: bool | None = None,
-) -> list[str]:
+	get_details: bool = False,
+) -> list[str] | list[ModelDetails]:
 	"""Returns a list of available models matching the given criteria.
 
 	This function checks both the model capabilities and provider availability.
@@ -200,9 +272,10 @@ def get_models(
 		size: Filter by model size (Very Small, Small, Medium, Large)
 		is_reasoning: Filter by whether model supports reasoning
 		supports_vision: Filter by whether model supports image input
+		get_details: If True, returns list of ModelDetails, otherwise returns list of model names
 
 	Returns:
-		List of model names that match all criteria and are available for use
+		List of model names that match all criteria and are available for use or list of ModelDetails if get_details is True
 	"""
 	if provider and not is_provider_available(provider):
 		return []
@@ -220,14 +293,22 @@ def get_models(
 	if supports_vision is not None:
 		filters["supports_vision"] = supports_vision
 
-	models = frappe.get_all("Otto LLM", filters=filters, pluck="name")
+	if get_details:
+		fields = ["name", "title", "provider", "size", "is_reasoning", "supports_vision", "enabled"]
+	else:
+		fields = ["name"]
+
+	def _get_models(m) -> list[ModelDetails] | list[str]:
+		return [ModelDetails(**m) for m in m] if get_details else [m.name for m in m]
+
+	models = frappe.get_all("Otto LLM", filters=filters, fields=fields)
 	if provider:
-		return models
+		return _get_models(models)
 
 	available: list[str] = []
 	availability: dict[Provider, bool] = {}
 	for model in models:
-		provider = utils.get_provider(model)
+		provider = utils.get_provider(model.name)
 		if not provider:
 			continue
 
@@ -237,4 +318,4 @@ def get_models(
 		if availability[provider]:
 			available.append(model)
 
-	return available
+	return _get_models(available)

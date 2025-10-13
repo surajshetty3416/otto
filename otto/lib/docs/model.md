@@ -58,6 +58,7 @@ model = otto.get_model(
 - [`create_model`](#create_model): Create new model entries with specific configuration
 - [`get_model`](#get_model): Find the first model matching criteria with optional preference
 - [`get_models`](#get_models): Get all models matching specified filters
+- [`get_keys_set`](#get_keys_set): Get API key status for all providers
 - [`set_api_key`](#set_api_key): Set the API key for a provider
 
 > [!TIP]
@@ -192,6 +193,10 @@ be used to specify a model name that is preferred. If preferred model is
 available this will be returned, otherwise a model matching the rest of the
 criteria will be returned.
 
+By default, returns the model name as a string. Set `get_details=True` to get
+a `ModelDetails` object containing full model information (name, title, provider,
+size, is_reasoning, supports_vision, enabled).
+
 Check [is_model_available](#is_model_available) for more details on model
 availablity.
 
@@ -203,7 +208,8 @@ def get_model(
     is_reasoning: bool | None = None,
     supports_vision: bool | None = None,
     preference: str | None = None,
-) -> str | None
+    get_details: bool = False,
+) -> str | ModelDetails | None
 ```
 
 **Example:**
@@ -230,12 +236,31 @@ model = otto.get_model(
     supports_vision=True
 )
 # Returns first available large Anthropic model with vision support
+
+# Get model details instead of just the name
+model_details = otto.get_model(
+    provider="Anthropic",
+    get_details=True
+)
+# Returns ModelDetails object with fields:
+# {
+#     "name": "anthropic/claude-3-5-sonnet-20241022",
+#     "title": "Claude 3.5 Sonnet",
+#     "provider": "Anthropic",
+#     "size": "Large",
+#     "is_reasoning": True,
+#     "supports_vision": True,
+#     "enabled": True
+# }
 ```
 
 ### `get_models`
 
-Returns a list of available models matching the given criteria. Check
-[is_model_available](#is_model_available) for more details on model availablity.
+Returns a list of available models matching the given criteria. By default,
+returns a list of model names as strings. Set `get_details=True` to get a list
+of `ModelDetails` objects containing full model information.
+
+Check [is_model_available](#is_model_available) for more details on model availablity.
 
 ```python
 def get_models(
@@ -244,7 +269,8 @@ def get_models(
     size: ModelSize | None = None,
     is_reasoning: bool | None = None,
     supports_vision: bool | None = None,
-) -> list[str]
+    get_details: bool = False,
+) -> list[str] | list[ModelDetails]
 ```
 
 **Example:**
@@ -271,6 +297,64 @@ filtered_models = otto.get_models(
     supports_vision=True
 )
 # Returns medium sized OpenAI models that support vision
+
+# Get detailed information about all models
+all_model_details = otto.get_models(get_details=True)
+# Returns list of ModelDetails objects:
+# [
+#     {
+#         "name": "anthropic/claude-3-5-sonnet-20241022",
+#         "title": "Claude 3.5 Sonnet",
+#         "provider": "Anthropic",
+#         "size": "Large",
+#         "is_reasoning": True,
+#         "supports_vision": True,
+#         "enabled": True
+#     },
+#     ...
+# ]
+
+# Get detailed information with filters
+reasoning_details = otto.get_models(
+    is_reasoning=True,
+    get_details=True
+)
+# Returns list of ModelDetails for reasoning models only
+```
+
+### `get_keys_set`
+
+Returns a dictionary mapping each provider to its API key status. This is useful
+for checking which providers have been configured with API keys at a glance.
+
+```python
+def get_keys_set() -> dict[str, bool]
+```
+
+**Example:**
+
+```python
+import otto.lib as otto
+
+# Get API key status for all providers
+key_status = otto.get_keys_set()
+# Returns: {
+#     "OpenAI": True,
+#     "Anthropic": False,
+#     "Google": True
+# }
+
+# Check which providers are configured
+configured_providers = [
+    provider for provider, has_key in key_status.items() if has_key
+]
+# Returns: ["OpenAI", "Google"]
+
+# Check which providers need configuration
+missing_providers = [
+    provider for provider, has_key in key_status.items() if not has_key
+]
+# Returns: ["Anthropic"]
 ```
 
 ### `set_api_key`

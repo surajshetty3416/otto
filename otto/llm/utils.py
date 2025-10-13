@@ -424,7 +424,10 @@ def get_key(provider: Provider) -> tuple[str, str] | tuple[None, None]:
 
 	password = os.environ.get(key.upper())
 	if not password:
-		password = get_decrypted_password("Otto Settings", "Otto Settings", key.lower())
+		try:
+			password = get_decrypted_password("Otto Settings", "Otto Settings", key.lower())
+		except Exception:
+			password = None
 
 	if password is None:
 		return None, None

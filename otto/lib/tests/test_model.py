@@ -112,6 +112,87 @@ class TestModelRetrieval(unittest.TestCase):
 		if fallback_model:
 			self.assertTrue(fallback_model.startswith("openai/"))
 
+	def test_get_models_with_details_flag(self, mock_get_key):
+		"""Test get_models returns details when get_details=True."""
+
+		# Test without get_details (default behavior - should return list of strings)
+		models_without_details = model.get_models(provider="Anthropic")
+		self.assertGreater(len(models_without_details), 0)
+		self.assertIsInstance(models_without_details[0], str)
+
+		# Test with get_details=False (explicit - should return list of strings)
+		models_explicit_false = model.get_models(provider="Anthropic", get_details=False)
+		self.assertGreater(len(models_explicit_false), 0)
+		self.assertIsInstance(models_explicit_false[0], str)
+
+		# Test with get_details=True (should return list of ModelDetails)
+		models_with_details = model.get_models(provider="Anthropic", get_details=True)
+		self.assertGreater(len(models_with_details), 0)
+		self.assertIsInstance(models_with_details[0], dict)
+
+		# Verify ModelDetails structure
+		model_detail = models_with_details[0]
+		self.assertIn("name", model_detail)
+		self.assertIn("title", model_detail)
+		self.assertIn("provider", model_detail)
+		self.assertIn("size", model_detail)
+		self.assertIn("is_reasoning", model_detail)
+		self.assertIn("supports_vision", model_detail)
+		self.assertIn("enabled", model_detail)
+
+		# Verify provider matches
+		self.assertEqual(model_detail["provider"], "Anthropic")
+
+	def test_get_model_with_details_flag(self, mock_get_key):
+		"""Test get_model returns details when get_details=True."""
+
+		# Test without get_details (default behavior - should return string)
+		model_without_details = model.get_model(provider="OpenAI")
+		self.assertIsNotNone(model_without_details)
+		self.assertIsInstance(model_without_details, str)
+
+		# Test with get_details=False (explicit - should return string)
+		model_explicit_false = model.get_model(provider="OpenAI", get_details=False)
+		self.assertIsNotNone(model_explicit_false)
+		self.assertIsInstance(model_explicit_false, str)
+
+		# Test with get_details=True (should return ModelDetails)
+		model_with_details = model.get_model(provider="OpenAI", get_details=True)
+		self.assertIsNotNone(model_with_details)
+		self.assertIsInstance(model_with_details, dict)
+
+		assert model_with_details is not None
+
+		# Verify ModelDetails structure
+		self.assertIn("name", model_with_details)
+		self.assertIn("title", model_with_details)
+		self.assertIn("provider", model_with_details)
+		self.assertIn("size", model_with_details)
+		self.assertIn("is_reasoning", model_with_details)
+		self.assertIn("supports_vision", model_with_details)
+		self.assertIn("enabled", model_with_details)
+
+		# Verify provider matches
+		self.assertEqual(model_with_details["provider"], "OpenAI")
+
+	def test_get_model_with_preference_and_details(self, mock_get_key):
+		"""Test get_model with both preference and get_details flags."""
+
+		# Test preference with get_details=True
+		model_with_preference_and_details = model.get_model(preference="claude", get_details=True)
+		self.assertIsNotNone(model_with_preference_and_details)
+		self.assertIsInstance(model_with_preference_and_details, dict)
+
+		assert model_with_preference_and_details is not None
+
+		# Verify the preference was applied
+		self.assertIn("claude", model_with_preference_and_details["name"].lower())
+
+		# Verify ModelDetails structure
+		self.assertIn("name", model_with_preference_and_details)
+		self.assertIn("title", model_with_preference_and_details)
+		self.assertIn("provider", model_with_preference_and_details)
+
 
 class TestAPIKeyManagement(unittest.TestCase):
 	"""Test API key setting functionality."""
