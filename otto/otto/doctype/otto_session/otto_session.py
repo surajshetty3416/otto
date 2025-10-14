@@ -61,6 +61,8 @@ class OttoSession(Document):
 		llm: DF.Link | None
 		reason: DF.SmallText | None
 		reasoning_effort: DF.Literal["None", "Low", "Medium", "High"]
+		reference_doctype: DF.Link | None
+		reference_name: DF.DynamicLink | None
 		tools: DF.Table[OttoSessionToolCT]
 		uid: DF.Data | None
 	# end: auto-generated types
@@ -76,6 +78,8 @@ class OttoSession(Document):
 		instruction: str,
 		reasoning_effort: str | None,
 		tools: list[ToolSchema] | None = None,
+		reference_doctype: str | None = None,
+		reference_name: str | None = None,
 	):
 		doc = cast("OttoSession", frappe.get_doc({"doctype": "Otto Session"}))
 
@@ -85,6 +89,12 @@ class OttoSession(Document):
 			doc.reasoning_effort = reasoning_effort  # type: ignore
 		else:
 			doc.reasoning_effort = "None"
+
+		if reference_doctype:
+			doc.reference_doctype = reference_doctype
+
+		if reference_name and reference_doctype:
+			doc.reference_name = reference_name
 
 		doc.set_tools(tools or [])
 		doc.save(ignore_permissions=True, ignore_version=True)

@@ -49,6 +49,9 @@ class Session:
 		instruction: str = utils.DEFAULT_INSTRUCTION,
 		reasoning_effort: ReasoningEffort | None = None,
 		tools: list[ToolSchema] | None = None,
+		*,
+		reference_doctype: str | None = None,
+		reference_name: str | None = None,
 	) -> Session:
 		# See session.new for details
 		manager = Session()
@@ -58,6 +61,8 @@ class Session:
 			instruction=instruction,
 			reasoning_effort=reasoning_effort,
 			tools=tools,
+			reference_doctype=reference_doctype,
+			reference_name=reference_name,
 		)
 		return manager
 

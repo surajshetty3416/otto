@@ -12,6 +12,10 @@
   "reason",
   "section_break_excj",
   "items",
+  "reference_section",
+  "reference_doctype",
+  "column_break_rbxe",
+  "reference_name",
   "config_tab",
   "task_section",
   "llm",
@@ -126,6 +130,32 @@
    "fieldtype": "Table",
    "label": "Tools",
    "options": "Otto Session Tool CT"
+  },
+  {
+   "description": "Reference maybe set for standalone sessions",
+   "fieldname": "reference_section",
+   "fieldtype": "Section Break",
+   "label": "Reference"
+  },
+  {
+   "depends_on": "eval:doc.reference_doctype",
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "Reference DocType",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_rbxe",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.reference_name",
+   "fieldname": "reference_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Reference Name",
+   "options": "reference_doctype",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
@@ -147,7 +177,7 @@
    "link_fieldname": "session"
   }
  ],
- "modified": "2025-10-06 17:37:21.267114",
+ "modified": "2025-10-14 16:07:13.564215",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Session",

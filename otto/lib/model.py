@@ -39,6 +39,24 @@ def set_api_key(provider: Provider, value: str) -> None:
 
 
 @frappe.whitelist()
+def set_api_keys(keys: dict[Provider, str]) -> None:
+	"""
+	Sets API keys for multiple providers.
+
+	Args:
+		keys: A dictionary mapping provider names to their corresponding API keys.
+
+	For each (provider, key) pair in `keys`, updates the API key in Otto Settings.
+	If a provider is unknown, it is skipped.
+	"""
+	for provider, value in keys.items():
+		if (key := utils.get_provider_key(provider)) is None:
+			continue
+
+		frappe.set_value("Otto Settings", "Otto Settings", key.lower(), value)
+
+
+@frappe.whitelist()
 @cache(ttl=60)
 def is_model_available(model: str, exact: bool = True) -> bool:
 	"""Checks if a given model name is available in Otto LLM.
