@@ -9,7 +9,7 @@ from frappe.model.document import Document
 
 import otto
 from otto import utils
-from otto.llm.utils import is_reasoning_effort
+from otto.lib.utils import is_reasoning_effort
 from otto.otto.doctype.otto_task.tools import is_meta_tool, meta_tools
 
 if TYPE_CHECKING:

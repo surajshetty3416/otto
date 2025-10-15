@@ -17,6 +17,7 @@ from otto.lib.types import (
 	ToolUseContent,
 	ToolUseUpdate,
 )
+from otto.lib.utils import is_reasoning_effort
 from otto.llm import utils
 from otto.otto.doctype.otto_session.otto_session import OttoSession, SessionInteractStream
 from otto.utils import drain
@@ -120,7 +121,7 @@ class Session:
 		"""The reasoning effort used for this session."""
 		assert self._session.reasoning_effort is not None, "type check"
 		reasoning_effort = self._session.reasoning_effort
-		if utils.is_reasoning_effort(reasoning_effort):
+		if is_reasoning_effort(reasoning_effort):
 			return reasoning_effort
 
 		return None
@@ -418,6 +419,9 @@ def new(
 	instruction: str = utils.DEFAULT_INSTRUCTION,
 	reasoning_effort: ReasoningEffort | None = None,
 	tools: list[ToolSchema] | None = None,
+	*,
+	reference_doctype: str | None = None,
+	reference_name: str | None = None,
 ) -> Session:
 	"""Creates a new LLM session.
 
@@ -426,11 +430,20 @@ def new(
 		instruction: The system prompt or instruction for the LLM.
 		reasoning_effort: The reasoning effort level for the LLM.
 		tools: A list of tool schemas available to the LLM during this session.
+		reference_doctype: The doctype of the reference doc.
+		reference_name: The name of the reference doc.
 
 	Returns:
 		A new `Session` instance.
 	"""
-	return Session.new(model, instruction, reasoning_effort, tools)
+	return Session.new(
+		model,
+		instruction,
+		reasoning_effort,
+		tools,
+		reference_doctype=reference_doctype,
+		reference_name=reference_name,
+	)
 
 
 def load(id: str) -> Session:

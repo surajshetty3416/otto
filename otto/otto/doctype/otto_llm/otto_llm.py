@@ -8,7 +8,8 @@ import frappe
 import frappe.realtime
 from frappe.model.document import Document
 
-from otto.llm.utils import DEFAULT_INSTRUCTION, is_reasoning_effort
+from otto.lib.utils import is_reasoning_effort
+from otto.llm.utils import DEFAULT_INSTRUCTION
 
 if TYPE_CHECKING:
 	from otto.llm.types import ModelSize, Provider, ReasoningEffort

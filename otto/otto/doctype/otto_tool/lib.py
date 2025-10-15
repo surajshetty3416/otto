@@ -29,47 +29,6 @@ def log(
 	OttoScrapbook.new(content, tool=tool, task=task, session=session)
 
 
-def get_file(url: str):
-	"""If url is private or public Frappe File then returns base64 encoded file data else returns as it is"""
-
-	assert isinstance(url, str), "url must be a string"
-	return utils.get_file(url, get_data_if_url=False).value
-
-
-def interpolate_imgs(html: str):
-	"""
-	Interpolate img urls within images, the images can then be converted
-	into the right content types.
-
-	Eg:
-		from: '<div><img src="file.png"></div>'
-		to: ['from: '<div><img src="file.png">', 'file.png' , '</div>']
-	"""
-	from bs4 import BeautifulSoup
-
-	soup = BeautifulSoup(html, "html.parser")
-	if not (imgs := soup.find_all("img")):
-		return [html]
-
-	content = []
-	last_idx = 0
-	for img in imgs:
-		start_idx = html.find("<img", last_idx)
-
-		if start_idx == -1:
-			continue
-
-		end_idx = html.find(">", start_idx) + 1
-		content.append(html[last_idx:end_idx])
-
-		# get image
-		content.append(get_file(str(img.get("src"))))  # type: ignore
-		last_idx = end_idx
-
-	content.append(html[last_idx:])
-	return [c for c in content if c]
-
-
 def get_env(env: dict | None = None):
 	"""Global and Task specific env variables"""
 	global_env_str = frappe.get_cached_value("Otto Settings", "Otto Settings", "global_env") or "{}"
@@ -78,27 +37,22 @@ def get_env(env: dict | None = None):
 	return frappe._dict(global_env)
 
 
-def to_html(content: str):
-	"""Converts provided markdown to HTML"""
-	from otto.utils import to_html
-
-	return to_html(content)
-
-
 def set_user(user: str):
 	"""Sets the current user for the session"""
 	frappe.set_user(user)
 
 
 def get_lib(env: dict | None = None):
+	from otto.lib.utils import get_file, interpolate_imgs, to_html
+
 	"""Returned object is available in scripts and code as otto.PROPERTY"""
 	return frappe._dict(
 		{
 			"env": get_env(env),
 			"log": log,
 			"get_file": get_file,
-			"interpolate_imgs": interpolate_imgs,
 			"to_html": to_html,
 			"set_user": set_user,
+			"interpolate_imgs": interpolate_imgs,
 		}
 	)

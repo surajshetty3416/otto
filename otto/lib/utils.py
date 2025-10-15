@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 from contextlib import suppress
+from typing import TypeGuard
 
 import frappe
 
-from otto import utils
-from otto.lib.types import FileContent, ImageContent, TextContent, ToolUseContent
+from otto import Any, utils
+from otto.lib.types import FileContent, ImageContent, ReasoningEffort, TextContent, ToolUseContent
 
 
 class content:
@@ -84,8 +85,16 @@ class content:
 		)
 
 
-def get_tool_use(session_id: str, tool_use_id: str) -> ToolUseContent | None:
-	"""Get a specific ToolUseContent by its ID from a Session."""
+def get_tool_uses(
+	*,
+	session_id: str | list[str] | None = None,
+	id: str | list[str] | None = None,
+	status: str | list[str] | None = None,
+	name: str | list[str] | None = None,
+	limit: int = 0,
+) -> list[ToolUseContent]:
+	"""Get a list of ToolUseContent filtered by the given args"""
+
 	query = """
 		SELECT
 			jt.id,
@@ -115,41 +124,146 @@ def get_tool_use(session_id: str, tool_use_id: str) -> ToolUseContent | None:
 				stderr TEXT PATH '$.stderr'
 			)
 		) AS jt
-		WHERE osi.parent = %s
-		AND jt.type = 'tool_use'
-		AND jt.id = %s
-		LIMIT 1
+		WHERE jt.type = 'tool_use'
 	"""
+	params: list = []
+
+	# Handle session_id (str or list[str] or None)
+	if session_id is not None:
+		if isinstance(session_id, list):
+			query += f" AND osi.parent IN ({', '.join(['%s'] * len(session_id))})"
+			params.extend(session_id)
+		else:
+			query += " AND osi.parent = %s"
+			params.append(session_id)
+
+	# Handle id filter
+	if id is not None:
+		if isinstance(id, list):
+			query += f" AND jt.id IN ({', '.join(['%s'] * len(id))})"
+			params.extend(id)
+		else:
+			query += " AND jt.id = %s"
+			params.append(id)
+
+	# Handle status filter
+	if status is not None:
+		if isinstance(status, list):
+			query += f" AND jt.status IN ({', '.join(['%s'] * len(status))})"
+			params.extend(status)
+		else:
+			query += " AND jt.status = %s"
+			params.append(status)
+
+	# Handle name filter
+	if name is not None:
+		if isinstance(name, list):
+			query += f" AND jt.name IN ({', '.join(['%s'] * len(name))})"
+			params.extend(name)
+		else:
+			query += " AND jt.name = %s"
+			params.append(name)
+
+	if limit > 0:
+		query += f"\nLIMIT {limit}"
 
 	result: list[dict] = frappe.db.sql(
 		query,
-		[session_id, tool_use_id],
+		params,
 		as_dict=True,
 	)  # pyright: ignore[reportAssignmentType]
 
 	if not result:
-		return None
+		return []
 
-	row = result[0]
-	args = {}
-	override = None
-	if row["args"]:
-		args = json.loads(row["args"])
+	uses: list[ToolUseContent] = []
 
-	if o := row.get("override"):
-		with suppress(json.JSONDecodeError):
-			override = json.loads(o)
+	for row in result:
+		args = {}
+		override = None
+		if row["args"]:
+			args = json.loads(row["args"])
 
-	return ToolUseContent(
-		type="tool_use",
-		id=row["id"],
-		name=row["name"],
-		args=args,
-		override=override,
-		status=row["status"],
-		result=row["result"],
-		start_time=row["start_time"] or 0.0,
-		end_time=row["end_time"] or 0.0,
-		stdout=row["stdout"],
-		stderr=row["stderr"],
-	)
+		if o := row.get("override"):
+			with suppress(json.JSONDecodeError):
+				override = json.loads(o)
+
+		tool_use = ToolUseContent(
+			type="tool_use",
+			id=row["id"],
+			name=row["name"],
+			args=args,
+			override=override,
+			status=row["status"],
+			result=row["result"],
+			start_time=row["start_time"] or 0.0,
+			end_time=row["end_time"] or 0.0,
+			stdout=row["stdout"],
+			stderr=row["stderr"],
+		)
+		uses.append(tool_use)
+	return uses
+
+
+def get_tool_use(
+	session_id: str,
+	tool_use_id: str,
+) -> ToolUseContent | None:
+	"""Get a specific ToolUseContent by its ID from a Session."""
+	if uses := get_tool_uses(session_id=session_id, id=tool_use_id, limit=1):
+		return uses[0]
+
+	return None
+
+
+def to_html(content: str):
+	"""Converts provided markdown to HTML"""
+	from otto.utils import to_html
+
+	return to_html(content)
+
+
+def get_file(url: str):
+	"""If url is private or public Frappe File then returns base64 encoded file data else returns as it is"""
+
+	assert isinstance(url, str), "url must be a string"
+	return utils.get_file(url, get_data_if_url=False).value
+
+
+def interpolate_imgs(html: str):
+	"""
+	Interpolate img urls within images, the images can then be converted
+	into the right content types.
+
+	Eg:
+		from: '<div><img src="file.png"></div>'
+		to: ['from: '<div><img src="file.png">', 'file.png' , '</div>']
+	"""
+	from bs4 import BeautifulSoup
+
+	soup = BeautifulSoup(html, "html.parser")
+	if not (imgs := soup.find_all("img")):
+		return [html]
+
+	content = []
+	last_idx = 0
+	for img in imgs:
+		start_idx = html.find("<img", last_idx)
+
+		if start_idx == -1:
+			continue
+
+		end_idx = html.find(">", start_idx) + 1
+		content.append(html[last_idx:end_idx])
+
+		# get image
+		content.append(get_file(str(img.get("src"))))  # type: ignore
+		last_idx = end_idx
+
+	content.append(html[last_idx:])
+	return [c for c in content if c]
+
+
+def is_reasoning_effort(value: Any) -> TypeGuard[ReasoningEffort]:
+	"""Type guard to check if a value is a valid ReasoningEffort."""
+	return value in ["Low", "Medium", "High"]

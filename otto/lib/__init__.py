@@ -1,4 +1,5 @@
 import otto.lib.types as types
+import otto.lib.utils as utils
 from otto.lib.model import (
 	create_model,
 	get_keys_set,
@@ -24,4 +25,5 @@ __all__ = [
 	"new",
 	"quick_query",
 	"types",
+	"utils",
 ]
