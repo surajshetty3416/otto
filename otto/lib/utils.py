@@ -234,7 +234,7 @@ def get_file(url: str):
 	return utils.get_file(url, get_data_if_url=False).value
 
 
-def interpolate_imgs(html: str):
+def interpolate_imgs(html: str, skip_errors: bool = False):
 	"""
 	Interpolate img urls within images, the images can then be converted
 	into the right content types.
@@ -260,8 +260,17 @@ def interpolate_imgs(html: str):
 		end_idx = html.find(">", start_idx) + 1
 		content.append(html[last_idx:end_idx])
 
+		file = None
+		if not skip_errors:
+			file = get_file(str(img.get("src")))  # type: ignore
+		else:
+			with suppress(Exception):
+				file = get_file(str(img.get("src")))  # type: ignore
+
 		# get image
-		content.append(get_file(str(img.get("src"))))  # type: ignore
+		if file:
+			content.append(file)
+
 		last_idx = end_idx
 
 	content.append(html[last_idx:])
