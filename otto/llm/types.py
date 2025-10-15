@@ -115,7 +115,8 @@ class ContentChunk(TypedDict):
 	ContentChunk is used to stream content to the user.
 	"""
 
-	type: Literal["text", "thinking", "tool_use"]
+	type: Literal["text", "thinking", "tool_use", "system"]
+	message: Literal["start", "end", "error", "content"]
 	content: str
 	item_id: str
 	session_id: str

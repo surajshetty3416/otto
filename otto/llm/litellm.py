@@ -358,12 +358,38 @@ def _stream(
 	timestamps: list[float] = []
 	chunks: list[ContentChunk] = []
 
-	for chunk in completion:
-		timestamps.append(time.time())
-		if cc := _stream_chunk(chunk, item["id"], session_id):
-			logger.debug({"id": item["id"], "content": cc["content"]})
-			chunks.append(cc)
-			yield cc
+	yield ContentChunk(
+		type="system",
+		message="start",
+		content="",
+		item_id=item["id"],
+		session_id=session_id or "",
+	)
+
+	try:
+		for chunk in completion:
+			timestamps.append(time.time())
+			if cc := _stream_chunk(chunk, item["id"], session_id):
+				logger.debug({"id": item["id"], "content": cc["content"]})
+				chunks.append(cc)
+				yield cc
+	except Exception as e:
+		yield ContentChunk(
+			type="system",
+			message="error",
+			content=str(e),
+			item_id=item["id"],
+			session_id=session_id or "",
+		)
+		raise e
+
+	yield ContentChunk(
+		type="system",
+		message="end",
+		content="",
+		item_id=item["id"],
+		session_id=session_id or "",
+	)
 
 	return StreamReturn(chunks, _get_inter_chunk_latency(timestamps))
 
@@ -384,6 +410,7 @@ def _stream_chunk(chunk: ModelResponseStream, item_id: str, session_id: str | No
 
 	cc = ContentChunk(
 		type="text",
+		message="content",
 		content="",
 		item_id=item_id,
 		session_id=session_id or "",

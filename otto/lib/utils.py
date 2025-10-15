@@ -87,16 +87,17 @@ class content:
 
 def get_tool_uses(
 	*,
-	session_id: str | list[str] | None = None,
+	session: str | list[str] | None = None,
 	id: str | list[str] | None = None,
 	status: str | list[str] | None = None,
 	name: str | list[str] | None = None,
 	limit: int = 0,
-) -> list[ToolUseContent]:
-	"""Get a list of ToolUseContent filtered by the given args"""
+) -> list[tuple[str, ToolUseContent]]:
+	"""Get a list of tuple[session_id, ToolUseContent] filtered by the given args"""
 
 	query = """
 		SELECT
+			osi.parent as session,
 			jt.id,
 			jt.type,
 			jt.name,
@@ -129,13 +130,13 @@ def get_tool_uses(
 	params: list = []
 
 	# Handle session_id (str or list[str] or None)
-	if session_id is not None:
-		if isinstance(session_id, list):
-			query += f" AND osi.parent IN ({', '.join(['%s'] * len(session_id))})"
-			params.extend(session_id)
+	if session is not None:
+		if isinstance(session, list):
+			query += f" AND osi.parent IN ({', '.join(['%s'] * len(session))})"
+			params.extend(session)
 		else:
 			query += " AND osi.parent = %s"
-			params.append(session_id)
+			params.append(session)
 
 	# Handle id filter
 	if id is not None:
@@ -176,7 +177,7 @@ def get_tool_uses(
 	if not result:
 		return []
 
-	uses: list[ToolUseContent] = []
+	uses: list[tuple[str, ToolUseContent]] = []
 
 	for row in result:
 		args = {}
@@ -187,6 +188,9 @@ def get_tool_uses(
 		if o := row.get("override"):
 			with suppress(json.JSONDecodeError):
 				override = json.loads(o)
+
+		session = row["session"]
+		assert isinstance(session, str), "type check"
 
 		tool_use = ToolUseContent(
 			type="tool_use",
@@ -201,17 +205,17 @@ def get_tool_uses(
 			stdout=row["stdout"],
 			stderr=row["stderr"],
 		)
-		uses.append(tool_use)
+		uses.append((session, tool_use))
 	return uses
 
 
 def get_tool_use(
-	session_id: str,
+	session: str,
 	tool_use_id: str,
 ) -> ToolUseContent | None:
 	"""Get a specific ToolUseContent by its ID from a Session."""
-	if uses := get_tool_uses(session_id=session_id, id=tool_use_id, limit=1):
-		return uses[0]
+	if uses := get_tool_uses(session=session, id=tool_use_id, limit=1):
+		return uses[0][1]
 
 	return None
 

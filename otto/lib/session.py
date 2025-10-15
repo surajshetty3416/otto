@@ -185,6 +185,52 @@ class Session:
 			return drain(interact_generator)
 		return InteractStreamResponse(interact_generator)
 
+	def get_tool_uses(
+		self,
+		id: str | list[str] | None = None,
+		status: str | list[str] | None = None,
+		name: str | list[str] | None = None,
+	) -> list[ToolUseContent]:
+		"""Retrieves a list of tool uses matching the provided filters.
+
+		This method scans all items in the session and collects any tool uses that
+		match the specified filters such as id, status, or name.
+
+		Args:
+		    id: The tool use id or list of ids to match.
+		    status: The tool use status or list of statuses to match (e.g., "pending", "success").
+		    name: The tool name or list of names to match.
+
+		Returns:
+		    A list of `ToolUseContent` objects representing tool calls matching the filters.
+		"""
+		tool_uses: list[ToolUseContent] = []
+		for item in self.get_items():
+			for content in item["content"]:
+				if content["type"] != "tool_use":
+					continue
+
+				if id is not None and (
+					(isinstance(id, list) and content["id"] not in id)
+					or (isinstance(id, str) and content["id"] != id)
+				):
+					continue
+
+				if status is not None and (
+					(isinstance(status, list) and content["status"] not in status)
+					or (isinstance(status, str) and content["status"] != status)
+				):
+					continue
+
+				if name is not None and (
+					(isinstance(name, list) and content["name"] not in name)
+					or (isinstance(name, str) and content["name"] != name)
+				):
+					continue
+
+				tool_uses.append(content)
+		return tool_uses
+
 	def get_pending_tool_use(self, last_item_only: bool = True) -> list[PendingToolUse]:
 		"""Retrieves a list of tool use requests that are pending execution.
 
