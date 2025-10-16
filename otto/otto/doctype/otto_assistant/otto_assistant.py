@@ -6,7 +6,7 @@ import frappe
 from frappe.model.document import Document
 from jinja2 import Template
 
-from otto.llm.utils import DEFAULT_INSTRUCTION, DEFAULT_MODEL
+from otto.llm.utils import DEFAULT_INSTRUCTION
 
 # TODO:
 # - tools
@@ -22,19 +22,24 @@ class OttoAssistant(Document):
 	if TYPE_CHECKING:
 		from frappe.types import DF
 
+		from otto.otto.doctype.otto_assistant_tool_ct.otto_assistant_tool_ct import OttoAssistantToolCT
+
 		get_context: DF.Code | None
 		instruction: DF.Code | None
 		llm: DF.Link | None
 		reasoning_effort: DF.Literal["None", "Low", "Medium", "High"]
 		title: DF.Data | None
+		tools: DF.Table[OttoAssistantToolCT]
 	# end: auto-generated types
 
 	def before_save(self):
+		import otto.lib as lib
+
 		if not self.instruction:
 			self.instruction = DEFAULT_INSTRUCTION
 
 		if not self.llm:
-			self.llm = DEFAULT_MODEL
+			self.llm = lib.get_model(size="Medium")
 
 	@frappe.whitelist()
 	def get_instruction(self):
@@ -43,7 +48,9 @@ class OttoAssistant(Document):
 			return DEFAULT_INSTRUCTION
 
 		template = Template(self.instruction)
-		return template.render(context)
+		instruction = template.render(context)
+		assert isinstance(instruction, str), "type check"
+		return instruction
 
 	@frappe.whitelist()
 	def run_get_context(self):
@@ -62,16 +69,20 @@ class OttoAssistant(Document):
 			function_name="get_context",
 		)
 
+		user = frappe.session.user
+		if full_name := frappe.get_value("User", frappe.session.user, "full_name"):
+			user = full_name
+
 		result = context["result"]
 		now = datetime.now()
 		common = {
-			"user": frappe.session.user,
+			"user": user,
 			"date": now.date().isoformat(),
 			"time": now.time().isoformat(),
+			"datetime": now.isoformat(),
 		}
 
 		if not isinstance(result, dict):
-			# TODO: indicate that get_context should return a dict always
 			return common
 
 		return {**common, **result}

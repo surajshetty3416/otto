@@ -12,6 +12,7 @@
   "reasoning_effort",
   "definition_section",
   "instruction",
+  "tools",
   "context_section",
   "get_context"
  ],
@@ -45,6 +46,7 @@
    "label": "Context"
   },
   {
+   "description": "Function with signature: <code>def get_context() -&gt; dict[str, str]</code>\n<br>\nThe returned dict is used to render the instruction template.",
    "fieldname": "get_context",
    "fieldtype": "Code",
    "label": "Get Context",
@@ -64,12 +66,18 @@
    "fieldtype": "Select",
    "label": "Reasoning Effort",
    "options": "None\nLow\nMedium\nHigh"
+  },
+  {
+   "fieldname": "tools",
+   "fieldtype": "Table",
+   "label": "Tools",
+   "options": "Otto Assistant Tool CT"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-01 15:50:05.712387",
+ "modified": "2025-10-16 11:37:29.309067",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Assistant",

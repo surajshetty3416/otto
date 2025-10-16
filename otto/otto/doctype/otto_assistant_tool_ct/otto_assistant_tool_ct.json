@@ -1,0 +1,112 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-10-16 11:19:54.123600",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "slug",
+  "tool",
+  "column_break_wwzy",
+  "is_enabled",
+  "requires_permission",
+  "section_break_ozxh",
+  "title",
+  "properties",
+  "column_break_smrj",
+  "description",
+  "required"
+ ],
+ "fields": [
+  {
+   "fieldname": "slug",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name (Slug)"
+  },
+  {
+   "fieldname": "column_break_wwzy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Used to enable or disable tool availability mid session.",
+   "fieldname": "is_enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Enabled"
+  },
+  {
+   "description": "If <b>Otto Tool</b> link is not set then <i>Tool Definition</i> entries below need to be filled out.\n<br>\nIn such a case the calling code is responsible for executing the tool.",
+   "fieldname": "tool",
+   "fieldtype": "Link",
+   "label": "Tool",
+   "options": "Otto Tool"
+  },
+  {
+   "default": "0",
+   "description": "Tool requires permission to execute.\n\nIf checked an Otto Permission entry will be created during task execution when this tool is called by the LLM.",
+   "fieldname": "requires_permission",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Requires Permission"
+  },
+  {
+   "depends_on": "eval:!doc.tool",
+   "description": "JSON dump of a tools Properties, example:\n\n<pre>{\n    \"thought\": {\n        \"type\": \"string\",\n        \"description\": \"A thought to think about\",\n    },\n}</pre>",
+   "fieldname": "properties",
+   "fieldtype": "JSON",
+   "label": "Properties",
+   "mandatory_depends_on": "eval:!doc.tool"
+  },
+  {
+   "depends_on": "eval:!doc.tool",
+   "description": "JSON dump of required properties, example:\n\n<pre>[\"thought\"]</pre>",
+   "fieldname": "required",
+   "fieldtype": "JSON",
+   "label": "Required",
+   "mandatory_depends_on": "eval:!doc.tool"
+  },
+  {
+   "depends_on": "eval:!doc.tool",
+   "description": "Description of the tool",
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Description",
+   "mandatory_depends_on": "eval:!doc.tool"
+  },
+  {
+   "fieldname": "section_break_ozxh",
+   "fieldtype": "Section Break",
+   "label": "Tool Definition"
+  },
+  {
+   "fieldname": "column_break_smrj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:!doc.tool",
+   "description": "UI facing title for the tool",
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "Title"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-10-16 11:38:52.989621",
+ "modified_by": "Administrator",
+ "module": "Otto",
+ "name": "Otto Assistant Tool CT",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

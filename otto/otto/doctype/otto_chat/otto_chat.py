@@ -64,8 +64,8 @@ class OttoChat(Document):
 	def chat(
 		query: Query,
 		*,
-		chat: str | None = None,  # if None, then new chat
-		assistant: str | None = None,  # should be present if chat is None
+		chat: str | None = None,  # Chat ID, if None, then new chat
+		assistant: str | None = None,  # Assistant ID, should be present if chat is None
 	):
 		if chat:
 			doc = otto.get(OttoChat, chat)
@@ -73,25 +73,7 @@ class OttoChat(Document):
 			assert assistant, "sanity check"
 			doc = OttoChat.new(assistant)
 
-		frappe.enqueue_doc(
-			doctype="Otto Chat",
-			name=doc.name,
-			doc=doc,
-			method="interact",
-			timeout=300,
-			at_front=True,
-			# params
-			query=query,
-		)
-
-	def interact(self, query: Query):
-		# TODO:
-		# - publish chunks
-		# - publish final complete item with end message
-		# - if error, publish error
-		response = self.session_.interact(query, stream=True)
-		for _ in response:
-			frappe.publish_realtime()
+		return doc.session_.interact(query, stream=True)
 
 	@staticmethod
 	def new(assistant: str) -> OttoChat:
