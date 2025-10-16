@@ -1,7 +1,6 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "hash",
  "creation": "2025-09-01 12:59:27.289099",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -77,11 +76,10 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-16 11:37:29.309067",
+ "modified": "2025-10-16 14:35:56.163561",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Assistant",
- "naming_rule": "Random",
  "owner": "Administrator",
  "permissions": [
   {

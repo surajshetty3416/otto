@@ -25,6 +25,7 @@ class OttoPermissionRequest(Document):
 		from frappe.types import DF
 
 		args_updated: DF.Check
+		denied_reason: DF.Data | None
 		session: DF.Link
 		status: DF.Literal["Pending", "Granted", "Denied"]
 		tool_use_id: DF.Data
@@ -33,6 +34,7 @@ class OttoPermissionRequest(Document):
 	_descriptions: dict[str, str] | None = None
 	_tool: dict[str, str] | None = None
 	_execution: dict[str, str] | None = None
+	_chat: dict[str, str] | None = None
 	_tool_use: ToolUseContent | None = None
 
 	@property
@@ -47,6 +49,17 @@ class OttoPermissionRequest(Document):
 			self._execution = execs[0] if execs else None
 
 		return self._execution or {}
+
+	@property
+	def chat_(self) -> dict[str, str]:
+		if not self._chat:
+			chats = frappe.get_all(
+				"Otto Chat",
+				filters={"session": self.session},
+				fields=["name", "title", "assistant"],
+			)
+			self._chat = chats[0] if chats else None
+		return self._chat or {}
 
 	@property
 	def tool_(self) -> dict[str, str]:
@@ -95,6 +108,14 @@ class OttoPermissionRequest(Document):
 		if self._tool_use is None:
 			self._tool_use = get_tool_use(self.session, self.tool_use_id)
 		return self._tool_use
+
+	@property
+	def chat(self) -> DF.Link | None:
+		return self.chat_.get("name")
+
+	@property
+	def assistant(self) -> DF.Link | None:
+		return self.chat_.get("assistant")
 
 	@property
 	def execution(self) -> DF.Link | None:
@@ -163,15 +184,17 @@ class OttoPermissionRequest(Document):
 
 	@frappe.whitelist()
 	def grant(self, override_args: dict | None = None):
-		return self.acknowledge("Granted", override_args)
+		return self.acknowledge(status="Granted", override_args=override_args)
 
 	@frappe.whitelist()
-	def deny(self):
-		return self.acknowledge("Denied")
+	def deny(self, denied_reason: str | None = None):
+		return self.acknowledge(status="Denied", denied_reason=denied_reason)
 
 	def acknowledge(
 		self,
+		*,
 		status: Literal["Granted", "Denied"],
+		denied_reason: str | None = None,
 		override_args: dict | None = None,
 	):
 		if self.status != "Pending":
@@ -180,6 +203,9 @@ class OttoPermissionRequest(Document):
 		if override_args and status == "Granted":
 			set_override(self.session, self.tool_use_id, override_args)
 			self.args_updated = True
+
+		if denied_reason and status == "Denied":
+			self.denied_reason = denied_reason
 
 		self.set_status(status)
 		self.resume()

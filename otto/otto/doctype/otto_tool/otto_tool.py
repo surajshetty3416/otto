@@ -4,6 +4,7 @@ from __future__ import annotations
 # For license information, please see license.txt
 # import frappe
 import json
+import time
 from typing import TYPE_CHECKING, Any, cast
 
 import frappe
@@ -11,13 +12,14 @@ from frappe.exceptions import ValidationError
 from frappe.model.document import Document
 from frappe.model.naming import make_autoname
 
+import otto
 from otto.llm.utils import reset_user
 from otto.otto.doctype.otto_task.tools import is_meta_tool
 from otto.otto.doctype.otto_tool import lib
 from otto.utils import execute
 
 if TYPE_CHECKING:
-	from otto.llm.types import ToolSchema
+	from otto.lib.types import ToolSchema, ToolUseUpdate
 
 arg_type_to_json_type = {
 	"str": "string",
@@ -225,12 +227,14 @@ class OttoTool(Document):
 		self,
 		args: dict[str, Any],
 		*,
+		chat: str | None = None,
 		task: str | None = None,
 		session: str | None = None,
 	):
 		lib.log(
 			args,
 			tool=self.name,
+			chat=chat,
 			task=task,
 			session=session,
 		)
@@ -247,6 +251,7 @@ class OttoTool(Document):
 		args: dict[str, Any],
 		*,
 		force: bool = False,
+		chat: str | None = None,
 		task: str | None = None,
 		session: str | None = None,
 		env: dict | None = None,
@@ -260,7 +265,7 @@ class OttoTool(Document):
 			raise ValidationError("Internal tools cannot be executed")
 
 		if self.mock_tool:
-			return self.mock(args, task=task, session=session)
+			return self.mock(args, task=task, session=session, chat=chat)
 
 		if not self.is_valid and not force:
 			raise ValidationError("tool is invalid: " + (self.reason or ""))
@@ -274,6 +279,7 @@ class OttoTool(Document):
 			{
 				"tool": self.name,
 				"task": task,
+				"chat": chat,
 				"session": session,
 			}
 		)
@@ -323,3 +329,68 @@ def to_slug(value: str) -> str:
 
 	slug = "_".join(part for part in slug.split("_") if part)
 	return slug.lower()
+
+
+def execute_tool(
+	*,
+	tool: str,
+	args: dict,
+	tool_use_id: str,
+	env_str: str | None,
+	task: str | None = None,
+	session: str | None = None,
+	chat: str | None = None,
+	permission_granted: bool,
+	denied_reason: str | None = None,
+	doc: Document | None = None,
+) -> ToolUseUpdate:
+	"""
+	Executes a tool and returns a ToolUseUpdate.
+
+	Arguments:
+	- tool: ID of the Otto Tool doc to execute
+	- args: LLM generated arguments dictionary for the tool.
+	- tool_use_id: LLM provider given Tool use ID.
+	- env_str: JSON string of environment variables, or None.
+	- task: Otto Task doc name (if any)
+	- session: Otto Session doc name (if any)
+	- chat: Otto Chat doc name (if any)
+	- permission_granted: Whether permission to use the tool was granted.
+	- denied_reason: Reason for denial, if permission is denied.
+	- doc: Otto Execution doc used for error logging (for reference purpose only).
+	"""
+
+	from otto.lib.types import ToolUseUpdate
+	from otto.otto.doctype.otto_tool.otto_tool import OttoTool
+
+	update = ToolUseUpdate(id=tool_use_id, start_time=time.time(), end_time=time.time())
+	if not permission_granted:
+		update["is_error"] = True
+		update["result"] = denied_reason or "Permission to use tool denied by user"
+		return update
+
+	tool_doc = otto.get(OttoTool, tool)
+	try:
+		env = json.loads(env_str) if env_str else None
+		result = tool_doc.execute(
+			args,
+			task=task,
+			session=session,
+			env=env,
+			chat=chat,
+		)
+		update["is_error"] = False
+		update["result"] = result["result"]
+		update["stdout"] = result["stdout"]
+		update["stderr"] = result["stderr"]
+	except Exception as e:
+		otto.log_error(
+			"Tool Use Error",
+			doc=doc or tool_doc,
+			tool=tool,
+		)
+		update["is_error"] = True
+		update["result"] = str(e)
+	finally:
+		update["end_time"] = time.time()
+	return update

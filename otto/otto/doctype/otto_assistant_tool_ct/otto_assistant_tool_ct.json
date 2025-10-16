@@ -20,7 +20,8 @@
    "fieldname": "slug",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Name (Slug)"
+   "label": "Name (Slug)",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_wwzy",
@@ -54,15 +55,17 @@
   {
    "fieldname": "tool",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Tool",
-   "options": "Otto Tool"
+   "options": "Otto Tool",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-10-16 12:39:32.126283",
+ "modified": "2025-10-16 13:46:03.611481",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Assistant Tool CT",

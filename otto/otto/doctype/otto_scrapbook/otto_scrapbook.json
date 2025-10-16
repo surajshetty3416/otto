@@ -10,6 +10,7 @@
   "session",
   "column_break_nqul",
   "task",
+  "chat",
   "content_section",
   "content"
  ],
@@ -61,13 +62,19 @@
    "label": "Session",
    "options": "Otto Session",
    "read_only": 1
+  },
+  {
+   "fieldname": "chat",
+   "fieldtype": "Link",
+   "label": "Chat",
+   "options": "Otto Chat"
   }
  ],
  "grid_page_length": 50,
  "in_create": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-17 16:07:41.115454",
+ "modified": "2025-10-16 14:17:47.231541",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Scrapbook",

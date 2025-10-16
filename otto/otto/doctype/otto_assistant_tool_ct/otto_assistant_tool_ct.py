@@ -19,8 +19,8 @@ class OttoAssistantToolCT(Document):
 		parentfield: DF.Data
 		parenttype: DF.Data
 		requires_permission: DF.Check
-		slug: DF.Data | None
-		tool: DF.Link | None
+		slug: DF.Data
+		tool: DF.Link
 	# end: auto-generated types
 
 	pass

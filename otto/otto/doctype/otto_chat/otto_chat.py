@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast, overload
+from typing import TYPE_CHECKING, NamedTuple, cast
 
 # Copyright (c) 2025, Alan Tom and contributors
 # For license information, please see license.txt
@@ -10,9 +10,18 @@ from frappe.model.document import Document
 import otto
 import otto.lib as lib
 from otto.llm.utils import DEFAULT_MODEL
+from otto.otto.doctype.otto_assistant.otto_assistant import OttoAssistant
+from otto.otto.doctype.otto_permission_request.otto_permission_request import OttoPermissionRequest
 
 if TYPE_CHECKING:
-	from otto.lib.types import Query
+	from otto.lib.types import PendingToolUse, Query, ToolUseUpdate
+
+
+class ToolConfig(NamedTuple):
+	slug: str
+	tool: str  # Otto Tool name
+	is_internal: bool
+	requires_permission: bool
 
 
 class OttoChat(Document):
@@ -30,6 +39,48 @@ class OttoChat(Document):
 	# end: auto-generated types
 
 	_session: lib.Session
+	_assistant: OttoAssistant | None
+	_pending_tool_use: list[PendingToolUse] | None
+	_tool_configs: dict[str, ToolConfig] | None
+
+	@property
+	def tool_configs(self) -> dict[str, ToolConfig]:
+		"""Returns: dict[slug, otto_tool_name]"""
+		if self._tool_configs is not None:
+			return self._tool_configs
+
+		map: dict[str, ToolConfig] = {}
+		tool_names = [tool.tool for tool in self.assistant_.tools]
+
+		tools = {
+			t.name: t
+			for t in frappe.get_all(
+				"Otto Tool",
+				filters={"name": ["in", tool_names]},
+				fields=["name", "slug", "is_internal", "requires_permission"],
+			)
+		}
+
+		for tool in self.assistant_.tools:
+			if not tool.slug:
+				continue
+
+			td = tools[tool.tool]
+			map[tool.slug] = ToolConfig(
+				slug=tool.slug,
+				tool=tool.tool,
+				is_internal=bool(td.is_internal),
+				requires_permission=bool(tools[tool.tool].requires_permission or td.requires_permission),
+			)
+
+		self._tool_configs = map
+		return map
+
+	@property
+	def assistant_(self) -> OttoAssistant:
+		if not self._assistant:
+			self._assistant = otto.get(OttoAssistant, self.assistant)
+		return self._assistant
 
 	@property
 	def session_(self) -> lib.Session:
@@ -41,39 +92,6 @@ class OttoChat(Document):
 	def session_(self, session: lib.Session):
 		self._session = session
 		self.session = session.id
-
-	@overload
-	@staticmethod
-	def chat(
-		query: Query,
-		*,
-		chat: None,
-		assistant: str,
-	): ...
-
-	@overload
-	@staticmethod
-	def chat(
-		query: Query,
-		*,
-		chat: str,
-		assistant: None,
-	): ...
-
-	@staticmethod
-	def chat(
-		query: Query,
-		*,
-		chat: str | None = None,  # Chat ID, if None, then new chat
-		assistant: str | None = None,  # Assistant ID, should be present if chat is None
-	):
-		if chat:
-			doc = otto.get(OttoChat, chat)
-		else:
-			assert assistant, "sanity check"
-			doc = OttoChat.new(assistant)
-
-		return doc.session_.interact(query, stream=True)
 
 	@staticmethod
 	def new(assistant: str) -> OttoChat:
@@ -97,3 +115,88 @@ class OttoChat(Document):
 
 		doc.save()
 		return doc
+
+	def chat(self, query: Query):
+		if self.has_pending_requests():
+			return None, "Resolve all pending requests before resuming chat"
+
+		return self.session_.interact(query, stream=True), None
+
+	def has_pending_requests(self) -> bool:
+		rm = self._get_requests_map()
+		return any(status == "Pending" for status in rm.values())
+
+	def get_pending_requests(self) -> list[OttoPermissionRequest]:
+		return [
+			otto.get(OttoPermissionRequest, req)
+			for req in frappe.get_all(
+				"Otto Permission Request",
+				filters={"session": self.session, "status": "Pending"},
+				pluck="name",
+			)
+		]
+
+	def raise_permissions_requests(self) -> list[OttoPermissionRequest]:
+		requests: list[OttoPermissionRequest] = []
+		pending_tool_use = self.get_pending_tools()
+		for ptu in pending_tool_use:
+			config = self.tool_configs.get(ptu.name)
+			if not config or not config.requires_permission:
+				continue
+
+			req = OttoPermissionRequest.new(session=self.session, tool_use_id=ptu.id)
+			requests.append(req)
+		return requests
+
+	def execute_tools(self):
+		from otto.otto.doctype.otto_tool.otto_tool import execute_tool
+
+		req_map = self._get_requests_map()
+		updates: list[ToolUseUpdate] = []
+		for ptu in self.get_pending_tools():
+			config = self.tool_configs.get(ptu.name)
+			if not config or config.is_internal:
+				continue
+
+			req_status = req_map.get(ptu.id)
+			if not (req_status is None or req_status == "Granted"):
+				continue
+
+			update = execute_tool(
+				tool=config.tool,
+				args=ptu.args,
+				tool_use_id=ptu.id,
+				env_str=None,
+				permission_granted=True,
+				task=None,
+				session=self.session,
+				chat=self.name,
+				doc=None,
+			)
+			updates.append(update)
+		self.update_tool_use(updates)
+
+	def get_pending_tools(self, internal_only: bool = False) -> list[PendingToolUse]:
+		pending_tool_uses = self.session_.get_pending_tool_use()
+		if not internal_only:
+			return pending_tool_uses
+
+		pending: list[PendingToolUse] = []
+		for ptu in pending_tool_uses:
+			config = self.tool_configs.get(ptu.name)
+			if not config or not config.is_internal:
+				continue
+
+			pending.append(ptu)
+		return pending
+
+	def update_tool_use(self, update: ToolUseUpdate | list[ToolUseUpdate]) -> None:
+		self.session_.update_tool_use(update)
+
+	def _get_requests_map(self) -> dict[str, str]:
+		requests = frappe.get_all(
+			"Otto Permission Request",
+			filters={"session": self.session},
+			fields=["tool_use_id", "status", "denied_reason"],
+		)
+		return {req.tool_use_id: req.status for req in requests}

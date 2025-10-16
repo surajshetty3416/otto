@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import time
 from typing import TYPE_CHECKING, Literal, cast
 
 import frappe
@@ -173,6 +172,7 @@ class OttoExecution(Document):
 		"""
 		from otto.otto.doctype.otto_permission_request.otto_permission_request import OttoPermissionRequest
 		from otto.otto.doctype.otto_task.otto_task import get_tool_map
+		from otto.otto.doctype.otto_tool.otto_tool import execute_tool
 		from otto.utils.notify import PermissionRequest
 
 		if not (pending := session.get_pending_tool_use()):
@@ -221,14 +221,16 @@ class OttoExecution(Document):
 			update = ToolUseUpdate(id=tool.id)  # Used if meta tool
 			if not is_meta_tool(tool.name):
 				assert tool_name is not None, "sanity check"
-				update = self._execute_tool(
-					tool_name=tool_name,
+				update = execute_tool(
+					tool=tool_name,
 					args=tool.args,
 					tool_use_id=tool.id,
 					env_str=env_str,
 					permission_granted=permission_granted,
+					task=self.task,
+					session=self.session,
+					doc=self,
 				)
-
 			updates.append(update)
 
 		session.update_tool_use(updates)
@@ -241,49 +243,6 @@ class OttoExecution(Document):
 			)
 
 		return set_waiting
-
-	def _execute_tool(
-		self,
-		*,
-		tool_name: str,
-		args: dict,
-		tool_use_id: str,
-		env_str: str | None,
-		permission_granted: bool,
-	) -> ToolUseUpdate:
-		"""Executes tool and returns tuple of (result, is_error)"""
-		from otto.otto.doctype.otto_tool.otto_tool import OttoTool
-
-		update = ToolUseUpdate(id=tool_use_id, start_time=time.time(), end_time=time.time())
-		if not permission_granted:
-			update["is_error"] = True
-			update["result"] = "Permission to use tool denied by user"
-			return update
-
-		tool_doc = otto.get(OttoTool, tool_name)
-		try:
-			env = json.loads(env_str) if env_str else None
-			result = tool_doc.execute(
-				args,
-				task=self.task,
-				session=self.session,
-				env=env,
-			)
-			update["is_error"] = False
-			update["result"] = result["result"]
-			update["stdout"] = result["stdout"]
-			update["stderr"] = result["stderr"]
-		except Exception as e:
-			otto.log_error(
-				"Tool Use Error",
-				doc=self,
-				tool=tool_name,
-			)
-			update["is_error"] = True
-			update["result"] = str(e)
-		finally:
-			update["end_time"] = time.time()
-		return update
 
 	def should_stop(self, session: Session) -> bool:
 		item = session.get_last_item()

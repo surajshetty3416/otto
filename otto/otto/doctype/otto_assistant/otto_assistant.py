@@ -63,8 +63,12 @@ class OttoAssistant(Document):
 		else:
 			doc.reasoning_effort = reasoning_effort
 
-		for tool in tools or []:
-			doc.append("tools", {"tool": tool})
+		if tools:
+			tool_slugs = {}
+			tool_rows = frappe.get_all("Otto Tool", filters={"name": ["in", tools]}, fields=["name", "slug"])
+			tool_slugs = {row["name"]: row["slug"] for row in tool_rows}
+			for tool in tools:
+				doc.append("tools", {"tool": tool, "slug": tool_slugs.get(tool)})
 
 		doc.save()
 		return doc

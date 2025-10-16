@@ -122,6 +122,16 @@ class OttoTask(Document):
 			if tool.slug and is_meta_tool(tool.slug):
 				raise frappe.ValidationError(f'Slug cannot be named "{tool.slug}" as it is a meta tool')
 
+		# TODO: figure out support for internal tools in tasks
+		if internal_tools := frappe.get_all(
+			"Otto Tool",
+			filters={"name": ("in", [t.tool for t in self.tools]), "is_internal": True},
+			fields=["name", "title", "slug"],
+		):
+			raise frappe.ValidationError(
+				f"Internal tools cannot be used in tasks: {', '.join([t.slug for t in internal_tools])}"
+			)
+
 	def set_if_no_target(self):
 		if self.target_doctype and not self.no_target:
 			return

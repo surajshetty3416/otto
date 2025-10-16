@@ -17,6 +17,7 @@ class OttoScrapbook(Document):
 	if TYPE_CHECKING:
 		from frappe.types import DF
 
+		chat: DF.Link | None
 		content: DF.Code | None
 		session: DF.Link | None
 		task: DF.Link | None
@@ -24,18 +25,20 @@ class OttoScrapbook(Document):
 	# end: auto-generated types
 
 	@staticmethod
-	def new(content: str, *, session: str | None = None, task: str | None = None, tool: str | None = None):
-		doc = cast(
-			"OttoScrapbook",
-			frappe.get_doc(
-				{
-					"doctype": "Otto Scrapbook",
-					"content": content,
-					"session": session,
-					"task": task,
-					"tool": tool,
-				}
-			),
-		)
+	def new(
+		content: str,
+		*,
+		session: str | None = None,
+		task: str | None = None,
+		tool: str | None = None,
+		chat: str | None = None,
+	):
+		doc = cast("OttoScrapbook", frappe.new_doc("Otto Scrapbook"))
+		doc.content = content
+		doc.session = session
+		doc.task = task
+		doc.tool = tool
+		doc.chat = chat
 		doc.save(ignore_permissions=True)
+		return doc
 		return doc

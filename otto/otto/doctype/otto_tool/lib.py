@@ -16,6 +16,7 @@ def log(
 	content: Any,
 	*,
 	tool: str | None = None,
+	chat: str | None = None,
 	task: str | None = None,
 	session: str | None = None,
 ):
@@ -26,7 +27,7 @@ def log(
 	if not isinstance(content, str):
 		content = utils.json_dumps(content)[0]
 
-	OttoScrapbook.new(content, tool=tool, task=task, session=session)
+	OttoScrapbook.new(content, tool=tool, chat=chat, task=task, session=session)
 
 
 def get_env(env: dict | None = None):

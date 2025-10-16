@@ -17,6 +17,7 @@ def acknowledge(
 	name: str,
 	type: Literal["grant", "deny"],
 	override_args: dict | None = None,
+	denied_reason: str | None = None,
 ):
 	"""
 	Acknowledge and update the status of an Otto Permission Request.
@@ -29,6 +30,7 @@ def acknowledge(
 		name: The name of the Otto Permission Request doc to acknowledge.
 		type: The action to take - either "grant" to approve
 			or "deny" to reject the permission request.
+		denied_reason: The reason for denying the permission request. Defaults to None.
 		override_args: A dictionary of arguments to override
 			the original permission request parameters. Defaults to None.
 
@@ -47,7 +49,7 @@ def acknowledge(
 
 	opr = otto.get(OttoPermissionRequest, name)
 	opr.add_viewed()
-	opr.acknowledge(status, override_args)
+	opr.acknowledge(status=status, denied_reason=denied_reason, override_args=override_args)
 
 
 @frappe.whitelist(methods=["POST"])

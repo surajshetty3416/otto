@@ -8,6 +8,7 @@
  "field_order": [
   "session",
   "tool_use_id",
+  "denied_reason",
   "column_break_ncdl",
   "status",
   "tool_name",
@@ -181,13 +182,20 @@
    "fieldname": "context_tab",
    "fieldtype": "Tab Break",
    "label": "Context"
+  },
+  {
+   "depends_on": "eval:doc.status == \"Denied\"",
+   "fieldname": "denied_reason",
+   "fieldtype": "Data",
+   "label": "Denied Reason",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "in_create": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-03 12:37:17.661729",
+ "modified": "2025-10-16 14:35:27.378276",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Permission Request",
