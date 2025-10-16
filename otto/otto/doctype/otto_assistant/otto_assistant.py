@@ -47,7 +47,7 @@ class OttoAssistant(Document):
 		name: str | None = None,
 		llm: str | None = None,
 		instruction: str | None = None,
-		tools: list[dict] | None = None,
+		tools: list[str] | None = None,
 		reasoning_effort: ReasoningEffort | None = None,
 	):
 		import otto.lib as lib
@@ -64,7 +64,7 @@ class OttoAssistant(Document):
 			doc.reasoning_effort = reasoning_effort
 
 		for tool in tools or []:
-			doc.append("tools", tool)
+			doc.append("tools", {"tool": tool})
 
 		doc.save()
 		return doc

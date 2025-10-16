@@ -8,6 +8,7 @@
  "field_order": [
   "slug",
   "column_break_wwzy",
+  "tool",
   "flags1_section",
   "is_enabled",
   "column_break_wyrm",
@@ -49,13 +50,19 @@
   {
    "fieldname": "column_break_wyrm",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "tool",
+   "fieldtype": "Link",
+   "label": "Tool",
+   "options": "Otto Tool"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-10-16 11:58:06.030297",
+ "modified": "2025-10-16 12:39:32.126283",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Assistant Tool CT",

@@ -78,15 +78,16 @@ class OttoTool(Document):
 		doc = cast("OttoTool", frappe.new_doc("Otto Tool"))
 		doc.name = name or make_autoname("hash")
 		doc.title = title
-		doc.slug = slug or ""
+		doc.slug = slug or to_slug(title or "")
 
 		doc.description = description
 		for arg in args or []:
 			doc.append("args", arg)
 
 		if schema:
-			update_from_schema(doc, schema)
+			doc.set_from_schema(schema)
 
+		doc.is_internal = is_internal
 		if not is_internal:
 			doc.code = code
 			doc.mock_tool = mock_tool
@@ -106,6 +107,7 @@ class OttoTool(Document):
 	def before_save(self):
 		self.set_title_or_slug()
 		if self.is_internal:
+			self.validate_internal()
 			return None
 
 		if not self.code:
@@ -123,6 +125,12 @@ class OttoTool(Document):
 		self.validate_arg_types()
 		self.validate_descriptions()
 		return None
+
+	def validate_internal(self):
+		self.is_valid = True
+		self.reason = None
+		self.validate_arg_types()
+		self.validate_descriptions()
 
 	def set_title_or_slug(self):
 		if self.title and not self.slug:
@@ -169,7 +177,6 @@ class OttoTool(Document):
 
 	def validate_descriptions(self):
 		if not self.description:
-			self.is_valid = False
 			self.set_reason("Tool description missing")
 
 		for arg in self.args:
@@ -290,17 +297,29 @@ class OttoTool(Document):
 
 		return json.dumps(result, indent=2)
 
+	def set_from_schema(self, schema: ToolSchema):
+		self.slug = schema["name"]
+		self.description = schema["description"]
+		self.args = []
 
-def update_from_schema(doc: OttoTool, schema: ToolSchema):
-	doc.slug = schema["name"]
-	doc.description = schema["description"]
-	doc.args = []
+		for arg in schema["parameters"]["properties"]:
+			arg_def = {
+				"arg_name": arg,
+				"type": schema["parameters"]["properties"].get(arg, {}).get("type", "unknown"),
+				"description": schema["parameters"]["properties"].get(arg, {}).get("description", ""),
+				"is_required": arg in schema["parameters"]["required"],
+			}
+			self.append("args", arg_def)
 
-	for arg in schema["parameters"]["properties"]:
-		arg_def = {
-			"arg_name": arg,
-			"type": schema["parameters"]["properties"].get(arg, {}).get("type", "unknown"),
-			"description": schema["parameters"]["properties"].get(arg, {}).get("description", ""),
-			"is_required": arg in schema["parameters"]["required"],
-		}
-		doc.append("args", arg_def)
+
+def to_slug(value: str) -> str:
+	out = []
+	for c in value:
+		if c.isalnum():
+			out.append(c)
+		elif c in (" ", "-", "."):
+			out.append("_")
+	slug = "".join(out)
+
+	slug = "_".join(part for part in slug.split("_") if part)
+	return slug.lower()
