@@ -14,6 +14,8 @@ from otto.otto.doctype.otto_assistant.otto_assistant import OttoAssistant
 from otto.otto.doctype.otto_permission_request.otto_permission_request import OttoPermissionRequest
 
 if TYPE_CHECKING:
+	from collections.abc import Callable
+
 	from otto.lib.types import PendingToolUse, Query, ToolUseUpdate
 
 
@@ -148,14 +150,20 @@ class OttoChat(Document):
 			requests.append(req)
 		return requests
 
-	def execute_tools(self):
+	def execute_tools(self, fn_map: dict[str, Callable] | None = None):
 		from otto.otto.doctype.otto_tool.otto_tool import execute_tool
 
+		fn_map = fn_map or {}
 		req_map = self._get_requests_map()
 		updates: list[ToolUseUpdate] = []
 		for ptu in self.get_pending_tools():
 			config = self.tool_configs.get(ptu.name)
-			if not config or config.is_external:
+			if not config:
+				continue
+
+			fn = fn_map.get(config.slug)
+			if config.is_external and not fn:
+				# External tool call managed by caller
 				continue
 
 			req_status = req_map.get(ptu.id)
@@ -172,6 +180,7 @@ class OttoChat(Document):
 				session=self.session,
 				chat=self.name,
 				doc=None,
+				fn=fn,
 			)
 			updates.append(update)
 		self.update_tool_use(updates)
