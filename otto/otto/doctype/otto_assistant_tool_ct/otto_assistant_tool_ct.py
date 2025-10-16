@@ -14,17 +14,12 @@ class OttoAssistantToolCT(Document):
 	if TYPE_CHECKING:
 		from frappe.types import DF
 
-		description: DF.SmallText | None
 		is_enabled: DF.Check
 		parent: DF.Data
 		parentfield: DF.Data
 		parenttype: DF.Data
-		properties: DF.JSON | None
-		required: DF.JSON | None
 		requires_permission: DF.Check
 		slug: DF.Data | None
-		title: DF.Data | None
-		tool: DF.Link | None
 	# end: auto-generated types
 
 	pass

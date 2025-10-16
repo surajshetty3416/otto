@@ -79,16 +79,9 @@ class OttoChat(Document):
 	def new(assistant: str) -> OttoChat:
 		from otto.otto.doctype.otto_assistant.otto_assistant import OttoAssistant
 
+		doc = cast("OttoChat", frappe.new_doc("Otto Chat"))
 		assistant_doc = otto.get(OttoAssistant, assistant)
-		doc = cast(
-			"OttoChat",
-			frappe.get_doc(
-				{
-					"doctype": "Otto Chat",
-					"assistant": assistant,
-				}
-			),
-		)
+		doc.assistant = assistant
 
 		reasoning_effort = assistant_doc.reasoning_effort
 		if reasoning_effort == "None":

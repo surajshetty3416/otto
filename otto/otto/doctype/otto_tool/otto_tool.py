@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, cast
 import frappe
 from frappe.exceptions import ValidationError
 from frappe.model.document import Document
+from frappe.model.naming import make_autoname
 
 from otto.llm.utils import reset_user
 from otto.otto.doctype.otto_task.tools import is_meta_tool
@@ -40,8 +41,9 @@ class OttoTool(Document):
 		from otto.otto.doctype.otto_tool_arg_ct.otto_tool_arg_ct import OttoToolArgCT
 
 		args: DF.Table[OttoToolArgCT]
-		code: DF.Code
+		code: DF.Code | None
 		description: DF.LongText | None
+		is_internal: DF.Check
 		is_valid: DF.Check
 		mock_return_value: DF.Data | None
 		mock_tool: DF.Check
@@ -49,37 +51,51 @@ class OttoTool(Document):
 		requires_permission: DF.Check
 		slug: DF.Data
 		title: DF.Data | None
+		use_explanation: DF.Check
 	# end: auto-generated types
 
 	@staticmethod
 	def new(
-		slug: str,
-		description: str,
-		code: str,
 		*,
-		args: list[dict] | None = None,
-		group: str | None = None,
+		# Labels
+		name: str | None = None,
+		title: str | None = None,
+		# Flags
+		is_internal: bool = False,
+		use_explanation: bool = False,
+		requires_permission: bool = False,
+		# Mocks
 		mock_tool: bool = False,
 		mock_return_value: str | None = None,
+		# Schema
+		schema: ToolSchema | None = None,
+		code: str | None = None,
+		# Not required if schema is provided
+		slug: str | None = None,
+		args: list[dict] | None = None,
+		description: str | None = None,
 	):
-		doc = cast(
-			"OttoTool",
-			frappe.get_doc(
-				{
-					"doctype": "Otto Tool",
-					"slug": slug,
-					"description": description,
-					"code": code,
-					"group": group,
-					"mock_tool": mock_tool,
-					"mock_return_value": mock_return_value,
-				}
-			),
-		)
+		doc = cast("OttoTool", frappe.new_doc("Otto Tool"))
+		doc.name = name or make_autoname("hash")
+		doc.title = title
+		doc.slug = slug or ""
 
+		doc.description = description
 		for arg in args or []:
 			doc.append("args", arg)
 
+		if schema:
+			update_from_schema(doc, schema)
+
+		if not is_internal:
+			doc.code = code
+			doc.mock_tool = mock_tool
+			doc.mock_return_value = mock_return_value
+
+		doc.use_explanation = use_explanation
+		doc.requires_permission = requires_permission
+
+		assert doc.slug, "slug is required"
 		doc.save()
 		return doc
 
@@ -89,6 +105,13 @@ class OttoTool(Document):
 
 	def before_save(self):
 		self.set_title_or_slug()
+		if self.is_internal:
+			return None
+
+		if not self.code:
+			self.set_reason("Code is required")
+			return None
+
 		reasons, args_def = execute.validate(self.code, self.slug)
 		if reasons:
 			return self.set_reason("\n".join(reasons))
@@ -163,28 +186,33 @@ class OttoTool(Document):
 	@frappe.whitelist()
 	def get_function_schema(self, slug: str | None = None) -> ToolSchema:
 		"""Returns function schema for the tool, add meta properties that might aid in usage reasoning."""
+
+		from otto.llm.types import ToolSchema, ToolSchemaParameters
+
 		properties = {
 			arg.arg_name: {"type": arg.type, "description": arg.description or ""} for arg in self.args
 		}
+		required = [arg.arg_name for arg in self.args if arg.is_required]
 
-		"""Returns tool as a JSON Schema function"""
-		schema: ToolSchema = {
-			"name": slug or self.slug,
-			"description": self.description or "",
-			"parameters": {
-				"type": "object",
-				"properties": {
-					"explanation": {
-						"type": "string",
-						"description": "A short explanation of why the this tool is being called, and how it contributes to the task.",
-					},
-					**properties,
+		if self.use_explanation:
+			properties = {
+				"explanation": {
+					"type": "string",
+					"description": "A short explanation of why the this tool is being called, and how it contributes to the task.",
 				},
-				"required": ["explanation"] + [arg.arg_name for arg in self.args if arg.is_required],
-			},
-		}
+				**properties,
+			}
+			required = ["explanation", *required]
 
-		return schema
+		return ToolSchema(
+			name=slug or self.slug,
+			description=self.description or "",
+			parameters=ToolSchemaParameters(
+				type="object",
+				properties=properties,
+				required=required,
+			),
+		)
 
 	def mock(
 		self,
@@ -221,6 +249,9 @@ class OttoTool(Document):
 		- task: task document name (for logging if needed)
 		- session: session document name (for logging if needed)
 		"""
+		if self.is_internal:
+			raise ValidationError("Internal tools cannot be executed")
+
 		if self.mock_tool:
 			return self.mock(args, task=task, session=session)
 
@@ -240,6 +271,7 @@ class OttoTool(Document):
 			}
 		)
 		globals = dict(otto=lib.get_lib(env), refs=refs)
+		assert self.code is not None, "sanity check"
 		return execute.execute(
 			self.code,
 			args=args,
@@ -257,3 +289,18 @@ class OttoTool(Document):
 			del result["stderr"]
 
 		return json.dumps(result, indent=2)
+
+
+def update_from_schema(doc: OttoTool, schema: ToolSchema):
+	doc.slug = schema["name"]
+	doc.description = schema["description"]
+	doc.args = []
+
+	for arg in schema["parameters"]["properties"]:
+		arg_def = {
+			"arg_name": arg,
+			"type": schema["parameters"]["properties"].get(arg, {}).get("type", "unknown"),
+			"description": schema["parameters"]["properties"].get(arg, {}).get("description", ""),
+			"is_required": arg in schema["parameters"]["required"],
+		}
+		doc.append("args", arg_def)

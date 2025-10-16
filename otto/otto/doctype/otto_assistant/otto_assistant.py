@@ -1,16 +1,24 @@
+from __future__ import annotations
+
 # Copyright (c) 2025, Alan Tom and contributors
 # For license information, please see license.txt
-
 # import frappe
+from typing import TYPE_CHECKING, cast
+
 import frappe
 from frappe.model.document import Document
+from frappe.model.naming import make_autoname
 from jinja2 import Template
 
-from otto.llm.utils import DEFAULT_INSTRUCTION
+if TYPE_CHECKING:
+	from otto.lib.types import ReasoningEffort
 
 # TODO:
 # - tools
 # - re-render instruction on every message
+DEFAULT_INSTRUCTION = (
+	"You are Otto, a helpful assistant. You are currently speaking to {{user}} and the date is {{date}}."
+)
 
 
 class OttoAssistant(Document):
@@ -31,6 +39,35 @@ class OttoAssistant(Document):
 		title: DF.Data | None
 		tools: DF.Table[OttoAssistantToolCT]
 	# end: auto-generated types
+
+	@staticmethod
+	def new(
+		*,
+		title: str,
+		name: str | None = None,
+		llm: str | None = None,
+		instruction: str | None = None,
+		tools: list[dict] | None = None,
+		reasoning_effort: ReasoningEffort | None = None,
+	):
+		import otto.lib as lib
+
+		doc = cast("OttoAssistant", frappe.new_doc("Otto Assistant"))
+		doc.title = title
+		doc.llm = llm or lib.get_model(size="Medium")
+		doc.instruction = instruction or DEFAULT_INSTRUCTION
+		doc.name = name or make_autoname("hash")
+
+		if not reasoning_effort:
+			doc.reasoning_effort = "None"
+		else:
+			doc.reasoning_effort = reasoning_effort
+
+		for tool in tools or []:
+			doc.append("tools", tool)
+
+		doc.save()
+		return doc
 
 	def before_save(self):
 		import otto.lib as lib
