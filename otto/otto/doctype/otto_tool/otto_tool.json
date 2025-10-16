@@ -12,7 +12,7 @@
   "requires_permission",
   "mock_tool",
   "column_break_jpkx",
-  "is_internal",
+  "is_external",
   "use_explanation",
   "definition_section",
   "code",
@@ -28,15 +28,15 @@
  "fields": [
   {
    "default": "def main(name: str):\n    return f\"Hello {name}\"",
-   "depends_on": "eval:!doc.is_internal",
+   "depends_on": "eval:!doc.is_external",
    "description": "Tool definition consists of a function <code>main</code>. Return value of this\n<code>main</code> function is passed to the LLM.\n\n<br><br>\n<b>Tool definition guidelines</b>\n<ul>\n    <li>Tool definition should have a valid Python function named <code>main</code>.</li>\n    <li>Use <code>from module import item</code> instead of <code>import module</code>.</li>\n    <li>Not all imports are allowed, test the function to find out if the import works.</li>\n    <li>Use simple type annotations to infer JSON schema type for the arguments.</li>\n    <li>Complex types like <code>str | int</code> cannot be inferred from.</li>\n</ul>",
    "fieldname": "code",
    "fieldtype": "Code",
    "in_list_view": 1,
    "label": "Code",
-   "mandatory_depends_on": "eval:!doc.is_internal",
+   "mandatory_depends_on": "eval:!doc.is_external",
    "options": "Python",
-   "read_only_depends_on": "eval:doc.is_internal"
+   "read_only_depends_on": "eval:doc.is_external"
   },
   {
    "fieldname": "definition_section",
@@ -54,7 +54,7 @@
    "fieldname": "description",
    "fieldtype": "Long Text",
    "label": "Description",
-   "read_only_depends_on": "eval:doc.is_internal"
+   "read_only_depends_on": "eval:doc.is_external"
   },
   {
    "description": "Arg descriptions should tell then LLM what the argument is for. If needed it should also describe its structure (if a nested data type is used).\n<br><br>\nIf the <code>main</code> function in <b>Code</b> is has type annotations, this list can be auto generated. If the type annotations are complex, the type will be set as <code>unknown</code> this should be overridden with a valid JSON type. Ref: <a href=\"https://json-schema.org/understanding-json-schema/reference/type\">JSON Schema Types</a>",
@@ -62,7 +62,7 @@
    "fieldtype": "Table",
    "label": "Args",
    "options": "Otto Tool Arg CT",
-   "read_only_depends_on": "eval:doc.is_internal"
+   "read_only_depends_on": "eval:doc.is_external"
   },
   {
    "description": "Snake cased name of the tool. This is the name that the LLM sees.",
@@ -71,7 +71,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Slug",
-   "read_only_depends_on": "eval:doc.is_internal",
+   "read_only_depends_on": "eval:doc.is_external",
    "reqd": 1
   },
   {
@@ -125,13 +125,13 @@
    "fieldname": "requires_permission",
    "fieldtype": "Check",
    "label": "Requires Permission",
-   "read_only_depends_on": "eval:doc.is_internal"
+   "read_only_depends_on": "eval:doc.is_external"
   },
   {
    "fieldname": "title",
    "fieldtype": "Data",
    "label": "Title",
-   "read_only_depends_on": "eval:doc.is_internal"
+   "read_only_depends_on": "eval:doc.is_external"
   },
   {
    "fieldname": "mock_section",
@@ -144,19 +144,19 @@
   },
   {
    "default": "0",
-   "depends_on": "eval:doc.is_internal",
-   "description": "If checked then tool is defined within an app and cannot be edited by the user.\n<br>\nInternal tools are managed by the app they are defined in.",
-   "fieldname": "is_internal",
-   "fieldtype": "Check",
-   "label": "Is Internal",
-   "read_only": 1
-  },
-  {
-   "default": "0",
    "description": "If checked then makes use of meta arg <code>explanation</code>. This asks the LLM to provide an explanation for why the tool was called.",
    "fieldname": "use_explanation",
    "fieldtype": "Check",
    "label": "Use Explanation"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.is_external",
+   "description": "If checked then tool is defined within an app and cannot be edited by the user.\n<br>\nExternal tools are managed by the app they are defined in.",
+   "fieldname": "is_external",
+   "fieldtype": "Check",
+   "label": "Is External",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
@@ -166,7 +166,7 @@
    "link_fieldname": "tool"
   }
  ],
- "modified": "2025-10-16 12:20:03.137035",
+ "modified": "2025-10-16 15:07:59.442647",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Tool",

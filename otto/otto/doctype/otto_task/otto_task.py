@@ -125,7 +125,7 @@ class OttoTask(Document):
 		# TODO: figure out support for internal tools in tasks
 		if internal_tools := frappe.get_all(
 			"Otto Tool",
-			filters={"name": ("in", [t.tool for t in self.tools]), "is_internal": True},
+			filters={"name": ("in", [t.tool for t in self.tools]), "is_external": True},
 			fields=["name", "title", "slug"],
 		):
 			raise frappe.ValidationError(

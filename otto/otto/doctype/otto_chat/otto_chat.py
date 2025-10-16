@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 class ToolConfig(NamedTuple):
 	slug: str
 	tool: str  # Otto Tool name
-	is_internal: bool
+	is_external: bool
 	requires_permission: bool
 
 
@@ -57,7 +57,7 @@ class OttoChat(Document):
 			for t in frappe.get_all(
 				"Otto Tool",
 				filters={"name": ["in", tool_names]},
-				fields=["name", "slug", "is_internal", "requires_permission"],
+				fields=["name", "slug", "is_external", "requires_permission"],
 			)
 		}
 
@@ -69,7 +69,7 @@ class OttoChat(Document):
 			map[tool.slug] = ToolConfig(
 				slug=tool.slug,
 				tool=tool.tool,
-				is_internal=bool(td.is_internal),
+				is_external=bool(td.is_external),
 				requires_permission=bool(tools[tool.tool].requires_permission or td.requires_permission),
 			)
 
@@ -155,7 +155,7 @@ class OttoChat(Document):
 		updates: list[ToolUseUpdate] = []
 		for ptu in self.get_pending_tools():
 			config = self.tool_configs.get(ptu.name)
-			if not config or config.is_internal:
+			if not config or config.is_external:
 				continue
 
 			req_status = req_map.get(ptu.id)
@@ -184,7 +184,7 @@ class OttoChat(Document):
 		pending: list[PendingToolUse] = []
 		for ptu in pending_tool_uses:
 			config = self.tool_configs.get(ptu.name)
-			if not config or not config.is_internal:
+			if not config or not config.is_external:
 				continue
 
 			pending.append(ptu)

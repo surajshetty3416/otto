@@ -45,7 +45,7 @@ class OttoTool(Document):
 		args: DF.Table[OttoToolArgCT]
 		code: DF.Code | None
 		description: DF.LongText | None
-		is_internal: DF.Check
+		is_external: DF.Check
 		is_valid: DF.Check
 		mock_return_value: DF.Data | None
 		mock_tool: DF.Check
@@ -63,7 +63,7 @@ class OttoTool(Document):
 		name: str | None = None,
 		title: str | None = None,
 		# Flags
-		is_internal: bool = False,
+		is_external: bool = False,
 		use_explanation: bool = False,
 		requires_permission: bool = False,
 		# Mocks
@@ -89,8 +89,8 @@ class OttoTool(Document):
 		if schema:
 			doc.set_from_schema(schema)
 
-		doc.is_internal = is_internal
-		if not is_internal:
+		doc.is_external = is_external
+		if not is_external:
 			doc.code = code
 			doc.mock_tool = mock_tool
 			doc.mock_return_value = mock_return_value
@@ -108,7 +108,7 @@ class OttoTool(Document):
 
 	def before_save(self):
 		self.set_title_or_slug()
-		if self.is_internal:
+		if self.is_external:
 			self.validate_internal()
 			return None
 
@@ -261,7 +261,7 @@ class OttoTool(Document):
 		- task: task document name (for logging if needed)
 		- session: session document name (for logging if needed)
 		"""
-		if self.is_internal:
+		if self.is_external:
 			raise ValidationError("Internal tools cannot be executed")
 
 		if self.mock_tool:

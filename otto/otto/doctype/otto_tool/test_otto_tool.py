@@ -33,7 +33,7 @@ class UnitTestOttoTool(UnitTestCase):
 			title="Get User Info",
 			slug="get_user_info",
 			description="Retrieves user information by ID",
-			is_internal=True,
+			is_external=True,
 			args=[
 				{
 					"arg_name": "user_id",
@@ -54,7 +54,7 @@ class UnitTestOttoTool(UnitTestCase):
 		# Verify tool was created successfully
 		self.assertEqual(tool.slug, "get_user_info")
 		self.assertEqual(tool.title, "Get User Info")
-		self.assertTrue(tool.is_internal)
+		self.assertTrue(tool.is_external)
 		self.assertTrue(tool.is_valid)
 		self.assertIsNone(tool.reason)
 		self.assertEqual(len(tool.args), 2)
@@ -81,7 +81,7 @@ class UnitTestOttoTool(UnitTestCase):
 		tool = OttoTool.new(
 			title="Invalid Tool",
 			slug="invalid_tool",
-			is_internal=True,
+			is_external=True,
 			args=[
 				{
 					"arg_name": "param1",
@@ -104,7 +104,7 @@ class UnitTestOttoTool(UnitTestCase):
 			title="Internal Tool",
 			slug="internal_tool",
 			description="An internal tool",
-			is_internal=True,
+			is_external=True,
 			args=[
 				{
 					"arg_name": "name",
@@ -342,7 +342,7 @@ def main(name: str, greeting: str = "Hello"):
 			slug="tool_with_explanation",
 			description="A tool that requires explanation",
 			use_explanation=True,
-			is_internal=True,
+			is_external=True,
 			args=[
 				{
 					"arg_name": "param1",
@@ -390,7 +390,7 @@ def other_function(a: int):
 		tool1 = OttoTool.new(
 			title="My Cool Tool",
 			description="A cool tool",
-			is_internal=True,
+			is_external=True,
 			args=[],
 		)
 		self.created_tools.append(tool1)
@@ -400,7 +400,7 @@ def other_function(a: int):
 		tool2 = OttoTool.new(
 			slug="another_awesome_tool",
 			description="Another awesome tool",
-			is_internal=True,
+			is_external=True,
 			args=[],
 		)
 		self.created_tools.append(tool2)
