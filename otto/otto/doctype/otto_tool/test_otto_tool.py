@@ -120,7 +120,7 @@ class UnitTestOttoTool(UnitTestCase):
 		with self.assertRaises(ValidationError) as context:
 			tool.execute({"name": "test"})
 
-		self.assertIn("Internal tools cannot be executed", str(context.exception))
+		self.assertIn("External tools must be", str(context.exception))
 
 	def test_non_internal_tool_with_code_auto_detect(self):
 		"""Test creating a non-internal tool with code and auto-detecting args."""
@@ -405,3 +405,247 @@ def other_function(a: int):
 		)
 		self.created_tools.append(tool2)
 		self.assertEqual(tool2.title, "Another Awesome Tool")
+
+	def test_external_tool_execution_with_function(self):
+		"""Test executing an external tool with a simple function."""
+		# Create external tool
+		tool = OttoTool.new(
+			title="Add Numbers External",
+			slug="add_numbers_external",
+			description="Adds two numbers using external function",
+			is_external=True,
+			args=[
+				{
+					"arg_name": "a",
+					"type": "integer",
+					"description": "First number",
+					"is_required": True,
+				},
+				{
+					"arg_name": "b",
+					"type": "integer",
+					"description": "Second number",
+					"is_required": True,
+				},
+			],
+		)
+		self.created_tools.append(tool)
+
+		# Define a simple add function
+		def add_fn(args):
+			return args["a"] + args["b"]
+
+		# Execute the tool with the function
+		result = tool.execute({"a": 10, "b": 5}, fn=add_fn)
+
+		# Verify result
+		self.assertEqual(result["result"], 15)
+		self.assertEqual(result["stdout"], "")
+		self.assertEqual(result["stderr"], "")
+
+	def test_external_tool_execution_with_execute_tool(self):
+		"""Test executing an external tool using the execute_tool function."""
+		from otto.otto.doctype.otto_tool.otto_tool import execute_tool
+
+		# Create external tool
+		tool = OttoTool.new(
+			title="Multiply Numbers External",
+			slug="multiply_numbers_external",
+			description="Multiplies two numbers using external function",
+			is_external=True,
+			args=[
+				{
+					"arg_name": "x",
+					"type": "number",
+					"description": "First number",
+					"is_required": True,
+				},
+				{
+					"arg_name": "y",
+					"type": "number",
+					"description": "Second number",
+					"is_required": True,
+				},
+			],
+		)
+		self.created_tools.append(tool)
+
+		# Define multiplication function
+		def multiply_fn(args):
+			return args["x"] * args["y"]
+
+		# Execute using execute_tool
+		assert tool.name is not None
+		update = execute_tool(
+			tool=tool.name,
+			args={"x": 7, "y": 3},
+			tool_use_id="test_tool_use_123",
+			env_str=None,
+			permission_granted=True,
+			fn=multiply_fn,
+		)
+
+		# Verify ToolUseUpdate structure
+		self.assertEqual(update.get("id"), "test_tool_use_123")
+		self.assertFalse(update.get("is_error"))
+		self.assertEqual(update.get("result"), 21)
+		self.assertEqual(update.get("stdout"), "")
+		self.assertEqual(update.get("stderr"), "")
+		self.assertIsNotNone(update.get("start_time"))
+		self.assertIsNotNone(update.get("end_time"))
+
+	def test_external_tool_execution_with_dict_return(self):
+		"""Test external tool that returns a dictionary."""
+		tool = OttoTool.new(
+			title="Process Data External",
+			slug="process_data_external",
+			description="Processes data and returns a dictionary",
+			is_external=True,
+			args=[
+				{
+					"arg_name": "name",
+					"type": "string",
+					"description": "Name to process",
+					"is_required": True,
+				},
+				{
+					"arg_name": "age",
+					"type": "integer",
+					"description": "Age to process",
+					"is_required": True,
+				},
+			],
+		)
+		self.created_tools.append(tool)
+
+		# Function that returns a dictionary
+		def process_fn(args):
+			return {
+				"greeting": f"Hello, {args['name']}!",
+				"age_in_months": args["age"] * 12,
+				"status": "processed",
+			}
+
+		# Execute the tool
+		result = tool.execute({"name": "Alice", "age": 25}, fn=process_fn)
+
+		# Verify result
+		self.assertIsInstance(result["result"], dict)
+		self.assertEqual(result["result"]["greeting"], "Hello, Alice!")
+		self.assertEqual(result["result"]["age_in_months"], 300)
+		self.assertEqual(result["result"]["status"], "processed")
+
+	def test_external_tool_execution_permission_denied(self):
+		"""Test execute_tool with permission denied."""
+		from otto.otto.doctype.otto_tool.otto_tool import execute_tool
+
+		# Create external tool
+		tool = OttoTool.new(
+			title="Sensitive Operation",
+			slug="sensitive_operation",
+			description="A sensitive operation that requires permission",
+			is_external=True,
+			args=[
+				{
+					"arg_name": "data",
+					"type": "string",
+					"description": "Data to process",
+					"is_required": True,
+				},
+			],
+		)
+		self.created_tools.append(tool)
+
+		def dummy_fn(args):
+			return "should not execute"
+
+		# Execute with permission denied
+		assert tool.name is not None
+		update = execute_tool(
+			tool=tool.name,
+			args={"data": "test"},
+			tool_use_id="test_denied_456",
+			env_str=None,
+			permission_granted=False,
+			denied_reason="User denied permission",
+			fn=dummy_fn,
+		)
+
+		# Verify permission denial
+		self.assertEqual(update.get("id"), "test_denied_456")
+		self.assertTrue(update.get("is_error"))
+		self.assertEqual(update.get("result"), "User denied permission")
+
+	def test_external_tool_execution_without_function_fails(self):
+		"""Test that executing external tool without function raises error."""
+		tool = OttoTool.new(
+			title="External Without Function",
+			slug="external_without_function",
+			description="External tool without function",
+			is_external=True,
+			args=[
+				{
+					"arg_name": "param",
+					"type": "string",
+					"description": "A parameter",
+					"is_required": True,
+				},
+			],
+		)
+		self.created_tools.append(tool)
+
+		# Attempting to execute without fn should raise ValidationError
+		with self.assertRaises(ValidationError) as context:
+			tool.execute({"param": "test"})
+
+		self.assertIn("External tools must be executed with a function", str(context.exception))
+
+	def test_external_tool_with_optional_args(self):
+		"""Test external tool with optional arguments."""
+		tool = OttoTool.new(
+			title="Format String External",
+			slug="format_string_external",
+			description="Formats a string with optional parameters",
+			is_external=True,
+			args=[
+				{
+					"arg_name": "text",
+					"type": "string",
+					"description": "Text to format",
+					"is_required": True,
+				},
+				{
+					"arg_name": "uppercase",
+					"type": "boolean",
+					"description": "Whether to convert to uppercase",
+					"is_required": False,
+				},
+				{
+					"arg_name": "prefix",
+					"type": "string",
+					"description": "Prefix to add",
+					"is_required": False,
+				},
+			],
+		)
+		self.created_tools.append(tool)
+
+		def format_fn(args):
+			text = args["text"]
+			if args.get("uppercase"):
+				text = text.upper()
+			if args.get("prefix"):
+				text = f"{args['prefix']}: {text}"
+			return text
+
+		# Test with only required arg
+		result1 = tool.execute({"text": "hello"}, fn=format_fn)
+		self.assertEqual(result1["result"], "hello")
+
+		# Test with uppercase
+		result2 = tool.execute({"text": "hello", "uppercase": True}, fn=format_fn)
+		self.assertEqual(result2["result"], "HELLO")
+
+		# Test with all args
+		result3 = tool.execute({"text": "world", "uppercase": True, "prefix": "Message"}, fn=format_fn)
+		self.assertEqual(result3["result"], "Message: WORLD")

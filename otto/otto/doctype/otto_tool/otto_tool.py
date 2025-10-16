@@ -3,6 +3,7 @@ from __future__ import annotations
 # Copyright (c) 2025, Alan Tom and contributors
 # For license information, please see license.txt
 # import frappe
+import io
 import json
 import time
 from typing import TYPE_CHECKING, Any, cast
@@ -19,6 +20,8 @@ from otto.otto.doctype.otto_tool import lib
 from otto.utils import execute
 
 if TYPE_CHECKING:
+	from collections.abc import Callable
+
 	from otto.lib.types import ToolSchema, ToolUseUpdate
 
 arg_type_to_json_type = {
@@ -109,7 +112,7 @@ class OttoTool(Document):
 	def before_save(self):
 		self.set_title_or_slug()
 		if self.is_external:
-			self.validate_internal()
+			self.validate_external()
 			return None
 
 		if not self.code:
@@ -128,7 +131,7 @@ class OttoTool(Document):
 		self.validate_descriptions()
 		return None
 
-	def validate_internal(self):
+	def validate_external(self):
 		self.is_valid = True
 		self.reason = None
 		self.validate_arg_types()
@@ -255,20 +258,25 @@ class OttoTool(Document):
 		task: str | None = None,
 		session: str | None = None,
 		env: dict | None = None,
+		fn: Callable | None = None,
 	):
 		"""Execute tool with given args.
 		- force: bypass validation
 		- task: task document name (for logging if needed)
 		- session: session document name (for logging if needed)
 		"""
-		if self.is_external:
-			raise ValidationError("Internal tools cannot be executed")
+		if self.is_external and not fn:
+			raise ValidationError("External tools must be executed with a function")
 
 		if self.mock_tool:
 			return self.mock(args, task=task, session=session, chat=chat)
 
 		if not self.is_valid and not force:
 			raise ValidationError("tool is invalid: " + (self.reason or ""))
+
+		if self.is_external:
+			assert fn is not None, "type check"
+			return self._execute_external(args, fn)
 
 		arg_names = []
 		for arg in self.args:
@@ -290,6 +298,18 @@ class OttoTool(Document):
 			args=args,
 			arg_names=arg_names,
 			globals=globals,
+		)
+
+	def _execute_external(self, args: dict[str, Any], fn: Callable):
+		stdout = io.StringIO()
+		stderr = io.StringIO()
+		with execute.capture_output(stdout, stderr):
+			result = fn(args)
+
+		return execute.SessionResult(
+			result=result,
+			stdout=stdout.getvalue(),
+			stderr=stderr.getvalue(),
 		)
 
 	@frappe.whitelist()
@@ -343,6 +363,7 @@ def execute_tool(
 	permission_granted: bool,
 	denied_reason: str | None = None,
 	doc: Document | None = None,
+	fn: Callable | None = None,
 ) -> ToolUseUpdate:
 	"""
 	Executes a tool and returns a ToolUseUpdate.
@@ -358,6 +379,7 @@ def execute_tool(
 	- permission_granted: Whether permission to use the tool was granted.
 	- denied_reason: Reason for denial, if permission is denied.
 	- doc: Otto Execution doc used for error logging (for reference purpose only).
+	- fn: Function to execute the tool, if the tool is external.
 	"""
 
 	from otto.lib.types import ToolUseUpdate
@@ -378,6 +400,7 @@ def execute_tool(
 			session=session,
 			env=env,
 			chat=chat,
+			fn=fn,
 		)
 		update["is_error"] = False
 		update["result"] = result["result"]
