@@ -410,7 +410,7 @@ def get_provider_key(provider: Provider):
 			return None
 
 
-@utils.cache(ttl=60)
+@utils.cache(ttl=2)
 def get_key(provider: Provider) -> tuple[str, str] | tuple[None, None]:
 	"""Get API key name and value for provider. Checks envvar and Otto Settings.
 

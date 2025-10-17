@@ -274,7 +274,7 @@ def get_models(
 
 
 @frappe.whitelist()
-@cache(ttl=5)
+@cache(ttl=2)
 def get_models(
 	*,
 	provider: Provider | None = None,
