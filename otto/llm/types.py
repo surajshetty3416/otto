@@ -14,6 +14,7 @@ class ModelDetails(TypedDict):
 	supports_vision: bool
 	title: str
 	is_enabled: bool
+	is_api_key_set: bool
 
 
 ID = str

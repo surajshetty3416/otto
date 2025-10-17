@@ -7,7 +7,15 @@ from typing import TypeGuard
 import frappe
 
 from otto import Any, utils
-from otto.lib.types import FileContent, ImageContent, ReasoningEffort, TextContent, ToolUseContent
+from otto.lib.types import (
+	FileContent,
+	ImageContent,
+	ModelSize,
+	Provider,
+	ReasoningEffort,
+	TextContent,
+	ToolUseContent,
+)
 
 
 class content:
@@ -280,3 +288,13 @@ def interpolate_imgs(html: str, skip_errors: bool = False):
 def is_reasoning_effort(value: Any) -> TypeGuard[ReasoningEffort]:
 	"""Type guard to check if a value is a valid ReasoningEffort."""
 	return value in ["Low", "Medium", "High"]
+
+
+def is_model_size(value: Any) -> TypeGuard[ModelSize]:
+	"""Type guard to check if a value is a valid ModelSize."""
+	return value in ["Very Small", "Small", "Medium", "Large"]
+
+
+def is_provider(value: Any) -> TypeGuard[Provider]:
+	"""Type guard to check if a value is a valid Provider."""
+	return value in ["Anthropic", "OpenAI", "Google"]

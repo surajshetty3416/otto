@@ -3,6 +3,7 @@ from typing import Any, Literal, overload
 import frappe
 
 from otto.lib.types import ModelDetails, ModelSize, Provider
+from otto.lib.utils import is_model_size, is_provider
 from otto.llm import utils
 from otto.utils import cache
 
@@ -18,7 +19,7 @@ __all__ = [
 
 
 @frappe.whitelist()
-def get_keys_set() -> dict[str, bool]:
+def get_keys_set() -> dict[Provider, bool]:
 	"""Returns a dictionary of providers and their API key status."""
 	providers: list[Provider] = ["OpenAI", "Anthropic", "Google"]
 	return {provider: is_provider_available(provider) for provider in providers}
@@ -57,7 +58,7 @@ def set_api_keys(keys: dict[Provider, str]) -> None:
 
 
 @frappe.whitelist()
-@cache(ttl=60)
+@cache(ttl=5)
 def is_model_available(model: str, exact: bool = True) -> bool:
 	"""Checks if a given model name is available in Otto LLM.
 
@@ -256,6 +257,7 @@ def get_models(
 	is_reasoning: bool | None = ...,
 	supports_vision: bool | None = ...,
 	get_details: Literal[False] = False,
+	include_unavailable: bool = False,
 ) -> list[str]: ...
 
 
@@ -267,11 +269,12 @@ def get_models(
 	is_reasoning: bool | None = ...,
 	supports_vision: bool | None = ...,
 	get_details: Literal[True] = True,
+	include_unavailable: bool = False,
 ) -> list[ModelDetails]: ...
 
 
 @frappe.whitelist()
-@cache(ttl=60)
+@cache(ttl=5)
 def get_models(
 	*,
 	provider: Provider | None = None,
@@ -279,6 +282,7 @@ def get_models(
 	is_reasoning: bool | None = None,
 	supports_vision: bool | None = None,
 	get_details: bool = False,
+	include_unavailable: bool = False,
 ) -> list[str] | list[ModelDetails]:
 	"""Returns a list of available models matching the given criteria.
 
@@ -291,18 +295,21 @@ def get_models(
 		is_reasoning: Filter by whether model supports reasoning
 		supports_vision: Filter by whether model supports image input
 		get_details: If True, returns list of ModelDetails, otherwise returns list of model names
-
+		include_unavailable: If True, includes unavailable models (i.e. key not set, or disabled) in the list
 	Returns:
 		List of model names that match all criteria and are available for use or list of ModelDetails if get_details is True
 	"""
-	if provider and not is_provider_available(provider):
+	if provider and not include_unavailable and not is_provider_available(provider):
 		return []
 
-	filters: dict[str, Any] = {"enabled": True}
-	if provider is not None:
+	filters: dict[str, Any] = {}
+	if not include_unavailable:
+		filters["enabled"] = True
+
+	if provider is not None and is_provider(provider):
 		filters["provider"] = provider
 
-	if size is not None:
+	if size is not None and is_model_size(size):
 		filters["size"] = size
 
 	if is_reasoning is not None:
@@ -316,24 +323,52 @@ def get_models(
 	else:
 		fields = ["name"]
 
-	def _get_models(m) -> list[ModelDetails] | list[str]:
-		return [ModelDetails(**m) for m in m] if get_details else [m.name for m in m]
-
 	models = frappe.get_all("Otto LLM", filters=filters, fields=fields)
+	keys_set = get_keys_set()
 	if provider:
-		return _get_models(models)
+		return _get_models(models, keys_set, get_details)
 
-	available: list[str] = []
-	availability: dict[Provider, bool] = {}
+	available: list[dict] = []
 	for model in models:
 		provider = utils.get_provider(model.name)
 		if not provider:
 			continue
 
-		if provider not in availability:
-			availability[provider] = is_provider_available(provider)
-
-		if availability[provider]:
+		if keys_set.get(provider, False) or include_unavailable:
 			available.append(model)
 
-	return _get_models(available)
+	return _get_models(available, keys_set, get_details)
+
+
+def _get_models(
+	ms: list[dict], availability: dict[Provider, bool], get_details: bool
+) -> list[ModelDetails] | list[str]:
+	models: list[ModelDetails] | list[str] = []
+
+	for m in ms:
+		name = m.get("name", "")
+		if not name:
+			continue
+
+		if not get_details:
+			models.append(name)
+			continue
+
+		size = m.get("size", "")
+		provider = m.get("provider", "")
+		if not is_model_size(size) or not is_provider(provider):
+			# safe type check
+			continue
+
+		details = ModelDetails(
+			name=name,
+			title=str(m.get("title", "")),
+			provider=provider,
+			size=size,
+			is_reasoning=bool(m["is_reasoning"]),
+			supports_vision=bool(m.get("supports_vision", False)),
+			is_enabled=bool(m.get("enabled", False)),
+			is_api_key_set=availability.get(provider, False),
+		)
+		models.append(details)
+	return models
