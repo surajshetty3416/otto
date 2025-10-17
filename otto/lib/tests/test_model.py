@@ -138,7 +138,8 @@ class TestModelRetrieval(unittest.TestCase):
 		self.assertIn("size", model_detail)
 		self.assertIn("is_reasoning", model_detail)
 		self.assertIn("supports_vision", model_detail)
-		self.assertIn("enabled", model_detail)
+		self.assertIn("is_enabled", model_detail)
+		self.assertIn("is_api_key_set", model_detail)
 
 		# Verify provider matches
 		self.assertEqual(model_detail["provider"], "Anthropic")
@@ -170,7 +171,8 @@ class TestModelRetrieval(unittest.TestCase):
 		self.assertIn("size", model_with_details)
 		self.assertIn("is_reasoning", model_with_details)
 		self.assertIn("supports_vision", model_with_details)
-		self.assertIn("enabled", model_with_details)
+		self.assertIn("is_enabled", model_with_details)
+		self.assertIn("is_api_key_set", model_with_details)
 
 		# Verify provider matches
 		self.assertEqual(model_with_details["provider"], "OpenAI")
