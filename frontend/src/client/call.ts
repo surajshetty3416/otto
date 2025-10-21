@@ -1,6 +1,6 @@
 import { reactive, type Reactive } from "vue";
-import type { Call, ServerError } from "./types";
 import { ui } from "../utils";
+import type { Call, Modifier, ServerError } from "./types";
 
 /**
  * Raw call to legacy FF API, used as a fallback when v2 doesn't work as expected.
@@ -12,7 +12,8 @@ export function callAPIv1<T = unknown>(
     body?: Record<string, unknown>;
     params?: Record<string, unknown>;
   },
-  method: "GET" | "PUT" | "POST" | "DELETE" = "POST"
+  method: "GET" | "PUT" | "POST" | "DELETE" = "POST",
+  modifier?: Modifier
 ): Reactive<Call<T>> {
   args ??= {};
 
@@ -35,7 +36,8 @@ export function callAPIv1<T = unknown>(
  */
 export function callAPIv2(
   method: string,
-  kwargs?: Record<string, unknown>
+  kwargs?: Record<string, unknown>,
+  modifier?: Modifier
 ): Reactive<Call> {
   const headers = getHeaders();
   const bodyJSON = kwargs ? JSON.stringify(kwargs) : undefined;

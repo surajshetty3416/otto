@@ -6,6 +6,11 @@ def ping():
 	return "pong"
 
 
+@frappe.whitelist(allow_guest=True)
+def echo(message: str) -> str:
+	return message
+
+
 @frappe.whitelist()
 def get_user() -> dict[str, str]:
 	assert isinstance(frappe.session.user, str), "User is not logged in"

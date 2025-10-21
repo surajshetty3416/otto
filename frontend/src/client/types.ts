@@ -1,18 +1,23 @@
 import type { Reactive } from "vue";
 import { framework } from "./framework";
-import type { API as OttoAPI, DocTypes } from "./generated.types";
+import type { API as OttoAPI, OttoDocTypes } from "./generated.types";
 
 export type ReactiveCall<T = unknown> = Reactive<Call<T>>;
 
 export type GetList<
-  DocType extends keyof DocTypes,
-  Field extends keyof DocTypes[DocType] & string
-> = ReactiveCall<Pick<DocTypes[DocType], Field>[]>;
+  DocType extends keyof OttoDocTypes,
+  Field extends keyof OttoDocTypes[DocType] & string
+> = ReactiveCall<Pick<OttoDocTypes[DocType], Field>[]>;
 
 export type ServerError = {
   type: string;
   exception: string;
 };
+
+export interface Modifier {
+  // cache: boolean;
+  // auto: boolean;
+}
 
 export interface Call<T = unknown> {
   url: string /** The API path that is being called */;
@@ -41,11 +46,41 @@ export interface Call<T = unknown> {
   reload(): Reactive<Call<T>>;
 }
 
-export interface Modifier {
-  cache?: boolean | string | string[];
-}
+export type API = typeof framework & _API<OttoAPI>;
 
-export type API = typeof framework &
-  OttoAPI & { modify(modifier: Modifier): typeof framework & OttoAPI };
+/**
+ * API conversion types to convert the raw API to the form used by the client.
+ */
 
+type RawFunction = (args: any) => any;
+
+export type APIFunction<RF extends RawFunction> =
+  Parameters<RF>[0] extends undefined
+    ? (args?: null | undefined, modifier?: Modifier) => Call<ReturnType<RF>>
+    : (args: Parameters<RF>[0], modifier?: Modifier) => Call<ReturnType<RF>>;
+
+export type _API<Raw> = {
+  [K in keyof Raw]: Raw[K] extends RawFunction
+    ? APIFunction<Raw[K]>
+    : Raw[K] extends Record<string, any>
+    ? _API<Raw[K]>
+    : never;
+};
+
+/**
+ * Utility types to check if a type is a raw API or a raw function.
+ */
+export type CheckIsRawFunction<X> = X extends RawFunction ? true : false;
+export type CheckIsRawAPI<X> = X extends RawFunction
+  ? CheckIsRawFunction<X> extends true
+    ? true
+    : false
+  : X extends object
+  ? {
+      [K in keyof X]: CheckIsRawAPI<X[K]>;
+    }[keyof X] extends true
+    ? true
+    : false
+  : false;
+export type AssertTrue<T extends true> = T;
 export type CallData<T> = T extends Call<infer U> ? U : T;

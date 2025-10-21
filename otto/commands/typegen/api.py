@@ -141,7 +141,7 @@ def get_func_str(func: APIFunction):
 	if params:
 		params_str = f"args: {{{', '.join(params)}}}"
 
-	return_str = f"Call<{func.return_type}>"
+	return_str = f"{func.return_type}"
 	return f"{func.name}({params_str}): {return_str};"
 
 

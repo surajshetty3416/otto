@@ -1,7 +1,7 @@
 import { markRaw } from "vue";
 import { callAPIv2 } from "./call";
 import { framework } from "./framework";
-import type { API, Modifier } from "./types";
+import type { API } from "./types";
 
 /**
  * The `api` object is used to call two kinds of APIs:
@@ -26,7 +26,7 @@ export const api = markRaw(
   )
 ) as API;
 
-function getApi(path: string, modifier?: Modifier): unknown {
+function getApi(path: string): unknown {
   const a: { path: string; (): void } = function () {};
   a.path = path;
 
@@ -45,8 +45,8 @@ function getApi(path: string, modifier?: Modifier): unknown {
        * await task.function_b();
        * ```
        */
-      if (target.path) return getApi(`${target.path}.${prop}`, modifier);
-      return getApi(`${prop}`, modifier);
+      if (target.path) return getApi(`${target.path}.${prop}`);
+      return getApi(`${prop}`);
     },
     apply(target, _, args) {
       if (window.DEBUG_API) {
@@ -56,12 +56,7 @@ function getApi(path: string, modifier?: Modifier): unknown {
         );
         console.log("path", target.path);
         console.log("args", args);
-        console.log("modifier", modifier);
         console.groupEnd();
-      }
-
-      if (target.path === "modify") {
-        return getApi("", args[0]);
       }
 
       if (target.path in framework) {
@@ -69,8 +64,7 @@ function getApi(path: string, modifier?: Modifier): unknown {
         return framework[target.path as keyof typeof framework](...args);
       }
 
-      // TODO: Implement usage of modifiers like cache
-      return callAPIv2(target.path, args[0]);
+      return callAPIv2(target.path, args[0], args[1]);
     },
   });
 
