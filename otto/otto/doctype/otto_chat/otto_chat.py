@@ -40,10 +40,10 @@ class OttoChat(Document):
 		title: DF.Data | None
 	# end: auto-generated types
 
-	_session: lib.Session
-	_assistant: OttoAssistant | None
-	_pending_tool_use: list[PendingToolUse] | None
-	_tool_configs: dict[str, ToolConfig] | None
+	_session: lib.Session | None = None
+	_assistant: OttoAssistant | None = None
+	_pending_tool_use: list[PendingToolUse] | None = None
+	_tool_configs: dict[str, ToolConfig] | None = None
 
 	@property
 	def tool_configs(self) -> dict[str, ToolConfig]:
