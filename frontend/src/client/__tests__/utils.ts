@@ -3,6 +3,7 @@
  */
 import { expect } from "vitest";
 import type { Call } from "../call";
+import { framework } from "../api";
 
 /**
  * Wait for a Call to complete (either success or failure)
@@ -119,4 +120,15 @@ export class TestCleanup {
   get count(): number {
     return this.docsToClean.length;
   }
+}
+
+export async function beforeEachCb() {
+  await framework.login(
+    import.meta.env.VITE_TEST_USERNAME,
+    import.meta.env.VITE_TEST_PASSWORD
+  );
+}
+
+export async function afterEachCb() {
+  await framework.logout();
 }

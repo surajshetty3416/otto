@@ -52,7 +52,6 @@ export default defineConfig(() => {
       exclude: [
         "src/client/__tests__/framework.test.ts",
         "src/client/__tests__/types.test.ts",
-        "src/client/__tests__/call.test.ts",
       ],
       testTimeout: 10_000,
     },

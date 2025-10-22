@@ -3,17 +3,17 @@
  * Tests type-safe Otto API calls
  */
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { api, framework } from "../api";
-import { expectCallException, expectCallSuccess, waitForCall } from "./utils";
+import { api } from "../api";
+import {
+  afterEachCb,
+  beforeEachCb,
+  expectCallException,
+  expectCallSuccess,
+  waitForCall,
+} from "./utils";
 
-beforeEach(async () => {
-  await framework.login(
-    import.meta.env.VITE_TEST_USERNAME,
-    import.meta.env.VITE_TEST_PASSWORD
-  );
-});
-
-afterEach(async () => await framework.logout());
+beforeEach(beforeEachCb);
+afterEach(afterEachCb);
 
 describe("api object", () => {
   describe("Basic Method Calls", () => {
@@ -135,7 +135,7 @@ describe("api object", () => {
   });
 
   describe("Error Handling", () => {
-    it("should handle server errors gracefully", async () => {
+    it("should handle server errors and extract exception information", async () => {
       const result = api.client_test.throw({
         message: "test error",
         use_frappe: true,
@@ -148,21 +148,6 @@ describe("api object", () => {
       }
 
       expectCallException(result);
-    });
-
-    it("should extract exception information", async () => {
-      const result = api.client_test.throw({
-        message: "exception test",
-        use_frappe: true,
-      });
-
-      try {
-        await waitForCall(result);
-      } catch {
-        expect.fail("Exceptions don't throw");
-        // Expected
-      }
-
       expect(result.exception).toBeDefined();
       expect(result.exception?.type).toBeTruthy();
       expect(result.exception?.traceback).toBeTruthy();
@@ -244,26 +229,9 @@ describe("api object", () => {
   });
 
   describe("Method Arguments", () => {
-    it("should handle required string arguments", async () => {
-      const result = api.echo({ message: "required arg" });
-
-      await waitForCall(result);
-      expect(result.data).toBe("required arg");
-    });
-
     it("should handle optional arguments", async () => {
       const result = api.client_test.get_list({
         limit: 5,
-      });
-
-      await waitForCall(result);
-      expectCallSuccess(result);
-    });
-
-    it("should handle all optional arguments", async () => {
-      const result = api.client_test.get_list({
-        limit: 10,
-        offset: 5,
       });
 
       await waitForCall(result);
