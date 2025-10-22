@@ -4,6 +4,9 @@
  *
  * https://docs.frappe.io/framework/user/en/api/rest
  * https://github.com/frappe/frappe/blob/develop/frappe/api/v2.py
+ *
+ * Note, these are present just for the sake of completeness, if executing backend
+ * code in the Otto res, use `client.api` instead.
  */
 import { Call, callV1, callV2 } from "./call";
 import type { OttoDocTypes } from "./generated.types";

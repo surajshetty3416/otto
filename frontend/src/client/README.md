@@ -48,16 +48,20 @@ it can be awaited or used with `.then()`, or `.catch()` etc.
 The main difference w.r.t a `Promise` is that the `Call` object has additional
 properties that are set depending on the state of the request such as `loading`,
 `data`, `failed`, etc. For more details check the interface `Call` in
-`./types.ts`.
+`./call.ts`.
 
-## Modifiers
+## Config
 
-All API calls can be modified using the `modify` method. This takes a Modifier
-(defined `./types.ts`). For example to make use of config like cache the call
-will change:
+All API calls can be modified using the `config` parameter. This takes a
+`Config` object (defined `./types.ts`). For example to prevent auto execution of
+the call:
 
-- From `api.func(args)`
-- To `api.modify({cache: true}).func(args)`
+```typescript
+const call = api.func(args, { auto: false });
+
+// Will not run unless .run is called.
+call.run();
+```
 
 ## Examples
 
@@ -69,9 +73,7 @@ const call = api.echo({ message: "Hello, World!" }); // Call<string>
 const message = await call; // "Hello, World!"
 
 // Using config
-const message = await api
-  .modify({ cache: true })
-  .echo({ message: "Hello, world!" });
+const message = await api.echo({ message: "Hello, world!" }, { cache: true });
 
 // Calling Framework APIs
 const doc = await api.get_doc("DocType", "DocName");

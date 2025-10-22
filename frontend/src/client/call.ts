@@ -5,6 +5,10 @@
  */
 import { reactive, toRaw } from "vue";
 import type { CallArgs, CallAPIArgs, Config, ServerException } from "./types";
+import { hash } from "./utils";
+import { Store } from "./store";
+
+const cachestore = new Store<unknown>("cache");
 
 export function call<Args extends any = unknown, Return extends any = unknown>(
   url: string,
@@ -83,6 +87,7 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     this._isFFCall = isFFCall;
 
     const obj = reactive(this) as any as Call<Args, Return>;
+    if (this._config?.cache) this._getCache();
     if (this._config?.auto !== false) obj.run();
 
     return obj;
@@ -195,6 +200,7 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
       logResponse(this, this.method, performance.now() - start);
     }
 
+    if (this._config?.cache) await this._setCache();
     return data;
   }
 
@@ -212,6 +218,28 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     this._response = undefined;
     this._exception = undefined;
     this._error = undefined;
+  }
+
+  private async _setCache(): Promise<void> {
+    const key = this._getkey();
+    await cachestore.set(key, this.data, this._config?.ttl);
+  }
+
+  private async _getCache(): Promise<void> {
+    const key = this._getkey();
+    const data = await cachestore.get(key);
+    if (typeof data === "undefined") return;
+    this._data = data as Return;
+  }
+
+  private _getkey(): number {
+    const raw = [
+      this.method,
+      this.url,
+      this.body ?? "<nobody>",
+      this.params ?? "<noparams>",
+    ].join(":");
+    return hash(raw);
   }
 }
 
