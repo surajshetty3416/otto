@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run"
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.23",
@@ -26,12 +27,17 @@
     "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^22.10.8",
     "@vitejs/plugin-vue": "^5.0.0",
+    "@vitest/browser": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
     "@vue/tsconfig": "^0.7.0",
     "autoprefixer": "^10.4.20",
+    "playwright": "^1.56.1",
     "postcss": "^8.5.1",
     "tailwindcss": "^3.4.0",
     "typescript": "~5.6.2",
     "vite": "^6.1.0",
+    "vitest": "^3.2.4",
+    "vitest-browser-vue": "^1.1.0",
     "vue-tsc": "^2.2.0"
   }
 }

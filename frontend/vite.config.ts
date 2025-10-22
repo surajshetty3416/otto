@@ -1,6 +1,8 @@
 import vue from "@vitejs/plugin-vue";
 import fs from "fs";
 import path from "path";
+
+/// <reference types="vitest/config" />
 import { defineConfig, Plugin, type ProxyOptions } from "vite";
 
 const fallbackFrappeServerPort = 8001;
@@ -22,7 +24,8 @@ export default defineConfig(() => {
 
   return {
     plugins: [vue(), postBuild()],
-    base: process.env.NODE_ENV === 'production' ? "/assets/otto/frontend/" : "/",
+    base:
+      process.env.NODE_ENV === "production" ? "/assets/otto/frontend/" : "/",
     build: {
       outDir,
       emptyOutDir: true,
@@ -30,6 +33,28 @@ export default defineConfig(() => {
     server: {
       port: frappeServerPort + 80,
       proxy,
+    },
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
+    },
+    test: {
+      browser: {
+        provider: "playwright",
+        enabled: true,
+        headless: true,
+        instances: [{ browser: "chromium" }],
+      },
+      globals: true,
+      // setupFiles: ["./src/client/__tests__/setup.ts"],
+      include: ["src/client/__tests__/**/*.test.ts"],
+      exclude: [
+        "src/client/__tests__/framework.test.ts",
+        "src/client/__tests__/types.test.ts",
+        "src/client/__tests__/call.test.ts",
+      ],
+      testTimeout: 10_000,
     },
   };
 });

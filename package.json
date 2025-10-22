@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
+    "test": "cd frontend && npm run test",
     "dev": "cd frontend && npm run dev",
     "postinstall": "cd frontend && npm install",
     "build": "npm run build-app && npm run build-email-css",

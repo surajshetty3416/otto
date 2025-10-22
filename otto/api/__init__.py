@@ -1,22 +1,16 @@
+from typing import Literal
+
 import frappe
 
 
 @frappe.whitelist(allow_guest=True)
-def ping():
+def ping() -> Literal["pong"]:
 	return "pong"
 
 
 @frappe.whitelist()
 def echo(message: str) -> str:
 	return message
-
-
-@frappe.whitelist()
-def throw(message: str, use_frappe: bool = False):
-	if use_frappe:
-		frappe.throw(message)
-	else:
-		raise Exception(message)
 
 
 @frappe.whitelist()

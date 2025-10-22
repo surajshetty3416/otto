@@ -42,8 +42,7 @@ export interface OttoAssistantToolCT extends BaseDoc<"Otto Assistant Tool CT"> {
   tool: string;
 }
 
-export interface OttoPermissionRequest
-  extends BaseDoc<"Otto Permission Request"> {
+export interface OttoPermissionRequest extends BaseDoc<"Otto Permission Request"> {
   tool_use_id: string;
   tool_status?: string;
   status: "Pending" | "Granted" | "Denied";
@@ -171,13 +170,7 @@ export interface OttoSettings extends BaseDoc<"Otto Settings"> {
 
 export interface OttoTask extends BaseDoc<"Otto Task"> {
   instruction?: string;
-  event:
-    | "On Create"
-    | "On Update"
-    | "On Delete"
-    | "On Submit"
-    | "On Cancel"
-    | "Manual";
+  event: "On Create" | "On Update" | "On Delete" | "On Submit" | "On Cancel" | "Manual";
   title?: string;
   is_enabled?: number | boolean;
   get_context?: string;
@@ -215,46 +208,38 @@ export interface OttoDocTypes {
 
 export interface API {
   session_view: {
-    get_session_view(args: { name: string }): unknown;
-    get_adjacent_session(args: {
-      name: string;
-      next: string | boolean;
-    }): unknown;
-    get_recent_sessions(args: {
-      limit?: number;
-      page?: number;
-    }): Record<string, unknown>[];
+    get_session_view(args: {name: string}): unknown;
+    get_adjacent_session(args: {name: string, next: string | boolean}): unknown;
+    get_recent_sessions(args: {limit?: number, page?: number}): Record<string, unknown>[];
   };
-  ping(): unknown;
-  echo(args: { message: string }): string;
-  throw(args: { message: string; use_frappe?: boolean }): unknown;
+  ping(): "pong";
+  echo(args: {message: string}): string;
   get_user(): Record<string, string>;
   log_feedback(): unknown;
   chat: {
     test(): unknown;
-    chat(args: { query: string }): unknown;
-    load(args: { session: string }): unknown;
+    chat(args: {query: string}): unknown;
+    load(args: {session: string}): unknown;
     list_chats(): unknown;
     list_assistants(): unknown;
   };
   permissions: {
-    add_viewed(args: { name: string }): unknown;
-    acknowledge(args: {
-      name: string;
-      type: "grant" | "deny";
-      override_args?: Record<string, unknown> | null;
-      denied_reason?: string | null;
-    }): unknown;
-    get_pending_requests(args: {
-      task?: string | null;
-      execution?: string | null;
-      target?: string | null;
-      tool_slug?: string | null;
-      tool_name?: string | null;
-      target_doctype?: string | null;
-      session?: string | null;
-      tool_use_id?: string | null;
-    }): unknown;
+    add_viewed(args: {name: string}): unknown;
+    acknowledge(args: {name: string, type: "grant" | "deny", override_args?: Record<string, unknown> | null, denied_reason?: string | null}): unknown;
+    get_pending_requests(args: {task?: string | null, execution?: string | null, target?: string | null, tool_slug?: string | null, tool_name?: string | null, target_doctype?: string | null, session?: string | null, tool_use_id?: string | null}): unknown;
+  };
+  client_test: {
+    add_numbers(args: {a: number, b: number}): number;
+    greet(args: {name: string, greeting?: string}): string;
+    get_user_info(args: {user_id: string, include_details?: boolean}): Record<string, unknown>;
+    process_items(args: {items: unknown[]}): Record<string, unknown>;
+    validate_credentials(args: {username: string, password: string}): Record<string, unknown>;
+    calculate(args: {operation: string, x: number, y: number}): Record<string, unknown>;
+    get_list(args: {limit?: number, offset?: number}): unknown[];
+    create_record(args: {name: string, data: Record<string, unknown>}): Record<string, unknown>;
+    test_error(args: {should_fail?: boolean}): Record<string, unknown>;
+    get_random(): number;
+    throw(args: {message: string, use_frappe?: boolean}): unknown;
   };
 }
 // </API Types for Otto>

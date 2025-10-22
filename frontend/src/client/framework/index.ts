@@ -72,7 +72,7 @@ function new_doc<Name extends keyof OttoDocTypes>(
 
 function get_doc<Name extends keyof OttoDocTypes>(
   doctype: Name,
-  name: string,
+  name: string | number,
   config?: Config
 ): Call<undefined, OttoDocTypes[Name]> {
   return callV2({
