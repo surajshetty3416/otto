@@ -25,14 +25,7 @@ import { api, framework } from "../../../client";
 const message = ref("test message");
 
 async function test() {
-	const call = api.echo({ message: message.value });
-	call.then((data) => {
-		console.log(`first: '${data}'`);
-	});
-
-	// const llms = api.get_list("Otto LLM", ["name", "size", "provider"], undefined, {
-	// 	cache: true,
-	// });
-	// console.log("llms", llms);
+	const call = await api.echo({ message: message.value });
+	const llms = await framework.get_list("Otto LLM", ["name", "size", "provider"]);
 }
 </script>

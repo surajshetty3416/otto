@@ -1,6 +1,6 @@
 import { markRaw } from "vue";
 import { callV2 } from "./call";
-import { framework as frameworkHandlers } from "./framework";
+import { handlers as frameworkHandlers } from "./framework";
 import type { API } from "./types";
 
 /**

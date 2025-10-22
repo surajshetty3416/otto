@@ -8,7 +8,7 @@
 import { Call, callV1, callV2 } from "../call";
 import type { OttoDocTypes } from "../generated.types";
 import type { Config } from "../types";
-import type { GetListReturn, GetListArgs } from "./types";
+import type { GetListReturn } from "./types";
 
 const KEY_MAP: Record<string, string | undefined> = {
   start: "limit_start",
@@ -30,12 +30,19 @@ function get_list<
   Doc extends keyof OttoDocTypes,
   Field extends keyof OttoDocTypes[Doc] & string
 >(
-  args: GetListArgs<Doc, Field>,
+  doctype: Doc,
+  fields: Field[] | ["*"],
+  options?: {
+    start?: number;
+    page_length?: number;
+    filters?: Record<string, unknown>;
+    or_filters?: Record<string, unknown>;
+    order_by?: `${Field} ${"asc" | "desc"}`;
+  },
   config?: Config
 ): Call<undefined, GetListReturn<Doc, Field>> {
-  const params: Record<string, unknown> = {};
-  for (const [_key, value] of Object.entries(args)) {
-    if (_key === "doctype") continue;
+  const params: Record<string, unknown> = { fields };
+  for (const [_key, value] of Object.entries(options ?? {})) {
     if (value === undefined) continue;
 
     const key = KEY_MAP[_key] ?? _key;
@@ -44,72 +51,64 @@ function get_list<
 
   return callV2({
     method: "GET",
-    path: `document/${args.doctype}`,
+    path: `document/${doctype}`,
     params,
     config,
   });
 }
 
 function new_doc<Name extends keyof OttoDocTypes>(
-  args: {
-    doctype: Name;
-    data: Partial<OttoDocTypes[Name]>;
-  },
+  doctype: Name,
+  data: Partial<OttoDocTypes[Name]>,
   config?: Config
 ): Call<undefined, OttoDocTypes[Name]> {
   return callV2({
     method: "POST",
-    path: `resource/${args.doctype}`,
-    body: args.data,
+    path: `resource/${doctype}`,
+    body: data,
     config,
   });
 }
 
 function get_doc<Name extends keyof OttoDocTypes>(
-  args: {
-    doctype: Name;
-    name: string;
-  },
+  doctype: Name,
+  name: string,
   config?: Config
 ): Call<undefined, OttoDocTypes[Name]> {
   return callV2({
     method: "GET",
-    path: `document/${args.doctype}/${args.name}`,
+    path: `document/${doctype}/${name}`,
     config,
   });
 }
 
 function update_doc<Name extends keyof OttoDocTypes>(
-  args: {
-    doctype: Name;
-    name: string | number;
-    data: Partial<OttoDocTypes[Name]>;
-  },
+  doctype: Name,
+  name: string | number,
+  data: Partial<OttoDocTypes[Name]>,
   config?: Config
 ): Call<undefined, OttoDocTypes[Name]> {
   return callV2({
     method: "PUT",
-    path: `document/${args.doctype}/${args.name}`,
-    body: args.data,
+    path: `document/${doctype}/${name}`,
+    body: data,
     config,
   });
 }
 
 function delete_doc<Name extends keyof OttoDocTypes>(
-  args: {
-    doctype: Name;
-    name: string | number;
-  },
+  doctype: Name,
+  name: string | number,
   config?: Config
 ): Call<undefined, "ok"> {
   return callV2({
     method: "DELETE",
-    path: `document/${args.doctype}/${args.name}`,
+    path: `document/${doctype}/${name}`,
     config,
   });
 }
 
-export const framework = {
+export const handlers = {
   login,
   logout,
   get_list,

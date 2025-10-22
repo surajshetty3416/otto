@@ -1,5 +1,6 @@
 /**
  * TODO:
+ * - todo, error handling v2 endpoints and v1 endpoints and general error handling
  * - add some tests for the new Call class to check if it works as expected
  * - add config, auto, cache, key (body if not set), ttl (invalidate on retrieval not settimeout), etc
  */
@@ -58,7 +59,6 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
   private _response?: Response;
   private _errors?: ServerError[];
   private _config?: Config;
-  private _alloRerun?: boolean;
   private _isFFCall: boolean;
 
   constructor(
@@ -82,11 +82,8 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     this._config = config;
     this._isFFCall = isFFCall;
 
-    // TODO: check if this is fine
     const obj = reactive(this) as any as Call<Args, Return>;
-    if (this._config?.auto !== false) {
-      obj.run();
-    }
+    if (this._config?.auto !== false) obj.run();
 
     return obj;
   }
@@ -116,20 +113,18 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
   }
 
   run() {
-    // Run with the same args
+    // Run with the same args, returns saved result
     return this._execute();
   }
 
   rerun(args?: Args) {
-    if (!this._alloRerun) throw new Error("Rerun not allowed");
-
     // Update args before running
     this.reset();
     this.body = args ? JSON.stringify(args) : undefined;
     return this._execute();
   }
 
-  then(resolve: (value: unknown) => void, reject?: (reason: unknown) => void) {
+  then(resolve: (value: Return) => void, reject?: (reason: unknown) => void) {
     const promise = this._execute();
     promise.then((res) => resolve(res)).catch((err) => reject?.(err));
     return promise;
@@ -157,7 +152,7 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     const request: RequestInit = {
       method: this.method,
       body: this.body,
-      headers: getHeaders(),
+      headers: getHeaders(this._isFFCall),
     };
 
     let data: Return;
@@ -180,6 +175,7 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
       }
     } catch (err) {
       this._failed = true;
+      window.LOG_ERRORS && logClientError(err);
       throw err;
     } finally {
       this._loading = false;
@@ -199,15 +195,22 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
   }
 }
 
-function getHeaders() {
+function getHeaders(isFFCall: boolean) {
   const headers: HeadersInit = {
     Accept: "application/json",
     "Content-Type": "application/json; charset=utf-8",
-    "X-Frappe-Site-Name": window.location.hostname,
   };
 
+  if (isFFCall) {
+    headers["X-Frappe-Site-Name"] = window.location.hostname;
+  }
+
   // TODO: Review this logic
-  if (window.csrf_token && window.csrf_token !== "{{ csrf_token }}") {
+  if (
+    isFFCall &&
+    window.csrf_token &&
+    window.csrf_token !== "{{ csrf_token }}"
+  ) {
     headers["X-Frappe-CSRF-Token"] = window.csrf_token;
   }
 
@@ -234,7 +237,7 @@ function getParams(params?: Record<string, unknown>): string {
 
 function log(duration: number, call: Call) {
   if (call.failed) {
-    window.LOG_ERRORS && logErrors(call);
+    window.LOG_ERRORS && logServerError(call);
   } else {
     window.DEBUG_API && logResponse(duration, call);
   }
@@ -252,7 +255,7 @@ function logResponse(duration: number, call: Call) {
   console.groupEnd();
 }
 
-function logErrors(call: Call) {
+function logServerError(call: Call) {
   console.groupCollapsed(
     `%cServer Error [${call.response?.url}]`,
     "color: red"
@@ -265,7 +268,7 @@ function logErrors(call: Call) {
   console.groupEnd();
 }
 
-function logNonError(error: unknown) {
+function logClientError(error: unknown) {
   console.groupCollapsed("%cClient Error", "color: red");
   console.error("Client Error", error);
   console.groupEnd();
@@ -305,9 +308,9 @@ function getIndicator(data: unknown) {
 
 function formatUrl(url: string) {
   const u = new URL(url);
-  if (u.pathname.startsWith("/api/v2/method/")) {
-    return u.pathname.slice(15);
+  if (u.pathname.startsWith("/api/v2/")) {
+    return decodeURI(u.pathname.slice(8));
   }
 
-  return u.pathname;
+  return decodeURI(u.pathname);
 }
