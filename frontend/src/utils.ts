@@ -241,3 +241,11 @@ export function isUi(str: string): boolean {
 export function deUi(str: string): string {
   return str.replace("<user>", "").replace("</user>", "");
 }
+
+export function logError(error: unknown) {
+  if (error instanceof Error) {
+    console.error(error.message);
+  } else {
+    console.error(error);
+  }
+}

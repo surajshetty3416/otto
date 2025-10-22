@@ -1,12 +1,8 @@
-/**
- * TODO:
- * - add some tests for the new Call class to check if it works as expected
- * - add config, auto, cache, key (body if not set), ttl (invalidate on retrieval not settimeout), etc, onsuccess, onerror, etc
- */
 import { reactive, toRaw } from "vue";
 import type { CallArgs, CallAPIArgs, Config, ServerException } from "./types";
 import { hash } from "./utils";
 import { Store } from "./store";
+import { logError } from "../utils";
 
 const cachestore = new Store<unknown>("cache");
 
@@ -53,7 +49,6 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
   private body?: string;
   private params?: string;
   private method: string;
-  private _promise?: Promise<Return>;
 
   private _data?: Return;
   private _loading: boolean;
@@ -63,6 +58,8 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
   private _exception?: ServerException;
   private _config?: Config;
   private _isFFCall: boolean;
+  private _isStale: boolean;
+  private _promise?: Promise<Return>;
 
   constructor(
     method: string,
@@ -85,9 +82,10 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     this._exception = undefined;
     this._config = config;
     this._isFFCall = isFFCall;
+    this._isStale = false;
 
     const obj = reactive(this) as any as Call<Args, Return>;
-    if (this._config?.cache) this._getCache();
+    if (this._config?.cache) this._loadFromCache();
     if (this._config?.auto !== false) obj.run();
 
     return obj;
@@ -123,6 +121,10 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
 
   get status() {
     return this._response?.status;
+  }
+
+  get isStale() {
+    return this._isStale;
   }
 
   run() {
@@ -189,6 +191,7 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
       }
 
       this._data = data;
+      this._isStale = false;
       if (this._failed && this._isFFCall) {
         this._exception = getError(json);
       }
@@ -200,7 +203,7 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
       logResponse(this, this.method, performance.now() - start);
     }
 
-    if (this._config?.cache) await this._setCache();
+    if (this._config?.cache) await this._saveToCache();
     return data;
   }
 
@@ -220,16 +223,29 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     this._error = undefined;
   }
 
-  private async _setCache(): Promise<void> {
+  private async _saveToCache(): Promise<void> {
     const key = this._getkey();
-    await cachestore.set(key, this.data, this._config?.ttl);
+    const ttl_ms = (this._config?.ttl ?? 0) * 1000;
+
+    try {
+      await cachestore.set(key, this.data, ttl_ms);
+    } catch (error) {
+      return logError(error);
+    }
   }
 
-  private async _getCache(): Promise<void> {
+  private async _loadFromCache(): Promise<void> {
     const key = this._getkey();
-    const data = await cachestore.get(key);
+    let data: unknown;
+    try {
+      data = await cachestore.get(key);
+    } catch (error) {
+      return logError(error);
+    }
+
     if (typeof data === "undefined") return;
     this._data = data as Return;
+    this._isStale = true;
   }
 
   private _getkey(): number {

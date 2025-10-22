@@ -28,7 +28,7 @@ export type ServerException = {
 
 export interface Config {
   cache?: boolean; // default false, if true then cache is used
-  ttl?: number; // milliseconds, if not set cache invalidate only on api response
+  ttl?: number; // seconds, if not set cache invalidate only on api response
   key?: string; // if not set, hash of url, method, body, params is used
   auto?: boolean; // default true, if false then call is not executed
 }

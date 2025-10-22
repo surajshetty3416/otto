@@ -21,12 +21,9 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { api, framework } from "../../../client";
-import { db, Store } from "../../../client/store";
+import { Store } from "../../../client/store";
 
 const message = ref("test message");
-
-//@ts-ignore
-window.db = db;
 
 //@ts-ignore
 window.Store = Store;
