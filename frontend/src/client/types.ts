@@ -15,12 +15,12 @@ export interface CallAPIArgs {
   config?: Config;
 }
 
-export type ServerError = {
+export type ServerException = {
   type: string;
-  exception: string;
+  traceback: string;
 };
 
-export interface Config {
+export interface Config<> {
   // cache: boolean;
   auto: boolean; // default true, if false then call is not executed
 }

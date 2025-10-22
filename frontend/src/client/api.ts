@@ -52,16 +52,6 @@ function _getApi(path: string): unknown {
       return _getApi(`${prop}`);
     },
     apply(target, _, args) {
-      if (window.DEBUG_API) {
-        console.groupCollapsed(
-          `%cAPI Call [${target.path}]`,
-          "color: lightblue"
-        );
-        console.log("path", target.path);
-        console.log("args", args);
-        console.groupEnd();
-      }
-
       if (target.path in frameworkHandlers) {
         const handler =
           frameworkHandlers[target.path as keyof typeof frameworkHandlers];

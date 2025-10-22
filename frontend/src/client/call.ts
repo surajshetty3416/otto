@@ -1,11 +1,10 @@
 /**
  * TODO:
- * - todo, error handling v2 endpoints and v1 endpoints and general error handling
  * - add some tests for the new Call class to check if it works as expected
- * - add config, auto, cache, key (body if not set), ttl (invalidate on retrieval not settimeout), etc
+ * - add config, auto, cache, key (body if not set), ttl (invalidate on retrieval not settimeout), etc, onsuccess, onerror, etc
  */
 import { reactive, toRaw } from "vue";
-import type { CallArgs, CallAPIArgs, Config, ServerError } from "./types";
+import type { CallArgs, CallAPIArgs, Config, ServerException } from "./types";
 
 export function call<Args extends any = unknown, Return extends any = unknown>(
   url: string,
@@ -37,7 +36,6 @@ export function callV1<
  *
  * Returns a Reactive<Call> object.
  */
-
 export function callV2<
   Args extends any = unknown,
   Return extends any = unknown
@@ -57,7 +55,8 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
   private _loading: boolean;
   private _failed: boolean;
   private _response?: Response;
-  private _errors?: ServerError[];
+  private _error?: unknown;
+  private _exception?: ServerException;
   private _config?: Config;
   private _isFFCall: boolean;
 
@@ -78,7 +77,8 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     this._loading = false;
     this._failed = false;
     this._response = undefined;
-    this._errors = undefined;
+    this._error = undefined;
+    this._exception = undefined;
     this._config = config;
     this._isFFCall = isFFCall;
 
@@ -108,8 +108,12 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     return this._response;
   }
 
-  get errors() {
-    return this._errors;
+  get exception() {
+    return this._exception;
+  }
+
+  get error() {
+    return this._error;
   }
 
   run() {
@@ -119,7 +123,7 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
 
   rerun(args?: Args) {
     // Update args before running
-    this.reset();
+    this._reset();
     this.body = args ? JSON.stringify(args) : undefined;
     return this._execute();
   }
@@ -141,12 +145,18 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
       return this._promise;
     }
 
-    const promise = this.__execute();
+    const promise = this.__execute().catch((error) => {
+      this._setClientError(error);
+      throw error;
+    });
+
     this._promise = promise;
     return promise;
   }
 
   private async __execute(): Promise<Return> {
+    window.DEBUG_API && logCall(this.url, this.body, this.params, this.method);
+
     const start = performance.now();
     this._loading = true;
     const request: RequestInit = {
@@ -171,27 +181,33 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
 
       this._data = data;
       if (this._failed && this._isFFCall) {
-        this._errors = json?.errors;
+        this._exception = getError(json);
       }
-    } catch (err) {
-      this._failed = true;
-      window.LOG_ERRORS && logClientError(err);
-      throw err;
+    } catch (error) {
+      this._setClientError(error);
+      throw error;
     } finally {
       this._loading = false;
-      log(performance.now() - start, this);
+      logResponse(this, this.method, performance.now() - start);
     }
 
     return data;
   }
 
-  private reset() {
+  private _setClientError(error: unknown) {
+    this._failed = true;
+    this._error = error;
+    window.LOG_ERRORS && logClientError(this.url, this.method, error);
+  }
+
+  private _reset() {
     this._promise = undefined;
     this._data = undefined;
     this._loading = false;
     this._failed = false;
     this._response = undefined;
-    this._errors = undefined;
+    this._exception = undefined;
+    this._error = undefined;
   }
 }
 
@@ -235,68 +251,62 @@ function getParams(params?: Record<string, unknown>): string {
   return `?${_params.toString()}`;
 }
 
-function log(duration: number, call: Call) {
+function logCall(
+  url: string,
+  body: string | undefined,
+  params: string | undefined,
+  method: string
+) {
+  const _url = formatUrl(url);
+  console.groupCollapsed(`%cAPI Call [${method} ${_url}]`, "color: lightblue");
+  try {
+    console.log(body ?? JSON.parse(body ?? "{}"));
+    params && console.log(params);
+  } catch {
+    console.log(body);
+    params && console.log(params);
+  }
+  console.groupEnd();
+}
+
+function logClientError(url: string, method: string, error: unknown) {
+  const _url = formatUrl(url);
+  console.groupCollapsed(`%cClient Error [${method} ${_url}]`, "color: red");
+  console.error(error);
+  console.groupEnd();
+}
+
+function logResponse(call: Call, method: string, duration: number) {
   if (call.failed) {
-    window.LOG_ERRORS && logServerError(call);
+    window.LOG_ERRORS && _logServerError(call, method, duration);
   } else {
-    window.DEBUG_API && logResponse(duration, call);
+    window.DEBUG_API && _logResponse(call, method, duration);
   }
 }
 
-function logResponse(duration: number, call: Call) {
+function _logResponse(call: Call, method: string, duration: number) {
   const url = formatUrl(call.response?.url ?? "");
   const indicator = getIndicator(call.data);
   console.groupCollapsed(
-    `%cAPI Response [${url}] ${indicator}`,
+    `%cAPI Response [${method} ${url}] ${indicator}`,
     "color: lightgreen"
   );
+  console.log(toRaw(call.data));
   console.log("Duration", duration, "ms");
-  console.log("Data", toRaw(call.data));
   console.groupEnd();
 }
 
-function logServerError(call: Call) {
-  console.groupCollapsed(
-    `%cServer Error [${call.response?.url}]`,
-    "color: red"
-  );
-  if (areErrors(call.errors)) {
-    call.errors.forEach((e) => console.error(e.exception));
-  } else {
-    console.error(call.errors);
+function _logServerError(call: Call, method: string, duration: number) {
+  const url = formatUrl(call.response?.url ?? "");
+  console.groupCollapsed(`%cServer Error [${method} ${url}]`, "color: red");
+
+  if (call.exception) {
+    console.error(call.exception.type);
+    console.error(call.exception.traceback);
   }
+
+  console.log("Duration", duration, "ms");
   console.groupEnd();
-}
-
-function logClientError(error: unknown) {
-  console.groupCollapsed("%cClient Error", "color: red");
-  console.error("Client Error", error);
-  console.groupEnd();
-}
-
-function getError(call: Call): Error {
-  if (!call.failed) {
-    return new Error("Something went wrong");
-  }
-
-  if (call.response?.status === 404) {
-    return new Error("Requested resource was not found");
-  }
-
-  if (call.response?.status === 401) {
-    return new Error("You are not authorized to access this resource");
-  }
-
-  return new Error("Something went wrong");
-}
-
-function areErrors(errors: any): errors is ServerError[] {
-  return (
-    errors instanceof Array &&
-    errors.every(
-      (e) => typeof e?.type === "string" && typeof e?.exception === "string"
-    )
-  );
 }
 
 function getIndicator(data: unknown) {
@@ -306,11 +316,56 @@ function getIndicator(data: unknown) {
   return `[${typeof data}]`;
 }
 
+function getError(data: any): ServerException | undefined {
+  if (isV2Error(data))
+    return { type: data.errors[0].type, traceback: data.errors[0].exception };
+  if (!isV1Error(data)) return undefined;
+
+  let { exc_type, exception } = data;
+  try {
+    const lines = JSON.parse(exception as string);
+    exception = lines.join("\n");
+  } catch {}
+
+  return { type: exc_type, traceback: exception };
+}
+
+function isRecord(data: any): data is Record<string, unknown> {
+  return typeof data === "object" && data !== null;
+}
+
+function isV1Error(data: any): data is { exc_type: string; exception: string } {
+  if (!isRecord(data)) return false;
+  if (typeof data.exc_type !== "string") return false;
+  if (typeof data.exception !== "string") return false;
+
+  return true;
+}
+
+function isV2Error(
+  data: any
+): data is { errors: { type: string; exception: string }[] } {
+  if (!isRecord(data)) return false;
+  if (!Array.isArray(data.errors)) return false;
+  return data.errors.every(
+    (e) => typeof e?.type === "string" && typeof e?.exception === "string"
+  );
+}
+
 function formatUrl(url: string) {
-  const u = new URL(url);
-  if (u.pathname.startsWith("/api/v2/")) {
-    return decodeURI(u.pathname.slice(8));
+  let pathname = url;
+  try {
+    const u = new URL(url);
+    pathname = u.pathname;
+  } catch {}
+
+  if (pathname.startsWith("/api/v2/method/otto.api")) {
+    return decodeURI(pathname.slice(20));
   }
 
-  return decodeURI(u.pathname);
+  if (pathname.startsWith("/api/v2/")) {
+    return decodeURI(pathname.slice(8));
+  }
+
+  return decodeURI(pathname);
 }
