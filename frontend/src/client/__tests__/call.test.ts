@@ -2,17 +2,17 @@
  * Tests for the call() function
  * Tests the low-level HTTP call wrapper
  */
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { call } from "../index";
 import {
-  afterEachCb,
-  beforeEachCb,
+  afterAllCb,
+  beforeAllCb,
   expectCallSuccess,
   waitForCall,
 } from "./utils";
 
-beforeEach(beforeEachCb);
-afterEach(afterEachCb);
+beforeAll(beforeAllCb);
+afterAll(afterAllCb);
 
 describe("call() function", () => {
   describe("Constructor and Initialization", () => {

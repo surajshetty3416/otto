@@ -1,5 +1,10 @@
 import type { Call } from "./call";
-import type { API as OttoAPI } from "./generated.types";
+import type { API as OttoAPI, OttoDocTypes } from "./generated.types";
+
+export type GetListReturn<
+  DocType extends keyof OttoDocTypes,
+  Field extends keyof OttoDocTypes[DocType] & string
+> = Pick<OttoDocTypes[DocType], Field>[];
 
 export interface CallArgs {
   method?: "GET" | "PUT" | "POST" | "DELETE";
@@ -17,7 +22,8 @@ export interface CallAPIArgs {
 
 export type ServerException = {
   type: string;
-  traceback: string;
+  message?: string;
+  traceback?: string;
 };
 
 export interface Config<> {

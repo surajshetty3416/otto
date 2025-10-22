@@ -47,12 +47,8 @@ export default defineConfig(() => {
         instances: [{ browser: "chromium" }],
       },
       globals: true,
-      // setupFiles: ["./src/client/__tests__/setup.ts"],
       include: ["src/client/__tests__/**/*.test.ts"],
-      exclude: [
-        "src/client/__tests__/framework.test.ts",
-        "src/client/__tests__/types.test.ts",
-      ],
+    setupFiles: ["src/client/__tests__/setup.ts"],
       testTimeout: 10_000,
     },
   };

@@ -116,6 +116,10 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     return this._error;
   }
 
+  get status() {
+    return this._response?.status;
+  }
+
   run() {
     // Run with the same args, returns saved result
     return this._execute();
@@ -318,7 +322,11 @@ function getIndicator(data: unknown) {
 
 function getError(data: any): ServerException | undefined {
   if (isV2Error(data))
-    return { type: data.errors[0].type, traceback: data.errors[0].exception };
+    return {
+      type: data.errors[0].type,
+      traceback: data.errors[0].exception,
+      message: data.errors[0].message,
+    };
   if (!isV1Error(data)) return undefined;
 
   let { exc_type, exception } = data;
@@ -342,14 +350,21 @@ function isV1Error(data: any): data is { exc_type: string; exception: string } {
   return true;
 }
 
-function isV2Error(
-  data: any
-): data is { errors: { type: string; exception: string }[] } {
+function isV2Error(data: any): data is {
+  errors: {
+    type: string;
+    exception?: string;
+    message?: string;
+    title?: string;
+    indicator?: string;
+  }[];
+} {
   if (!isRecord(data)) return false;
   if (!Array.isArray(data.errors)) return false;
-  return data.errors.every(
-    (e) => typeof e?.type === "string" && typeof e?.exception === "string"
-  );
+  const error = data.errors[0];
+  if (!isRecord(error)) return false;
+
+  return typeof error?.type === "string";
 }
 
 function formatUrl(url: string) {

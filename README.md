@@ -150,6 +150,52 @@ some steps you can try out.
 7. Click on the _Otto Execution_ link in the dialog and click on Open in Session Viewer (in the right panel)
 8. Complete output will only be visible after the task has completed executing.
 
+#### Server Tests
+
+After setting up the the bench you may run tests by using regular bench
+commands:
+
+```bash
+bench run-tests --app otto
+```
+
+Certain tests cost money to run and are disabled by a flag (for example
+[`test_session.py`](https://github.com/frappe/otto/blob/develop/otto/lib/tests/test_session.py)).
+To run these you need to:
+
+1. Set the `RUN_LLM_TESTS` environment variable to `true`.
+2. Set API keys for OpenAI in the **Otto Settings** doctype or by using the `OPENAI_API_KEY` environment variable.
+
+```bash
+RUN_LLM_TESTS=true OPENAI_API_KEY=your_openai_api_key bench run-tests --app otto
+```
+
+#### Client Tests
+
+The client tests are run using [Vitest](https://vitest.dev/) and are located in
+the [`frontend/src/client/__tests__`](./frontend/src/client/__tests__)
+directory.
+
+**These tests don't use mocks**
+
+To run UI tests you need to:
+
+1. Have your test bench running (`bench start`)
+2. Have the vite server running (`npm run dev`)
+3. Export the `VITE_TEST_USERNAME` and `VITE_TEST_PASSWORD` environment variables which point to a test user in the test bench.
+
+```bash
+# In a separate shell
+bench start
+
+# In a separate shell
+cd apps/otto && npm run dev
+
+# In a separate shell
+cd apps/otto
+VITE_TEST_USERNAME=test@example.com VITE_TEST_PASSWORD=test npm test
+```
+
 ## Links
 
 - [Otto Lib Docs](./otto/lib/docs/README.md)

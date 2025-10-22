@@ -2,18 +2,18 @@
  * Tests for the api object
  * Tests type-safe Otto API calls
  */
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { api } from "../api";
 import {
-  afterEachCb,
-  beforeEachCb,
+  afterAllCb,
+  beforeAllCb,
   expectCallException,
   expectCallSuccess,
   waitForCall,
 } from "./utils";
 
-beforeEach(beforeEachCb);
-afterEach(afterEachCb);
+beforeAll(beforeAllCb);
+afterAll(afterAllCb);
 
 describe("api object", () => {
   describe("Basic Method Calls", () => {

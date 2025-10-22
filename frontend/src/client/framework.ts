@@ -5,17 +5,9 @@
  * https://docs.frappe.io/framework/user/en/api/rest
  * https://github.com/frappe/frappe/blob/develop/frappe/api/v2.py
  */
-import { Call, callV1, callV2 } from "../call";
-import type { OttoDocTypes } from "../generated.types";
-import type { Config } from "../types";
-import type { GetListReturn } from "./types";
-
-const KEY_MAP: Record<string, string | undefined> = {
-  start: "limit_start",
-  page_length: "limit_page_length",
-  order_by: "order_by",
-  group_by: "group_by",
-};
+import { Call, callV1, callV2 } from "./call";
+import type { OttoDocTypes } from "./generated.types";
+import type { Config, GetListReturn } from "./types";
 
 function login(username: string, password: string): Call<undefined, undefined> {
   const body = { usr: username, pwd: password };
@@ -34,7 +26,7 @@ function get_list<
   fields: Field[] | ["*"],
   options?: {
     start?: number;
-    page_length?: number;
+    limit?: number;
     filters?: Record<string, unknown>;
     or_filters?: Record<string, unknown>;
     order_by?: `${Field} ${"asc" | "desc"}`;
@@ -42,10 +34,9 @@ function get_list<
   config?: Config
 ): Call<undefined, GetListReturn<Doc, Field>> {
   const params: Record<string, unknown> = { fields };
-  for (const [_key, value] of Object.entries(options ?? {})) {
+  for (const [key, value] of Object.entries(options ?? {})) {
     if (value === undefined) continue;
 
-    const key = KEY_MAP[_key] ?? _key;
     params[key] = value;
   }
 
@@ -64,7 +55,7 @@ function new_doc<Name extends keyof OttoDocTypes>(
 ): Call<undefined, OttoDocTypes[Name]> {
   return callV2({
     method: "POST",
-    path: `resource/${doctype}`,
+    path: `document/${doctype}`,
     body: data,
     config,
   });
