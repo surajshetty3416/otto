@@ -1,4 +1,4 @@
-import type { AssertTrue, Call, CheckIsRawAPI } from "./types";
+import type { AssertTrue, CheckIsRawAPI } from "./types";
 
 export interface BaseDoc<T extends string> {
   name: string | number;
@@ -227,6 +227,7 @@ export interface API {
   };
   ping(): unknown;
   echo(args: { message: string }): string;
+  throw(args: { message: string; use_frappe?: boolean }): unknown;
   get_user(): Record<string, string>;
   log_feedback(): unknown;
   chat: {

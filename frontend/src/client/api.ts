@@ -1,18 +1,20 @@
 import { markRaw } from "vue";
-import { callAPIv2 } from "./call";
-import { framework } from "./framework";
+import { callV2 } from "./call";
+import { framework as frameworkHandlers } from "./framework";
 import type { API } from "./types";
 
 /**
- * The `api` object is used to call two kinds of APIs:
- * - APIs defined in Frappe Framework (using v1)
- * - APIs defined in Otto (using v2)
- *
- * All backend calls are made through this. Check `./README.md` for more
- * details.
+ * The `api` object is used to call APIs defined in Otto (using v2).
  */
-export const api = markRaw(
-  new Proxy(
+export const api = getApi() as API;
+
+/**
+ * The `framework` object is used to call APIs defined in Frappe Framework (using v1 & v2).
+ */
+export const framework = getApi() as typeof frameworkHandlers;
+
+function getApi() {
+  const api = new Proxy(
     {},
     {
       get(_, prop) {
@@ -20,13 +22,14 @@ export const api = markRaw(
           throw Error(
             `string expected instead of ${typeof prop} ${String(prop)}`
           );
-        return getApi(prop);
+        return _getApi(prop);
       },
     }
-  )
-) as API;
+  );
+  return markRaw(api);
+}
 
-function getApi(path: string): unknown {
+function _getApi(path: string): unknown {
   const a: { path: string; (): void } = function () {};
   a.path = path;
 
@@ -45,8 +48,8 @@ function getApi(path: string): unknown {
        * await task.function_b();
        * ```
        */
-      if (target.path) return getApi(`${target.path}.${prop}`);
-      return getApi(`${prop}`);
+      if (target.path) return _getApi(`${target.path}.${prop}`);
+      return _getApi(`${prop}`);
     },
     apply(target, _, args) {
       if (window.DEBUG_API) {
@@ -59,12 +62,22 @@ function getApi(path: string): unknown {
         console.groupEnd();
       }
 
-      if (target.path in framework) {
+      if (target.path in frameworkHandlers) {
+        const handler =
+          frameworkHandlers[target.path as keyof typeof frameworkHandlers];
+
         // @ts-expect-error
-        return framework[target.path as keyof typeof framework](...args);
+        return handler(...args);
       }
 
-      return callAPIv2(target.path, args[0], args[1]);
+      const path = `method/otto.api.${target.path}`;
+      return callV2({
+        method: "POST",
+        path,
+        body: args[0],
+        params: undefined,
+        config: args[1],
+      });
     },
   });
 

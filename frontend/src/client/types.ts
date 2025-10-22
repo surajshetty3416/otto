@@ -1,52 +1,31 @@
-import type { Reactive } from "vue";
-import { framework } from "./framework";
-import type { API as OttoAPI, OttoDocTypes } from "./generated.types";
+import type { Call } from "./call";
+import type { API as OttoAPI } from "./generated.types";
 
-export type ReactiveCall<T = unknown> = Reactive<Call<T>>;
+export interface CallArgs {
+  method?: "GET" | "PUT" | "POST" | "DELETE";
+  body?: Record<string, unknown>;
+  params?: Record<string, unknown>;
+}
 
-export type GetList<
-  DocType extends keyof OttoDocTypes,
-  Field extends keyof OttoDocTypes[DocType] & string
-> = ReactiveCall<Pick<OttoDocTypes[DocType], Field>[]>;
+export interface CallAPIArgs {
+  method: "GET" | "PUT" | "POST" | "DELETE";
+  path: string;
+  body?: Record<string, unknown>;
+  params?: Record<string, unknown>;
+  config?: Config;
+}
 
 export type ServerError = {
   type: string;
   exception: string;
 };
 
-export interface Modifier {
+export interface Config {
   // cache: boolean;
-  // auto: boolean;
+  auto: boolean; // default true, if false then call is not executed
 }
 
-export interface Call<T = unknown> {
-  url: string /** The API path that is being called */;
-  body?: string /**JSON used here to prevent gc of mutable objects */;
-  loading: boolean /** Is true until the response promise resolves */;
-  data?: T /** Set only once the promise resolves */;
-  failed: boolean /** Set if fetch errored out */;
-  response?: Response /** Response object from the fetch call */;
-
-  /**
-   * Note: these error fields are not for userfacing UI, if an
-   * error occurs then the userfacing message should be defined
-   * client side depending on the action being called.
-   *
-   * If an error occurs server side and data about the raw error has
-   * to be sent, the error should be handled and the data should be
-   * sent instead.
-   */
-  error?: Error /** Set when the error occurs client side */;
-  errors?: ServerError[] /** Set when the error occurs server side */;
-
-  /**
-   * Methods that make a Call behave like a Promise.
-   */
-  then(resolve: (value: T) => any, reject?: (reason: any) => any): void;
-  reload(): Reactive<Call<T>>;
-}
-
-export type API = typeof framework & _API<OttoAPI>;
+export type API = _API<OttoAPI>;
 
 /**
  * API conversion types to convert the raw API to the form used by the client.
@@ -56,8 +35,14 @@ type RawFunction = (args: any) => any;
 
 export type APIFunction<RF extends RawFunction> =
   Parameters<RF>[0] extends undefined
-    ? (args?: null | undefined, modifier?: Modifier) => Call<ReturnType<RF>>
-    : (args: Parameters<RF>[0], modifier?: Modifier) => Call<ReturnType<RF>>;
+    ? (
+        args?: null | undefined,
+        modifier?: Config
+      ) => Call<undefined, ReturnType<RF>>
+    : (
+        args: Parameters<RF>[0],
+        modifier?: Config
+      ) => Call<Parameters<RF>[0], ReturnType<RF>>;
 
 export type _API<Raw> = {
   [K in keyof Raw]: Raw[K] extends RawFunction

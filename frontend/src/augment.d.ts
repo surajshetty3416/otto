@@ -15,6 +15,7 @@ declare global {
     site_name?: string;
     globals?: Globals;
     api?: API;
+    framework?: typeof framework;
     is_dev_mode?: boolean;
   }
 }

@@ -14,27 +14,25 @@
 				Echo
 			</button>
 		</div>
+		<button @click="framework.logout()">logout</button>
 	</div>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { api } from "../../../client";
+import { api, framework } from "../../../client";
 
 const message = ref("test message");
 
 async function test() {
-	const call = api.echo({ message: message.value }, { cache: true });
+	const call = api.echo({ message: message.value });
 	call.then((data) => {
 		console.log(`first: '${data}'`);
 	});
 
-	const re = await api.echo({ message: message.value });
-	console.log(`second: '${re}'`);
-
-	const llms = await api.get_list("Otto LLM", ["name", "size", "provider"], undefined, {
-		cache: true,
-	});
-	console.log("llms", llms);
+	// const llms = api.get_list("Otto LLM", ["name", "size", "provider"], undefined, {
+	// 	cache: true,
+	// });
+	// console.log("llms", llms);
 }
 </script>

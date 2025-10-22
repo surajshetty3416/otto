@@ -1,6 +1,6 @@
 import { createApp } from "vue";
 import App from "./App.vue";
-import { api } from "./client";
+import { api, framework } from "./client";
 import { useGlobals } from "./globals";
 import router from "./router";
 import "./style.css";
@@ -22,6 +22,7 @@ window.LOG_ERRORS = true;
 if (window.is_dev_mode) {
   window.DEBUG_API = true;
   window.api = api;
+  window.framework = framework;
   window.globals = app.config.globalProperties.$g;
 }
 

@@ -6,9 +6,17 @@ def ping():
 	return "pong"
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def echo(message: str) -> str:
 	return message
+
+
+@frappe.whitelist()
+def throw(message: str, use_frappe: bool = False):
+	if use_frappe:
+		frappe.throw(message)
+	else:
+		raise Exception(message)
 
 
 @frappe.whitelist()

@@ -1,31 +1,33 @@
-import { reactive, type Reactive } from "vue";
-import { ui } from "../utils";
-import type { Call, Modifier, ServerError } from "./types";
+/**
+ * TODO:
+ * - add some tests for the new Call class to check if it works as expected
+ * - add config, auto, cache, key (body if not set), ttl (invalidate on retrieval not settimeout), etc
+ */
+import { reactive, toRaw } from "vue";
+import type { CallArgs, CallAPIArgs, Config, ServerError } from "./types";
+
+export function call<Args extends any = unknown, Return extends any = unknown>(
+  url: string,
+  args?: CallArgs,
+  config?: Config
+): Call<Args, Return> {
+  const method = args?.method ?? "POST";
+  const body = args?.body;
+  const params = args?.params;
+
+  return new Call(method, url, body, params, config, false);
+}
 
 /**
  * Raw call to legacy FF API, used as a fallback when v2 doesn't work as expected.
  * Used only for calls to Framework defined endpoints.
  */
-export function callAPIv1<T = unknown>(
-  url: `/api/${string}`,
-  args?: {
-    body?: Record<string, unknown>;
-    params?: Record<string, unknown>;
-  },
-  method: "GET" | "PUT" | "POST" | "DELETE" = "POST",
-  modifier?: Modifier
-): Reactive<Call<T>> {
-  args ??= {};
-
-  const headers = getHeaders();
-  const bodyJSON = args.body ? JSON.stringify(args.body) : undefined;
-  const req: RequestInit = {
-    method,
-    headers,
-    body: bodyJSON,
-  };
-
-  return getCall(`${encodeURI(url)}${getParams(args.params)}`, req, bodyJSON);
+export function callV1<
+  Args extends any = unknown,
+  Return extends any = unknown
+>({ method, path, body, params, config }: CallAPIArgs): Call<Args, Return> {
+  const url = ["/api", path].join("/");
+  return new Call(method, url, body, params, config, true);
 }
 
 /**
@@ -34,171 +36,167 @@ export function callAPIv1<T = unknown>(
  *
  * Returns a Reactive<Call> object.
  */
-export function callAPIv2(
-  method: string,
-  kwargs?: Record<string, unknown>,
-  modifier?: Modifier
-): Reactive<Call> {
-  const headers = getHeaders();
-  const bodyJSON = kwargs ? JSON.stringify(kwargs) : undefined;
-  const req: RequestInit = {
-    method: "POST",
-    headers,
-    body: bodyJSON,
-  };
 
-  return getCall(`/api/v2/method/otto.api.${method}`, req, bodyJSON);
+export function callV2<
+  Args extends any = unknown,
+  Return extends any = unknown
+>({ method, path, body, params, config }: CallAPIArgs): Call<Args, Return> {
+  const url = ["/api/v2", path].join("/");
+  return new Call(method, url, body, params, config, true);
 }
 
-function getCall<T = unknown>(
-  url: string,
-  req: RequestInit,
-  body: string | undefined,
-  reCall?: Reactive<Call<T>>
-): Reactive<Call<T>> {
-  const start = performance.now();
+export class Call<Args extends any = unknown, Return extends any = unknown> {
+  private url: string;
+  private body?: string;
+  private params?: string;
+  private method: string;
+  private _promise?: Promise<Return>;
 
-  const promise = fetch(url, req);
-  const promiseJSON = promise
-    .then((response) => {
-      call.loading = false;
-      call.failed = !response.ok;
-      call.response = response;
-      return response.json();
-    })
-    .then((json) => {
-      if (!call.failed) {
-        call.data = json.data ?? json.message;
+  private _data?: Return;
+  private _loading: boolean;
+  private _failed: boolean;
+  private _response?: Response;
+  private _errors?: ServerError[];
+  private _config?: Config;
+  private _alloRerun?: boolean;
+  private _isFFCall: boolean;
+
+  constructor(
+    method: string,
+    url: string,
+    body: Record<string, unknown> | undefined,
+    params: Record<string, unknown> | undefined,
+    config: Config | undefined,
+    isFFCall: boolean
+  ) {
+    this.method = method;
+    this.url = url;
+    this.body = body ? JSON.stringify(body) : undefined;
+    this.params = params ? getParams(params) : undefined;
+
+    this._promise = undefined;
+    this._loading = false;
+    this._failed = false;
+    this._response = undefined;
+    this._errors = undefined;
+    this._config = config;
+    this._isFFCall = isFFCall;
+
+    // TODO: check if this is fine
+    const obj = reactive(this) as any as Call<Args, Return>;
+    if (this._config?.auto !== false) {
+      obj.run();
+    }
+
+    return obj;
+  }
+
+  get data() {
+    return this._data;
+  }
+
+  get loading() {
+    return this._loading;
+  }
+
+  get failed() {
+    return this._failed;
+  }
+
+  get promise() {
+    return this._promise;
+  }
+
+  get response() {
+    return this._response;
+  }
+
+  get errors() {
+    return this._errors;
+  }
+
+  run() {
+    // Run with the same args
+    return this._execute();
+  }
+
+  rerun(args?: Args) {
+    if (!this._alloRerun) throw new Error("Rerun not allowed");
+
+    // Update args before running
+    this.reset();
+    this.body = args ? JSON.stringify(args) : undefined;
+    return this._execute();
+  }
+
+  then(resolve: (value: unknown) => void, reject?: (reason: unknown) => void) {
+    const promise = this._execute();
+    promise.then((res) => resolve(res)).catch((err) => reject?.(err));
+    return promise;
+  }
+
+  catch(reject: (reason: unknown) => void) {
+    const promise = this._execute();
+    promise.catch((err) => reject(err));
+    return promise;
+  }
+
+  private _execute(): Promise<Return> {
+    if (this._promise) {
+      return this._promise;
+    }
+
+    const promise = this.__execute();
+    this._promise = promise;
+    return promise;
+  }
+
+  private async __execute(): Promise<Return> {
+    const start = performance.now();
+    this._loading = true;
+    const request: RequestInit = {
+      method: this.method,
+      body: this.body,
+      headers: getHeaders(),
+    };
+
+    let data: Return;
+    try {
+      const url = [encodeURI(this.url), this.params].join("");
+      const res = await fetch(url, request);
+      this._response = res;
+      this._failed = !res.ok;
+
+      const json = await res.json();
+      if (this._isFFCall) {
+        data = json.data ?? json.message;
       } else {
-        call.errors = json.errors;
-        logErrors(json.errors, call.url);
+        data = json;
       }
 
-      return json;
-    });
+      this._data = data;
+      if (this._failed && this._isFFCall) {
+        this._errors = json?.errors;
+      }
+    } catch (err) {
+      this._failed = true;
+      throw err;
+    } finally {
+      this._loading = false;
+      log(performance.now() - start, this);
+    }
 
-  /**
-   * If `call.then` as accessed then the below then handler is used. To
-   * access the value of `call.data` following can be done:
-   * - `const value = await call.then(...)`
-   * - `call.then(value => { ... })`
-   */
-  const then_ = (resolve: (value: T) => any, reject?: (reason: any) => any) =>
-    promiseJSON
-      .then(() => {
-        if (call.failed) throw getError(call); // Handled in chained catch
-
-        if (window.DEBUG_API) {
-          console.groupCollapsed(
-            `%cAPI Response [${url}] ${getIndicator(call.data)}`,
-            "color: lightgreen"
-          );
-          console.log("Duration", performance.now() - start, "ms");
-          console.log("Data", call.data);
-          console.groupEnd();
-        }
-
-        resolve(call.data as T);
-      })
-      .catch((error: any) => {
-        if (!(error instanceof Error)) {
-          logNonError(error);
-          error = getError(call);
-        }
-
-        call.error = error;
-        reject?.(error);
-      });
-  /**
-   * If `call.catch` as accessed then the below catch handler is used. To
-   * access the value of `call.data` following can be done:
-   * - `const value = await call.catch(...)`
-   * - `call.catch(...).then(value => { ... })`
-   */
-  const catch_ = (reject: (reason: any) => any) =>
-    promiseJSON
-      .then(async () => {
-        if (call.failed) throw getError(call); // Handled in chained catch
-
-        return call.data;
-      })
-      .catch((error: any) => {
-        if (!(error instanceof Error)) {
-          logNonError(error);
-          error = getError(call);
-        }
-
-        call.error = error;
-        reject(error);
-      });
-
-  const call = reCall
-    ? reCall
-    : (reactive({
-        url,
-        body,
-        loading: true,
-        data: undefined,
-        response: undefined,
-        error: undefined,
-        errors: undefined,
-        failed: false,
-        then: then_,
-        catch: catch_,
-        reload: () => getCall(url, req, body, call),
-      }) as Reactive<Call<T>>);
-
-  if (reCall) {
-    reCall.loading = true;
-    reCall.failed = false;
-    reCall.response = undefined;
-    reCall.errors = undefined;
-    reCall.error = undefined;
-    // reCall.data = undefined;
-    Object.assign(reCall, {
-      then: then_,
-      catch: catch_,
-    });
-    return reCall;
+    return data;
   }
 
-  return call;
-}
-
-function getError(call: Call): Error {
-  if (!call.failed) {
-    return new Error(ui("Something went wrong"));
+  private reset() {
+    this._promise = undefined;
+    this._data = undefined;
+    this._loading = false;
+    this._failed = false;
+    this._response = undefined;
+    this._errors = undefined;
   }
-
-  if (call.response?.status === 404) {
-    return new Error(ui("Requested resource was not found"));
-  }
-
-  if (call.response?.status === 401) {
-    return new Error(ui("You are not authorized to access this resource"));
-  }
-
-  return new Error(ui("Something went wrong"));
-}
-
-function areErrors(errors: any): errors is ServerError[] {
-  return (
-    errors instanceof Array &&
-    errors.every(
-      (e) => typeof e?.type === "string" && typeof e?.exception === "string"
-    )
-  );
-}
-
-function logErrors(errors: any, method: string) {
-  if (!window.LOG_ERRORS) return;
-  console.groupCollapsed(`%cServer Error [${method}]`, "color: red");
-  if (areErrors(errors)) {
-    errors.forEach((e) => console.error(e.exception));
-  } else {
-    console.error(errors);
-  }
-  console.groupEnd();
 }
 
 function getHeaders() {
@@ -234,6 +232,70 @@ function getParams(params?: Record<string, unknown>): string {
   return `?${_params.toString()}`;
 }
 
+function log(duration: number, call: Call) {
+  if (call.failed) {
+    window.LOG_ERRORS && logErrors(call);
+  } else {
+    window.DEBUG_API && logResponse(duration, call);
+  }
+}
+
+function logResponse(duration: number, call: Call) {
+  const url = formatUrl(call.response?.url ?? "");
+  const indicator = getIndicator(call.data);
+  console.groupCollapsed(
+    `%cAPI Response [${url}] ${indicator}`,
+    "color: lightgreen"
+  );
+  console.log("Duration", duration, "ms");
+  console.log("Data", toRaw(call.data));
+  console.groupEnd();
+}
+
+function logErrors(call: Call) {
+  console.groupCollapsed(
+    `%cServer Error [${call.response?.url}]`,
+    "color: red"
+  );
+  if (areErrors(call.errors)) {
+    call.errors.forEach((e) => console.error(e.exception));
+  } else {
+    console.error(call.errors);
+  }
+  console.groupEnd();
+}
+
+function logNonError(error: unknown) {
+  console.groupCollapsed("%cClient Error", "color: red");
+  console.error("Client Error", error);
+  console.groupEnd();
+}
+
+function getError(call: Call): Error {
+  if (!call.failed) {
+    return new Error("Something went wrong");
+  }
+
+  if (call.response?.status === 404) {
+    return new Error("Requested resource was not found");
+  }
+
+  if (call.response?.status === 401) {
+    return new Error("You are not authorized to access this resource");
+  }
+
+  return new Error("Something went wrong");
+}
+
+function areErrors(errors: any): errors is ServerError[] {
+  return (
+    errors instanceof Array &&
+    errors.every(
+      (e) => typeof e?.type === "string" && typeof e?.exception === "string"
+    )
+  );
+}
+
 function getIndicator(data: unknown) {
   if (Array.isArray(data)) return `[${data.length} items]`;
   if (typeof data === "object" && data !== null)
@@ -241,8 +303,11 @@ function getIndicator(data: unknown) {
   return `[${typeof data}]`;
 }
 
-function logNonError(error: unknown) {
-  console.groupCollapsed("%cClient Error", "color: red");
-  console.error("Client Error", error);
-  console.groupEnd();
+function formatUrl(url: string) {
+  const u = new URL(url);
+  if (u.pathname.startsWith("/api/v2/method/")) {
+    return u.pathname.slice(15);
+  }
+
+  return u.pathname;
 }

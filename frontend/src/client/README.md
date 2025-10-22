@@ -53,7 +53,7 @@ properties that are set depending on the state of the request such as `loading`,
 ## Modifiers
 
 All API calls can be modified using the `modify` method. This takes a Modifier
-(defined `./types.ts`). For example to make use of modifiers like cache the call
+(defined `./types.ts`). For example to make use of config like cache the call
 will change:
 
 - From `api.func(args)`
@@ -68,7 +68,7 @@ Here're a few calling convention examples:
 const call = api.echo({ message: "Hello, World!" }); // Call<string>
 const message = await call; // "Hello, World!"
 
-// Using modifiers
+// Using config
 const message = await api
   .modify({ cache: true })
   .echo({ message: "Hello, world!" });
