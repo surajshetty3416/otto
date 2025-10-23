@@ -36,6 +36,35 @@ venv.bak/
 node_modules/
 jspm_packages/
 
+# Symbolic links to node_modules
+public/node_modules/
+otto/public/node_modules
+
+# Lock files (use yarn.lock since this project uses yarn)
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+dist/
+build/
+coverage/
+.nyc_output/
+
+# Vite
+.vite/
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# TypeScript
+*.tsbuildinfo
+
+# Vue
+*.vue.js
+*.vue.ts
+
 # IDEs and editors
 .vscode/
 .vs/
@@ -47,6 +76,39 @@ jspm_packages/
 *.comp.js
 .wnf-lang-status
 *debug.log
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+
+# Cache directories
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Jupyter Notebook
+.ipynb_checkpoints
 
 # Helix Editor
 .helix/
@@ -56,8 +118,56 @@ jspm_packages/
 
 temp_*
 
+# Python virtual environments and tools
+.python-version
+.pipenv
+Pipfile.lock
+poetry.lock
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Local configuration files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+config.local.py
+settings.local.py
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
 # Frontend build
 otto/www/otto/index.html
 otto/public/frontend
 otto/public/css
 **/api/**/dummy.py
+
+# Static files and media
+staticfiles/
+media/
+

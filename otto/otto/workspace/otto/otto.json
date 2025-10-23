@@ -1,5 +1,4 @@
 {
- "app": "otto",
  "charts": [],
  "content": "[{\"id\":\"4eVkcmtiVn\",\"type\":\"card\",\"data\":{\"card_name\":\"Definitions\",\"col\":4}},{\"id\":\"OMj0VoZNL6\",\"type\":\"card\",\"data\":{\"card_name\":\"Executions\",\"col\":4}},{\"id\":\"lmh9Z242qd\",\"type\":\"card\",\"data\":{\"card_name\":\"Configs\",\"col\":4}},{\"id\":\"jyxJ06Ba8C\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"NaFHRr9umu\",\"type\":\"card\",\"data\":{\"card_name\":\"Management\",\"col\":4}}]",
  "creation": "2025-06-04 10:38:24.349553",
@@ -11,9 +10,8 @@
  "icon": "integration",
  "idx": 0,
  "indicator_color": "green",
- "is_hidden": 0,
+ "is_hidden": 1,
  "label": "Otto",
- "link_type": "DocType",
  "links": [
   {
    "hidden": 0,
@@ -202,7 +200,7 @@
    "type": "Link"
   }
  ],
- "modified": "2025-09-16 11:19:23.005597",
+ "modified": "2025-10-16 09:51:35.929326",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto",
@@ -212,8 +210,7 @@
  "public": 1,
  "quick_lists": [],
  "roles": [],
- "sequence_id": 32.0,
+ "sequence_id": 16.0,
  "shortcuts": [],
- "title": "Otto",
- "type": "Workspace"
+ "title": "Otto"
 }
