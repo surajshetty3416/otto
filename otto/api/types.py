@@ -1,6 +1,6 @@
 from typing import Literal, TypedDict
 
-from otto.llm.types import ContentChunk, SessionItem
+from otto.lib.types import ContentChunk, SessionItem, ToolUseUpdate
 
 
 class PendingRequest(TypedDict):
@@ -21,7 +21,7 @@ class RealtimeError(TypedDict):
 	id: str
 	chat_id: str
 	type: Literal["error"]
-	message: str
+	data: str
 
 
 class RealtimeChunk(TypedDict):
@@ -45,11 +45,26 @@ class RealtimeRequest(TypedDict):
 	data: PendingRequest
 
 
-class RealtimeToolsExecuted(TypedDict):
+class RealtimeToolExecutionUpdate(TypedDict):
 	id: str
 	chat_id: str
-	type: Literal["tools-executed"]
+	type: Literal["tool-execution-update"]
+	data: ToolUseUpdate
+
+
+class RealtimeToolExecutionComplete(TypedDict):
+	id: str
+	chat_id: str
+	type: Literal["tool-execution-complete"]
+	data: int
 
 
 # @export - used for listening to chat messages
-RealtimeChatMessage = RealtimeChunk | RealtimeItem | RealtimeRequest | RealtimeToolsExecuted | RealtimeError
+RealtimeChatMessage = (
+	RealtimeError
+	| RealtimeChunk
+	| RealtimeItem
+	| RealtimeRequest
+	| RealtimeToolExecutionUpdate
+	| RealtimeToolExecutionComplete
+)

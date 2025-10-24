@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import datetime
+from typing import TYPE_CHECKING
 
 import frappe
 
@@ -10,9 +13,13 @@ from otto.api.types import (
 	RealtimeError,
 	RealtimeItem,
 	RealtimeRequest,
-	RealtimeToolsExecuted,
+	RealtimeToolExecutionComplete,
+	RealtimeToolExecutionUpdate,
 )
-from otto.llm.types import SessionItem
+
+if TYPE_CHECKING:
+	from otto.lib.types import SessionItem
+	from otto.otto.doctype.otto_chat.otto_chat import OttoChat
 
 
 @frappe.whitelist()
@@ -86,11 +93,21 @@ def _chat(chat_id: str, query: str | None = None) -> None:
 	from otto.otto.doctype.otto_chat.otto_chat import OttoChat
 
 	chat = otto.get(OttoChat, chat_id)
+
+	if query is None:
+		_execute_tools(chat, chat_id)
+
+	_send_query(chat, chat_id, query)
+	_check_pending_requests(chat, chat_id)
+	_execute_tools(chat, chat_id)
+
+
+def _send_query(chat: OttoChat, chat_id: str, query: str | None) -> None:
 	response, reason = chat.chat(query)
 	if reason:
 		message = RealtimeError(
 			id=frappe.generate_hash(length=10),
-			message=reason,
+			data=reason,
 			chat_id=chat_id,
 			type="error",
 		)
@@ -117,6 +134,8 @@ def _chat(chat_id: str, query: str | None = None) -> None:
 		)
 	)
 
+
+def _check_pending_requests(chat: OttoChat, chat_id: str) -> None:
 	pending_requests = chat.get_pending_requests()
 	for opr in pending_requests:
 		assert opr.name is not None
@@ -137,16 +156,26 @@ def _chat(chat_id: str, query: str | None = None) -> None:
 		)
 		_publish(message)
 
-	if chat.execute_tools():
-		# TODO:
-		# execute tools in a generator, publish updates as tools are being
-		# executed and then publish the final result "ask to resume"
-		message = RealtimeToolsExecuted(
+
+def _execute_tools(chat: OttoChat, chat_id: str) -> None:
+	count = 0
+	for update in chat.execute_tools():
+		message = RealtimeToolExecutionUpdate(
 			id=frappe.generate_hash(length=10),
 			chat_id=chat_id,
-			type="tools-executed",
+			type="tool-execution-update",
+			data=update,
 		)
 		_publish(message)
+		count += 1
+
+	message = RealtimeToolExecutionComplete(
+		id=frappe.generate_hash(length=10),
+		chat_id=chat_id,
+		type="tool-execution-complete",
+		data=count,
+	)
+	_publish(message)
 
 
 def _publish(message: RealtimeChatMessage) -> None:

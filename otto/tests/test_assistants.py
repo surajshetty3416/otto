@@ -324,7 +324,8 @@ def get_context():
 		self.assertEqual(pending_tools[0].args["b"], 42)
 
 		# Execute tool use
-		chat.execute_tools()
+		for _ in chat.execute_tools():
+			pass
 		pending_tools = chat.get_pending_tools()
 		self.assertEqual(len(pending_tools), 0)
 
@@ -395,7 +396,8 @@ def get_context():
 
 		pending_tools = chat.get_pending_tools()
 		self.assertEqual(len(pending_tools), 1)
-		chat.execute_tools(fn_map={"send_email": dummy_send_email})
+		for _ in chat.execute_tools(fn_map={"send_email": dummy_send_email}):
+			pass
 		pending_tools = chat.get_pending_tools()
 		self.assertEqual(len(pending_tools), 0)
 

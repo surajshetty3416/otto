@@ -197,8 +197,9 @@ class OttoChat(Document):
 				fn=fn,
 			)
 			updates.append(update)
+			yield update
 		self.update_tool_use(updates)
-		return len(updates) > 0
+		return
 
 	def get_pending_tools(self, include_external: bool = True) -> list[PendingToolUse]:
 		pending_tool_uses = self.session_.get_pending_tool_use()

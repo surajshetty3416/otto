@@ -25,10 +25,10 @@ const props = defineProps<{
 	chatId?: string;
 }>();
 
-const messages = ref<SessionItem[]>([]);
-const assistant = "5t44lus4lh"; // dummy for now
 const isNew = computed(() => !!props.chatId);
+const assistant = "5t44lus4lh"; // dummy for now
 const isLoading = ref(false);
+const messages = ref<SessionItem[]>([]);
 
 async function handleSend(query: string) {
 	isLoading.value = true;
@@ -47,10 +47,6 @@ function appendUserMessage(query: string) {
 	messages.value.push(getUserMessage(query));
 }
 
-socket.on("chat", (message) => {
-	console.log(message);
-});
-
 function handleRealtimeMessage(message: RealtimeChatMessage) {
 	if (message.chat_id !== props.chatId) return;
 	if (received.has(message.id)) return;
@@ -63,7 +59,9 @@ function handleRealtimeMessage(message: RealtimeChatMessage) {
 			break;
 		case "request":
 			break;
-		case "tools-executed":
+		case "tool-execution-complete":
+			break;
+		case "tool-execution-update":
 			break;
 		case "error":
 			break;
@@ -75,5 +73,9 @@ onMounted(() => {
 });
 onUnmounted(() => {
 	socket.off("otto.chat.api", handleRealtimeMessage);
+});
+
+socket.on("chat", (message) => {
+	console.log(message);
 });
 </script>
