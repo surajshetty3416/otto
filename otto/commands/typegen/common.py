@@ -351,4 +351,4 @@ def get_dependent_types(relative_root: Path, found_types: FoundTypes, content: s
 
 
 def is_defined(type_name: str, content: str) -> bool:
-	return f"interface {type_name}" in content or f"type {type_name}" in content
+	return re.search(rf"interface\s+{type_name}\b|type\s+{type_name}\b", content) is not None
