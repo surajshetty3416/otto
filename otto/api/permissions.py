@@ -18,7 +18,7 @@ def acknowledge(
 	type: Literal["grant", "deny"],
 	override_args: dict | None = None,
 	denied_reason: str | None = None,
-):
+) -> None:
 	"""
 	Acknowledge and update the status of an Otto Permission Request.
 
@@ -40,6 +40,7 @@ def acknowledge(
 	Example:
 		acknowledge(name=perm_req_name, type="grant", override_args={"limit": 100})
 	"""
+	from otto.otto.doctype.otto_execution.otto_execution import resume_execution
 	from otto.otto.doctype.otto_permission_request.otto_permission_request import OttoPermissionRequest
 
 	if not name or type not in ["grant", "deny"]:
@@ -50,6 +51,7 @@ def acknowledge(
 	opr = otto.get(OttoPermissionRequest, name)
 	opr.add_viewed()
 	opr.acknowledge(status=status, denied_reason=denied_reason, override_args=override_args)
+	resume_execution(opr.session)
 
 
 @frappe.whitelist(methods=["POST"])
@@ -62,7 +64,7 @@ def get_pending_requests(
 	target_doctype: str | None = None,
 	session: str | None = None,
 	tool_use_id: str | None = None,
-):
+) -> list[dict]:
 	"""
 	Retrieve pending Otto Permission Requests based on various filter criteria.
 

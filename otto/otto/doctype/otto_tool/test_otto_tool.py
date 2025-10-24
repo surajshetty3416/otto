@@ -26,7 +26,7 @@ class UnitTestOttoTool(UnitTestCase):
 			with contextlib.suppress(Exception):
 				frappe.delete_doc("Otto Tool", tool.name, force=True)
 
-	def test_internal_tool_creation_and_validation(self):
+	def test_external_tool_creation_and_validation(self):
 		"""Test creating an internal tool (no code provided) and check if validation works properly."""
 		# Create internal tool with valid schema
 		tool = OttoTool.new(
@@ -76,7 +76,7 @@ class UnitTestOttoTool(UnitTestCase):
 		self.assertIn("user_id", schema["parameters"]["required"])
 		self.assertNotIn("include_email", schema["parameters"]["required"])
 
-	def test_internal_tool_validation_failure(self):
+	def test_external_tool_validation_failure(self):
 		"""Test internal tool validation fails when description is missing."""
 		tool = OttoTool.new(
 			title="Invalid Tool",
@@ -98,7 +98,7 @@ class UnitTestOttoTool(UnitTestCase):
 		assert tool.reason is not None  # for type checker
 		self.assertIn("description missing", tool.reason.lower())
 
-	def test_internal_tool_cannot_execute(self):
+	def test_external_tool_cannot_execute(self):
 		"""Test that internal tools cannot be executed."""
 		tool = OttoTool.new(
 			title="Internal Tool",
@@ -122,7 +122,7 @@ class UnitTestOttoTool(UnitTestCase):
 
 		self.assertIn("External tools must be", str(context.exception))
 
-	def test_non_internal_tool_with_code_auto_detect(self):
+	def test_tool_with_code_auto_detect(self):
 		"""Test creating a non-internal tool with code and auto-detecting args."""
 		code = """
 def main(a: int, b: int, verbose: bool = False):
@@ -175,7 +175,7 @@ def main(a: int, b: int, verbose: bool = False):
 		self.assertTrue(tool.is_valid)
 		self.assertIsNone(tool.reason)
 
-	def test_non_internal_tool_with_explicit_details(self):
+	def test_tool_with_explicit_details(self):
 		"""Test creating a non-internal tool with code and explicit details."""
 		code = """
 def main(x: float, y: float):
@@ -216,7 +216,7 @@ def main(x: float, y: float):
 				self.assertEqual(arg.description, "The second number to multiply")
 				self.assertEqual(arg.type, "number")
 
-	def test_execute_non_internal_tool_simple(self):
+	def test_execute_tool_simple(self):
 		"""Test executing a simple non-internal tool."""
 		code = """
 def main(a: int, b: int):
@@ -248,7 +248,7 @@ def main(a: int, b: int):
 		self.assertEqual(result["stdout"], "")
 		self.assertEqual(result["stderr"], "")
 
-	def test_execute_non_internal_tool_with_otto_lib(self):
+	def test_execute_tool_with_otto_lib(self):
 		"""Test executing a tool that uses the otto library."""
 		code = """
 def main(message: str):
@@ -282,7 +282,7 @@ def main(message: str):
 		self.assertEqual(result["result"]["message"], "test")
 		self.assertTrue(result["result"]["has_env"])
 
-	def test_execute_non_internal_tool_with_default_args(self):
+	def test_execute_tool_with_default_args(self):
 		"""Test executing a tool with default arguments."""
 		code = """
 def main(name: str, greeting: str = "Hello"):

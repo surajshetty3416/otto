@@ -1,5 +1,6 @@
-import unittest
 from typing import cast
+
+from frappe.tests import UnitTestCase
 
 from otto.lib.session import Session, quick_query
 from otto.lib.tests.utils import delete_sessions, print_stats
@@ -20,7 +21,7 @@ TEST_INSTRUCTION = (
 )
 
 
-class TestSession(unittest.TestCase):
+class TestSessions(UnitTestCase):
 	"""
 	Tests for the Session library wrapper around OttoSession.
 

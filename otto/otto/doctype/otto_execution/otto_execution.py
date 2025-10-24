@@ -390,3 +390,25 @@ def get_recent_execution(limit: int = 20) -> list[dict]:
 		session["task_name"] = task_map[session["task"]]["title"]
 
 	return sessions
+
+
+def resume_execution(session: str):
+	from otto.otto.doctype.otto_task.otto_task import get_timeout
+
+	execs = frappe.get_all(
+		"Otto Execution",
+		filters={"session": session},
+		fields=["name"],
+		limit=1,
+		pluck="name",
+	)
+	if not execs:
+		return
+
+	frappe.enqueue_doc(
+		doctype="Otto Execution",
+		name=execs[0],
+		method="resume",
+		timeout=get_timeout(),
+		enqueue_after_commit=True,
+	)

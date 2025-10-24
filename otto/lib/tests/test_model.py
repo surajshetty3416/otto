@@ -1,9 +1,9 @@
 import contextlib
-import unittest
 from typing import cast
 from unittest.mock import patch
 
 import frappe
+from frappe.tests import UnitTestCase
 
 import otto.lib.model as model
 from otto.lib.tests.utils import delete_sessions, print_stats
@@ -22,7 +22,7 @@ def mock_get_key(provider: Provider) -> tuple[str | None, str | None]:
 
 
 @patch("otto.llm.utils.get_key", side_effect=mock_get_key)
-class TestModelAvailability(unittest.TestCase):
+class TestModelAvailability(UnitTestCase):
 	"""Test model and provider availability checks."""
 
 	def test_is_model_available_exact_match(self, mock_get_key):
@@ -63,7 +63,7 @@ class TestModelAvailability(unittest.TestCase):
 
 
 @patch("otto.llm.utils.get_key", side_effect=mock_get_key)
-class TestModelRetrieval(unittest.TestCase):
+class TestModelRetrieval(UnitTestCase):
 	"""Test model filtering and retrieval functions."""
 
 	def test_get_models_basic_filtering(self, mock_get_key):
@@ -196,7 +196,7 @@ class TestModelRetrieval(unittest.TestCase):
 		self.assertIn("provider", model_with_preference_and_details)
 
 
-class TestAPIKeyManagement(unittest.TestCase):
+class TestAPIKeyManagement(UnitTestCase):
 	"""Test API key setting functionality."""
 
 	@patch("frappe.set_value")
@@ -215,7 +215,7 @@ class TestAPIKeyManagement(unittest.TestCase):
 		mock_set_value.assert_not_called()
 
 
-class TestModelCreationAndUsage(unittest.TestCase):
+class TestModelCreationAndUsage(UnitTestCase):
 	"""Test model creation and actual usage with LLM integration."""
 
 	def __init__(self, *args, **kwargs):
@@ -368,7 +368,3 @@ class TestModelCreationAndUsage(unittest.TestCase):
 		self.assertTrue(model_doc.get("is_reasoning"))
 		self.assertFalse(model_doc.get("supports_vision"))
 		self.assertTrue(model_doc.get("enabled"))  # Should be enabled by default
-
-
-if __name__ == "__main__":
-	unittest.main()

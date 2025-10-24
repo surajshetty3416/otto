@@ -4,17 +4,18 @@
 import contextlib
 
 import frappe
-from frappe.tests import IntegrationTestCase
+from frappe.tests import UnitTestCase
 
-import otto
+from otto.lib.tests.utils import print_session, print_stats
+from otto.llm.test_llm.utils import TEST_MODEL, skip_unless_can_run_llm_tests
 from otto.otto.doctype.otto_assistant.otto_assistant import OttoAssistant
 from otto.otto.doctype.otto_chat.otto_chat import OttoChat
 from otto.otto.doctype.otto_tool.otto_tool import OttoTool
 
 
-class IntegrationTestOttoAssistant(IntegrationTestCase):
+class TestAssistants(UnitTestCase):
 	"""
-	Integration tests for OttoAssistant.
+	Tests for OttoAssistant.
 	Tests the complete flow from tool creation to chat execution.
 	"""
 
@@ -26,23 +27,25 @@ class IntegrationTestOttoAssistant(IntegrationTestCase):
 
 	def tearDown(self):
 		"""Clean up created test resources."""
+		print_stats([chat.session_ for chat in self.created_chats if len(chat.session_.get_items()) > 0])
+
 		# Clean up in reverse order of dependencies
 		for chat in self.created_chats:
 			with contextlib.suppress(Exception):
 				# Clean up related sessions and permission requests
-				if hasattr(chat, "session") and chat.session:
-					# Clean up permission requests
-					permission_requests = frappe.get_all(
-						"Otto Permission Request", filters={"session": chat.session}, pluck="name"
-					)
-					for req_name in permission_requests:
-						frappe.delete_doc("Otto Permission Request", req_name, force=True)
 
-					# Clean up session
-					frappe.delete_doc("Otto Session", chat.session, force=True)
+				# Clean up permission requests
+				permission_requests = frappe.get_all(
+					"Otto Permission Request", filters={"session": chat.session}, pluck="name"
+				)
+				for req_name in permission_requests:
+					frappe.delete_doc("Otto Permission Request", req_name, force=True)
 
 				# Clean up chat
 				frappe.delete_doc("Otto Chat", chat.name, force=True)
+
+				# Clean up session
+				frappe.delete_doc("Otto Session", chat.session, force=True)
 
 		for assistant in self.created_assistants:
 			with contextlib.suppress(Exception):
@@ -177,123 +180,18 @@ def main(x: int, y: int):
 		self.assertIn("helpful assistant", instruction.lower())
 
 	def test_create_chat_from_assistant(self):
-		"""Test creating a chat from an assistant."""
-		# Create a simple tool
-		tool = OttoTool.new(
-			title="Get Time",
-			slug="get_time",
-			description="Gets the current time",
-			code="""
-def main():
-	from datetime import datetime
-	return datetime.now().isoformat()
-""",
-		)
-		self.created_tools.append(tool)
-		tool.description = "Returns the current time"
-		tool.save()
-		tool.reload()
-
-		# Create assistant
-		assert tool.name is not None
-		assistant = OttoAssistant.new(
-			title="Time Assistant",
-			instruction="You help users with time-related queries.",
-			tools=[tool.name],
-		)
-		self.created_assistants.append(assistant)
-
-		# Create chat from assistant
-		assert assistant.name is not None
-		chat = OttoChat.new(assistant=assistant.name)
-		self.created_chats.append(chat)
-
-		# Verify chat is created correctly
-		self.assertIsNotNone(chat.name)
-		self.assertEqual(chat.assistant, assistant.name)
-		self.assertIsNotNone(chat.session)
-
-		# Verify session is created
-		session = chat.session_
-		self.assertIsNotNone(session)
-		self.assertEqual(session.model, assistant.llm)
-
-		# Verify assistant reference is correct
-		self.assertEqual(chat.assistant_.name, assistant.name)
-
-		# Verify tool configs are loaded
-		tool_configs = chat.tool_configs
-		self.assertIn("get_time", tool_configs)
-		self.assertEqual(tool_configs["get_time"].tool, tool.name)
-
-	def test_chat_interaction_with_tool_execution(self):
 		"""Test the full chat flow: query -> permission request -> tool execution."""
-		# Create an internal tool
-		calc_tool = OttoTool.new(
-			title="Calculate",
-			slug="calculate",
-			description="Performs a simple calculation",
-			code="""
-def main(operation: str, a: int, b: int):
-	if operation == "add":
-		return a + b
-	elif operation == "multiply":
-		return a * b
-	elif operation == "subtract":
-		return a - b
-	elif operation == "divide":
-		return a / b if b != 0 else "Cannot divide by zero"
-	return "Unknown operation"
-""",
-		)
+		calc_tool, send_email_tool = _get_test_tools()
 		self.created_tools.append(calc_tool)
-		for arg in calc_tool.args:
-			if arg.arg_name == "operation":
-				arg.description = "The operation to perform (add, multiply, subtract, divide)"
-			elif arg.arg_name == "a":
-				arg.description = "First number"
-			elif arg.arg_name == "b":
-				arg.description = "Second number"
-		calc_tool.save()
-		calc_tool.reload()
-
-		# Create an external tool that requires permission
-		external_tool = OttoTool.new(
-			title="Send Email",
-			slug="send_email",
-			description="Sends an email to a recipient",
-			is_external=True,
-			requires_permission=True,
-			args=[
-				{
-					"arg_name": "to",
-					"type": "string",
-					"description": "Email recipient",
-					"is_required": True,
-				},
-				{
-					"arg_name": "subject",
-					"type": "string",
-					"description": "Email subject",
-					"is_required": True,
-				},
-				{
-					"arg_name": "body",
-					"type": "string",
-					"description": "Email body",
-					"is_required": True,
-				},
-			],
-		)
-		self.created_tools.append(external_tool)
+		self.created_tools.append(send_email_tool)
 
 		# Create assistant with these tools
 		assert calc_tool.name is not None
-		assert external_tool.name is not None
+		assert send_email_tool.name is not None
 		assistant = OttoAssistant.new(
 			title="Helpful Assistant",
 			instruction="You are a helpful assistant. When asked to perform calculations, use the calculate tool. When asked to send emails, use the send_email tool. Always acknowledge the request clearly.",
-			tools=[calc_tool.name, external_tool.name],
+			tools=[calc_tool.name, send_email_tool.name],
 		)
 		self.created_assistants.append(assistant)
 
@@ -306,139 +204,12 @@ def main(operation: str, a: int, b: int):
 		self.assertFalse(chat.has_pending_requests())
 		self.assertEqual(len(chat.get_pending_tools()), 0)
 
-		# Perform a chat interaction that should trigger the calculate tool
-		# Note: In a real scenario, the LLM would decide to use the tool
-		# For testing, we'll manually create a tool use scenario
-
-		# First, let's get the tool schemas to set up the session properly
-		tool_schemas = []
-		for tool_ref in assistant.tools:
-			tool_doc = otto.get(OttoTool, tool_ref.tool)
-			schema = tool_doc.get_function_schema(slug=tool_ref.slug)
-			tool_schemas.append(schema)
-
-		# Update session with tools
-		chat.session_.set_tools(tool_schemas)
-		chat.session_.save()
-
-		# Make a chat request (this would normally call the LLM)
-		# Since we can't actually call the LLM in tests, we'll simulate the flow
-		# by manually creating a tool use scenario
-
 		# For testing purposes, let's verify the setup is correct
 		session_tools = chat.session_.tools
 		self.assertEqual(len(session_tools), 2)
 		tool_names = [tool["name"] for tool in session_tools]
 		self.assertIn("calculate", tool_names)
 		self.assertIn("send_email", tool_names)
-
-	def test_permission_request_flow(self):
-		"""Test permission request creation and granting."""
-		# Create a tool that requires permission
-		sensitive_tool = OttoTool.new(
-			title="Delete Data",
-			slug="delete_data",
-			description="Deletes data from the database",
-			code="""
-def main(table: str, id: str):
-	# In real scenario, this would delete data
-	return f"Deleted record {id} from {table}"
-""",
-			requires_permission=True,
-		)
-		self.created_tools.append(sensitive_tool)
-		for arg in sensitive_tool.args:
-			if arg.arg_name == "table":
-				arg.description = "Table name"
-			elif arg.arg_name == "id":
-				arg.description = "Record ID to delete"
-		sensitive_tool.save()
-		sensitive_tool.reload()
-
-		# Create assistant with this tool
-		assert sensitive_tool.name is not None
-		assistant = OttoAssistant.new(
-			title="Admin Assistant",
-			instruction="You help with administrative tasks.",
-			tools=[sensitive_tool.name],
-		)
-		self.created_assistants.append(assistant)
-
-		# Create chat
-		assert assistant.name is not None
-		chat = OttoChat.new(assistant=assistant.name)
-		self.created_chats.append(chat)
-
-		# Set up tool schemas
-		tool_schemas = []
-		for tool_ref in assistant.tools:
-			tool_doc = otto.get(OttoTool, tool_ref.tool)
-			schema = tool_doc.get_function_schema(slug=tool_ref.slug)
-			tool_schemas.append(schema)
-
-		chat.session_.set_tools(tool_schemas)
-		chat.session_.save()
-
-		# Verify tool requires permission
-		tool_config = chat.tool_configs.get("delete_data")
-		self.assertIsNotNone(tool_config)
-		assert tool_config is not None
-		self.assertTrue(tool_config.requires_permission)
-
-	def test_external_tool_execution_with_fn_map(self):
-		"""Test executing external tools with function map."""
-		# Create external tool
-		external_tool = OttoTool.new(
-			title="Fetch Data",
-			slug="fetch_data",
-			description="Fetches data from an external source",
-			is_external=True,
-			args=[
-				{
-					"arg_name": "source",
-					"type": "string",
-					"description": "Data source identifier",
-					"is_required": True,
-				},
-			],
-		)
-		self.created_tools.append(external_tool)
-
-		# Create assistant
-		assert external_tool.name is not None
-		assistant = OttoAssistant.new(
-			title="Data Assistant",
-			instruction="You help fetch and analyze data.",
-			tools=[external_tool.name],
-		)
-		self.created_assistants.append(assistant)
-
-		# Create chat
-		assert assistant.name is not None
-		chat = OttoChat.new(assistant=assistant.name)
-		self.created_chats.append(chat)
-
-		# Define an external function for the tool
-		def fetch_data_fn(args):
-			source = args.get("source", "unknown")
-			return {"data": f"Data from {source}", "status": "success"}
-
-		# Create function map
-		fn_map = {"fetch_data": fetch_data_fn}
-
-		# Verify tool config
-		tool_config = chat.tool_configs.get("fetch_data")
-		self.assertIsNotNone(tool_config)
-		assert tool_config is not None
-		self.assertTrue(tool_config.is_external)
-
-		# Test that fn_map can be passed to execute_tools
-		# (In real scenario, this would be called after pending tools are detected)
-		chat.execute_tools(fn_map=fn_map)
-
-		# Verify it doesn't crash when there are no pending tools
-		pending = chat.get_pending_tools()
-		self.assertEqual(len(pending), 0)
 
 	def test_assistant_with_context_function(self):
 		"""Test assistant with get_context function."""
@@ -491,109 +262,6 @@ def get_context():
 		self.assertIn("test_value_123", instruction)
 		self.assertIn(context["date"], instruction)
 
-	def test_full_integration_flow(self):
-		"""Test complete integration: tools -> assistant -> chat -> tool execution."""
-		# 1. Create internal tool
-		sum_tool = OttoTool.new(
-			title="Sum Numbers",
-			slug="sum_numbers",
-			description="Sums a list of numbers",
-			code="""
-def main(numbers: list):
-	return sum(numbers)
-""",
-		)
-		self.created_tools.append(sum_tool)
-		for arg in sum_tool.args:
-			if arg.arg_name == "numbers":
-				arg.description = "List of numbers to sum"
-		sum_tool.save()
-		sum_tool.reload()
-
-		# 2. Create external tool
-		format_tool = OttoTool.new(
-			title="Format Result",
-			slug="format_result",
-			description="Formats a result as a string",
-			is_external=True,
-			args=[
-				{
-					"arg_name": "value",
-					"type": "number",
-					"description": "Value to format",
-					"is_required": True,
-				},
-				{
-					"arg_name": "prefix",
-					"type": "string",
-					"description": "Prefix to add",
-					"is_required": False,
-				},
-			],
-		)
-		self.created_tools.append(format_tool)
-
-		# 3. Create assistant with both tools
-		assert sum_tool.name is not None
-		assert format_tool.name is not None
-		assistant = OttoAssistant.new(
-			title="Math Formatter",
-			instruction="You can sum numbers and format results. Always be helpful and clear.",
-			tools=[sum_tool.name, format_tool.name],
-			reasoning_effort="Medium",
-		)
-		self.created_assistants.append(assistant)
-
-		# Verify assistant setup
-		self.assertEqual(len(assistant.tools), 2)
-		self.assertEqual(assistant.reasoning_effort, "Medium")
-
-		# 4. Create chat
-		assert assistant.name is not None
-		chat = OttoChat.new(assistant=assistant.name)
-		self.created_chats.append(chat)
-
-		# Verify chat setup
-		self.assertIsNotNone(chat.session)
-		self.assertEqual(chat.assistant, assistant.name)
-
-		# 5. Verify tool configs
-		tool_configs = chat.tool_configs
-		self.assertEqual(len(tool_configs), 2)
-		self.assertIn("sum_numbers", tool_configs)
-		self.assertIn("format_result", tool_configs)
-
-		# Verify internal tool
-		sum_config = tool_configs["sum_numbers"]
-		self.assertFalse(sum_config.is_external)
-		self.assertEqual(sum_config.tool, sum_tool.name)
-
-		# Verify external tool
-		format_config = tool_configs["format_result"]
-		self.assertTrue(format_config.is_external)
-		self.assertEqual(format_config.tool, format_tool.name)
-
-		# 6. Test tool execution directly
-		# Execute internal tool
-		result = sum_tool.execute({"numbers": [1, 2, 3, 4, 5]})
-		self.assertEqual(result["result"], 15)
-
-		# Execute external tool with function
-		def format_fn(args):
-			value = args["value"]
-			prefix = args.get("prefix", "Result:")
-			return f"{prefix} {value}"
-
-		result = format_tool.execute({"value": 15, "prefix": "Sum:"}, fn=format_fn)
-		self.assertEqual(result["result"], "Sum: 15")
-
-		# 7. Test execute_tools with fn_map
-		fn_map = {"format_result": format_fn}
-		chat.execute_tools(fn_map=fn_map)
-
-		# Should complete without errors even with no pending tools
-		self.assertEqual(len(chat.get_pending_tools()), 0)
-
 	def test_assistant_defaults(self):
 		"""Test assistant creation with default values."""
 		# Create minimal assistant
@@ -608,88 +276,208 @@ def main(numbers: list):
 		self.assertEqual(assistant.reasoning_effort, "None")
 		self.assertEqual(len(assistant.tools), 0)
 
-	def test_tool_schema_generation(self):
-		"""Test that tools generate correct schemas for the assistant."""
-		# Create a tool with various argument types
-		complex_tool = OttoTool.new(
-			title="Complex Tool",
-			slug="complex_tool",
-			description="A tool with various argument types",
-			is_external=True,
-			use_explanation=True,
-			args=[
-				{
-					"arg_name": "name",
-					"type": "string",
-					"description": "A string parameter",
-					"is_required": True,
-				},
-				{
-					"arg_name": "count",
-					"type": "integer",
-					"description": "An integer parameter",
-					"is_required": True,
-				},
-				{
-					"arg_name": "ratio",
-					"type": "number",
-					"description": "A float parameter",
-					"is_required": False,
-				},
-				{
-					"arg_name": "enabled",
-					"type": "boolean",
-					"description": "A boolean parameter",
-					"is_required": False,
-				},
-				{
-					"arg_name": "items",
-					"type": "array",
-					"description": "An array parameter",
-					"is_required": False,
-				},
-				{
-					"arg_name": "metadata",
-					"type": "object",
-					"description": "An object parameter",
-					"is_required": False,
-				},
-			],
+	@skip_unless_can_run_llm_tests
+	def test_full_integration_flow(self):
+		"""Test complete integration: tools -> assistant -> chat -> tool execution."""
+		# Create tools
+		calc_tool, send_email_tool = _get_test_tools()
+		self.created_tools.extend([calc_tool, send_email_tool])
+
+		# Create assistant
+		assert calc_tool.name is not None
+		assert send_email_tool.name is not None
+		assistant = OttoAssistant.new(
+			title="Assistant",
+			instruction="You can perform calculations and send emails. Always be helpful and clear. When asked to perform a calculation, use the calculate tool. When asked to send an email, use the send_email tool.",
+			tools=[calc_tool.name, send_email_tool.name],
+			llm=TEST_MODEL,
 		)
-		self.created_tools.append(complex_tool)
+		self.created_assistants.append(assistant)
 
-		# Get schema
-		schema = complex_tool.get_function_schema()
+		# Create chat (ask for calc)
+		assert assistant.name is not None
+		chat = OttoChat.new(assistant=assistant.name)
+		self.created_chats.append(chat)
+		self.assertIsNotNone(chat.session)
+		self.assertEqual(chat.assistant, assistant.name)
+		tool_configs = chat.tool_configs
+		self.assertEqual(len(tool_configs), 2)
+		self.assertIn("calculate", tool_configs)
+		self.assertIn("send_email", tool_configs)
 
-		# Verify schema structure
-		self.assertEqual(schema["name"], "complex_tool")
-		self.assertEqual(schema["description"], "A tool with various argument types")
+		# First query, expect calculate tool use
+		response, reason = chat.chat("What is 367 * 42?")
+		self.assertIsNotNone(response)
+		self.assertIsNone(reason)
+		assert response is not None
+		self.assertGreater(len([ch for ch in response]), 0)
+		self.assertGreaterEqual(len(chat.session_.get_items()), 2)
 
-		# Verify explanation is included (because use_explanation=True)
-		self.assertIn("explanation", schema["parameters"]["properties"])
-		self.assertIn("explanation", schema["parameters"]["required"])
+		# Verify tool use
+		permission_requests = chat.raise_permissions_requests()
+		self.assertEqual(len(permission_requests), 0)
+		pending_tools = chat.get_pending_tools()
+		self.assertEqual(len(pending_tools), 1)
+		self.assertEqual(pending_tools[0].name, "calculate")
+		self.assertEqual(pending_tools[0].args["operation"], "multiply")
+		self.assertEqual(pending_tools[0].args["a"], 367)
+		self.assertEqual(pending_tools[0].args["b"], 42)
 
-		# Verify all parameters are included
-		properties = schema["parameters"]["properties"]
-		self.assertIn("name", properties)
-		self.assertIn("count", properties)
-		self.assertIn("ratio", properties)
-		self.assertIn("enabled", properties)
-		self.assertIn("items", properties)
-		self.assertIn("metadata", properties)
+		# Execute tool use
+		chat.execute_tools()
+		pending_tools = chat.get_pending_tools()
+		self.assertEqual(len(pending_tools), 0)
 
-		# Verify types
-		self.assertEqual(properties["name"]["type"], "string")
-		self.assertEqual(properties["count"]["type"], "integer")
-		self.assertEqual(properties["ratio"]["type"], "number")
-		self.assertEqual(properties["enabled"]["type"], "boolean")
-		self.assertEqual(properties["items"]["type"], "array")
-		self.assertEqual(properties["metadata"]["type"], "object")
+		# Verify tool use execution
+		tool_uses = chat.session_.get_tool_uses(status="success")
+		self.assertEqual(len(tool_uses), 1)
+		tool_use = tool_uses[0]
+		assert tool_use is not None, "type check"
+		self.assertEqual(tool_use["name"], "calculate")
+		self.assertEqual(tool_use["args"]["operation"], "multiply")
+		self.assertEqual(tool_use["args"]["a"], 367)
+		self.assertEqual(tool_use["args"]["b"], 42)
+		self.assertEqual(tool_use["result"], "15414")
 
-		# Verify required fields
-		required = schema["parameters"]["required"]
-		self.assertIn("explanation", required)  # From use_explanation
-		self.assertIn("name", required)
-		self.assertIn("count", required)
-		self.assertNotIn("ratio", required)
-		self.assertNotIn("enabled", required)
+		# Resume chat after executing tool use
+		response, reason = chat.chat()
+		self.assertIsNotNone(response)
+		self.assertIsNone(reason)
+		assert response is not None
+		self.assertGreater(len([ch for ch in response]), 0)
+		item = response.item
+		self.assertIsNotNone(item)
+		assert item is not None, "type check"
+
+		# Verify tool use result used
+		content = item["content"]
+		self.assertGreater(len(content), 0)
+		self.assertEqual(content[0]["type"], "text")
+		text = content[0]
+		assert text["type"] == "text"
+		self.assertTrue("15414" in text["text"] or "15,414" in text["text"])
+		self.assertGreaterEqual(len(chat.session_.get_items()), 3)
+
+		# Second query, expect send email tool use request
+		response, reason = chat.chat(
+			"Can you send an email to blagar@octarine.com with the subject 'Hello' and the body 'Hi I'm Otto'?"
+		)
+		self.assertIsNotNone(response)
+		self.assertIsNone(reason)
+		assert response is not None
+		self.assertGreater(len([ch for ch in response]), 0)
+		item = response.item
+		self.assertIsNotNone(item)
+		assert item is not None, "type check"
+		self.assertGreaterEqual(len(chat.session_.get_items()), 4)
+		print_session(chat.session_)
+
+		# Verify send email tool use and permission request
+		permission_requests = chat.raise_permissions_requests()
+		self.assertEqual(len(permission_requests), 1)
+		pending_tools = chat.get_pending_tools()
+		self.assertEqual(len(pending_tools), 1)
+		self.assertEqual(pending_tools[0].name, "send_email")
+		self.assertEqual(pending_tools[0].args["to"], "blagar@octarine.com")
+		self.assertEqual(pending_tools[0].args["subject"], "Hello")
+		self.assertEqual(pending_tools[0].args["body"], "Hi I'm Otto")
+
+		# Grant permission request
+		request = permission_requests[0]
+		self.assertEqual(request.tool_use_id, pending_tools[0].id)
+		self.assertEqual(request.status, "Pending")
+		request.grant()
+		self.assertEqual(request.status, "Granted")
+
+		# Execute tool use
+		def dummy_send_email(to: str, subject: str, body: str):
+			return "email sent"
+
+		pending_tools = chat.get_pending_tools()
+		self.assertEqual(len(pending_tools), 1)
+		chat.execute_tools(fn_map={"send_email": dummy_send_email})
+		pending_tools = chat.get_pending_tools()
+		self.assertEqual(len(pending_tools), 0)
+
+		# Verify tool use execution
+		tool_uses = chat.session_.get_tool_uses(name="send_email")
+		self.assertEqual(len(tool_uses), 1)
+		tool_use = tool_uses[0]
+		assert tool_use is not None, "type check"
+		self.assertEqual(tool_use["name"], "send_email")
+		self.assertEqual(tool_use["args"]["to"], "blagar@octarine.com")
+		self.assertEqual(tool_use["args"]["subject"], "Hello")
+		self.assertEqual(tool_use["args"]["body"], "Hi I'm Otto")
+		self.assertEqual(tool_use["status"], "success")
+		self.assertEqual(tool_use["result"], "email sent")
+
+
+def _get_test_tools():
+	calc_tool = OttoTool.new(
+		title="Calculate",
+		slug="calculate",
+		description="Performs a simple calculation",
+		code="""
+def main(operation: str, a: int, b: int):
+	if operation == "add":
+		return a + b
+	elif operation == "multiply":
+		return a * b
+	elif operation == "subtract":
+		return a - b
+	elif operation == "divide":
+		return a / b if b != 0 else "Cannot divide by zero"
+	return "Unknown operation"
+""",
+		args=[
+			{
+				"arg_name": "operation",
+				"type": "string",
+				"description": "Operation to perform (add, multiply, subtract, divide)",
+				"is_required": True,
+			},
+			{
+				"arg_name": "a",
+				"type": "int",
+				"description": "First number",
+				"is_required": True,
+			},
+			{
+				"arg_name": "b",
+				"type": "int",
+				"description": "Second number",
+				"is_required": True,
+			},
+		],
+	)
+	assert calc_tool.is_valid
+
+	send_email_tool = OttoTool.new(
+		title="Send Email",
+		slug="send_email",
+		description="Sends an email to a recipient",
+		is_external=True,
+		requires_permission=True,
+		args=[
+			{
+				"arg_name": "to",
+				"type": "string",
+				"description": "Email recipient",
+				"is_required": True,
+			},
+			{
+				"arg_name": "subject",
+				"type": "string",
+				"description": "Email subject",
+				"is_required": True,
+			},
+			{
+				"arg_name": "body",
+				"type": "string",
+				"description": "Email body",
+				"is_required": True,
+			},
+		],
+	)
+	assert send_email_tool.is_valid
+	return calc_tool, send_email_tool

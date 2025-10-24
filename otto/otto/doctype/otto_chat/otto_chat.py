@@ -98,6 +98,7 @@ class OttoChat(Document):
 	@staticmethod
 	def new(assistant: str) -> OttoChat:
 		from otto.otto.doctype.otto_assistant.otto_assistant import OttoAssistant
+		from otto.otto.doctype.otto_tool.otto_tool import OttoTool
 
 		doc = cast("OttoChat", frappe.new_doc("Otto Chat"))
 		assistant_doc = otto.get(OttoAssistant, assistant)
@@ -107,18 +108,25 @@ class OttoChat(Document):
 		if reasoning_effort == "None":
 			reasoning_effort = None
 
+		tool_schemas: list[lib.types.ToolSchema] = []
+		for tool_ref in assistant_doc.tools:
+			tool_doc = otto.get(OttoTool, tool_ref.tool)
+			schema = tool_doc.get_function_schema(slug=tool_ref.slug)
+			tool_schemas.append(schema)
+
 		session = lib.new(
 			model=assistant_doc.llm or DEFAULT_MODEL,
 			instruction=assistant_doc.get_instruction(),
 			reasoning_effort=reasoning_effort,
-			tools=None,
+			tools=tool_schemas,
 		)
 		doc.session_ = session
 
 		doc.save()
 		return doc
 
-	def chat(self, query: Query):
+	def chat(self, query: Query | None = None):
+		"""query can be None when resuming after a tool use request"""
 		if self.has_pending_requests():
 			return None, "Resolve all pending requests before resuming chat"
 
@@ -185,9 +193,9 @@ class OttoChat(Document):
 			updates.append(update)
 		self.update_tool_use(updates)
 
-	def get_pending_tools(self, internal_only: bool = False) -> list[PendingToolUse]:
+	def get_pending_tools(self, include_external: bool = True) -> list[PendingToolUse]:
 		pending_tool_uses = self.session_.get_pending_tool_use()
-		if not internal_only:
+		if include_external:
 			return pending_tool_uses
 
 		pending: list[PendingToolUse] = []

@@ -208,33 +208,11 @@ class OttoPermissionRequest(Document):
 			self.denied_reason = denied_reason
 
 		self.set_status(status)
-		self.resume()
 		return {"message": f"Request {status.lower()}"}
 
 	def set_status(self, status: Literal["Granted", "Denied"]):
 		self.status = status
 		self.save()
-
-	def resume(self):
-		from otto.otto.doctype.otto_task.otto_task import get_timeout
-
-		execs = frappe.get_all(
-			"Otto Execution",
-			filters={"session": self.session},
-			fields=["name"],
-			limit=1,
-			pluck="name",
-		)
-		if not execs:
-			return
-
-		frappe.enqueue_doc(
-			doctype="Otto Execution",
-			name=execs[0],
-			method="resume",
-			timeout=get_timeout(),
-			enqueue_after_commit=True,
-		)
 
 
 def set_override(session: str, tool_use_id: str, override_args: dict):

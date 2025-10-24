@@ -304,7 +304,7 @@ class OttoTool(Document):
 		stdout = io.StringIO()
 		stderr = io.StringIO()
 		with execute.capture_output(stdout, stderr):
-			result = fn(args)
+			result = fn(**args)
 
 		return execute.SessionResult(
 			result=result,

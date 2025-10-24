@@ -1,4 +1,4 @@
-import unittest
+from frappe.tests import UnitTestCase
 
 from otto.llm.litellm import interact
 from otto.llm.test_llm.utils import (
@@ -15,7 +15,7 @@ from otto.utils import drain
 
 #  Skip if not explicitly enabled
 @skip_unless_can_run_llm_tests
-class TestLiteLLMIntegration(unittest.TestCase):
+class TestLiteLLMIntegration(UnitTestCase):
 	"""
 	Integration tests for the litellm interact function using {TEST_MODEL_NAME}.
 

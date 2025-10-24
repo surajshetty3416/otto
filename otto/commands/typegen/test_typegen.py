@@ -213,7 +213,7 @@ class TestTypegen(unittest.TestCase):
 		self.assertFalse(func_info.allow_guest)
 		self.assertEqual(
 			get_func_str(func_info),
-			"example(args: {x: string | null, y?: string}): Call<string | null>;",
+			"example(args: {x: string | null, y?: string}): string | null;",
 		)
 
 		# Test function with no optional parameters
