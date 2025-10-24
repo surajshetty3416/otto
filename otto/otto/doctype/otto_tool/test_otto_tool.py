@@ -432,8 +432,8 @@ def other_function(a: int):
 		self.created_tools.append(tool)
 
 		# Define a simple add function
-		def add_fn(args):
-			return args["a"] + args["b"]
+		def add_fn(a: int, b: int):
+			return a + b
 
 		# Execute the tool with the function
 		result = tool.execute({"a": 10, "b": 5}, fn=add_fn)
@@ -471,8 +471,8 @@ def other_function(a: int):
 		self.created_tools.append(tool)
 
 		# Define multiplication function
-		def multiply_fn(args):
-			return args["x"] * args["y"]
+		def multiply_fn(x: int, y: int):
+			return x * y
 
 		# Execute using execute_tool
 		assert tool.name is not None
@@ -519,10 +519,10 @@ def other_function(a: int):
 		self.created_tools.append(tool)
 
 		# Function that returns a dictionary
-		def process_fn(args):
+		def process_fn(name: str, age: int):
 			return {
-				"greeting": f"Hello, {args['name']}!",
-				"age_in_months": args["age"] * 12,
+				"greeting": f"Hello, {name}!",
+				"age_in_months": age * 12,
 				"status": "processed",
 			}
 
@@ -556,7 +556,7 @@ def other_function(a: int):
 		)
 		self.created_tools.append(tool)
 
-		def dummy_fn(args):
+		def dummy_fn():
 			return "should not execute"
 
 		# Execute with permission denied
@@ -630,12 +630,11 @@ def other_function(a: int):
 		)
 		self.created_tools.append(tool)
 
-		def format_fn(args):
-			text = args["text"]
-			if args.get("uppercase"):
+		def format_fn(text: str, uppercase: bool = False, prefix: str | None = None):
+			if uppercase:
 				text = text.upper()
-			if args.get("prefix"):
-				text = f"{args['prefix']}: {text}"
+			if prefix:
+				text = f"{prefix}: {text}"
 			return text
 
 		# Test with only required arg
@@ -649,3 +648,130 @@ def other_function(a: int):
 		# Test with all args
 		result3 = tool.execute({"text": "world", "uppercase": True, "prefix": "Message"}, fn=format_fn)
 		self.assertEqual(result3["result"], "Message: WORLD")
+
+	def test_external_tool_file_operation_simulation(self):
+		"""Test external tool simulating a file read operation."""
+		# Create external tool for reading files
+		tool = OttoTool.new(
+			title="Read File",
+			slug="read_file",
+			description="Reads contents from a file",
+			is_external=True,
+			args=[
+				{
+					"arg_name": "filepath",
+					"type": "string",
+					"description": "Path to the file to read",
+					"is_required": True,
+				},
+				{
+					"arg_name": "max_lines",
+					"type": "integer",
+					"description": "Maximum number of lines to read",
+					"is_required": False,
+				},
+			],
+		)
+		self.created_tools.append(tool)
+
+		# Define the function that would be called by the external system
+		def read_file_fn(filepath: str, max_lines: int | None = None):
+			# Simulate reading a file
+			simulated_content = [
+				"Line 1: Hello World",
+				"Line 2: This is a test",
+				"Line 3: External tools are working",
+				"Line 4: End of file",
+			]
+
+			if max_lines:
+				simulated_content = simulated_content[:max_lines]
+
+			return {
+				"filepath": filepath,
+				"content": "\n".join(simulated_content),
+				"lines_read": len(simulated_content),
+			}
+
+		# Execute tool with filepath only
+		result1 = tool.execute({"filepath": "/path/to/file.txt"}, fn=read_file_fn)
+		self.assertIsInstance(result1["result"], dict)
+		self.assertEqual(result1["result"]["filepath"], "/path/to/file.txt")
+		self.assertEqual(result1["result"]["lines_read"], 4)
+		self.assertIn("Hello World", result1["result"]["content"])
+
+		# Execute tool with max_lines limit
+		result2 = tool.execute({"filepath": "/path/to/file.txt", "max_lines": 2}, fn=read_file_fn)
+		self.assertEqual(result2["result"]["lines_read"], 2)
+		self.assertIn("Line 1", result2["result"]["content"])
+		self.assertIn("Line 2", result2["result"]["content"])
+		self.assertNotIn("Line 3", result2["result"]["content"])
+
+	def test_external_tool_api_call_simulation(self):
+		"""Test external tool simulating an API call with error handling."""
+		# Create external tool for making API calls
+		tool = OttoTool.new(
+			title="Fetch User Data",
+			slug="fetch_user_data",
+			description="Fetches user data from an external API",
+			is_external=True,
+			args=[
+				{
+					"arg_name": "user_id",
+					"type": "string",
+					"description": "The user ID to fetch data for",
+					"is_required": True,
+				},
+				{
+					"arg_name": "include_metadata",
+					"type": "boolean",
+					"description": "Whether to include metadata in the response",
+					"is_required": False,
+				},
+			],
+		)
+		self.created_tools.append(tool)
+
+		# Define the function that simulates an API call
+		def fetch_user_data_fn(user_id: str, include_metadata: bool = False):
+			# Simulate API response based on user_id
+			if user_id == "user123":
+				response: dict = {
+					"user_id": user_id,
+					"name": "John Doe",
+					"email": "john@example.com",
+					"status": "active",
+				}
+
+				if include_metadata:
+					response["metadata"] = {
+						"created_at": "2024-01-01",
+						"last_login": "2025-10-24",
+						"account_type": "premium",
+					}
+
+				return response
+
+			# Simulate user not found
+			return {
+				"error": "User not found",
+				"user_id": user_id,
+			}
+
+		# Execute tool for existing user without metadata
+		result1 = tool.execute({"user_id": "user123"}, fn=fetch_user_data_fn)
+		self.assertIsInstance(result1["result"], dict)
+		self.assertEqual(result1["result"]["user_id"], "user123")
+		self.assertEqual(result1["result"]["name"], "John Doe")
+		self.assertEqual(result1["result"]["email"], "john@example.com")
+		self.assertNotIn("metadata", result1["result"])
+
+		# Execute tool with metadata included
+		result2 = tool.execute({"user_id": "user123", "include_metadata": True}, fn=fetch_user_data_fn)
+		self.assertIn("metadata", result2["result"])
+		self.assertEqual(result2["result"]["metadata"]["account_type"], "premium")
+
+		# Execute tool for non-existent user
+		result3 = tool.execute({"user_id": "nonexistent"}, fn=fetch_user_data_fn)
+		self.assertIn("error", result3["result"])
+		self.assertEqual(result3["result"]["error"], "User not found")
