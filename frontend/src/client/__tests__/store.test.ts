@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { Store } from "../store";
-import { sleep } from "./utils";
+import { sleep } from "../../utils";
 
 describe("Store", () => {
   describe("Basic Operations", () => {

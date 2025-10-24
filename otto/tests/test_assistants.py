@@ -314,7 +314,7 @@ def get_context():
 		self.assertGreaterEqual(len(chat.session_.get_items()), 2)
 
 		# Verify tool use
-		permission_requests = chat.raise_permissions_requests()
+		permission_requests = chat.get_pending_requests()
 		self.assertEqual(len(permission_requests), 0)
 		pending_tools = chat.get_pending_tools()
 		self.assertEqual(len(pending_tools), 1)
@@ -373,7 +373,7 @@ def get_context():
 		print_session(chat.session_)
 
 		# Verify send email tool use and permission request
-		permission_requests = chat.raise_permissions_requests()
+		permission_requests = chat.get_pending_requests()
 		self.assertEqual(len(permission_requests), 1)
 		pending_tools = chat.get_pending_tools()
 		self.assertEqual(len(pending_tools), 1)

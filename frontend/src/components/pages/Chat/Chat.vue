@@ -1,35 +1,79 @@
 <template>
-	<div class="w-screen h-screen flex items-center justify-center bg-gray-50">
-		<div class="flex">
-			<input
-				type="text"
-				v-model="message"
-				placeholder="Message"
-				class="px-4 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-			/>
-			<button
-				@click="test"
-				class="px-4 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600 transition"
-			>
-				Echo
-			</button>
+	<div class="w-screen h-screen flex items-center justify-center">
+		<div style="width: 768px" class="border-l border-r border-gray-200 h-full relative">
+			<ChatMessages :messages="messages" />
+			<ChatInput :loading="isLoading" @send="handleSend" class="w-full absolute bottom-2" />
 		</div>
-		<button @click="framework.logout()">logout</button>
 	</div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import { api, framework } from "../../../client";
-import { Store } from "../../../client/store";
+import { api } from "@/client";
+import type { RealtimeChatMessage, SessionItem } from "@/client/generated.types";
+import router from "@/router";
+import { assert } from "@/utils";
+import { computed, onMounted, onUnmounted, ref } from "vue";
+import ChatInput from "./ChatInput.vue";
+import { getUserMessage } from "./utils";
+import ChatMessages from "./ChatMessages.vue";
+import socket from "@/socket";
 
-const message = ref("test message");
+// sanity check to avoid duplicates
+const received = new Set<string>();
 
-//@ts-ignore
-window.Store = Store;
+const props = defineProps<{
+	chatId?: string;
+}>();
 
-async function test() {
-	const call = await api.echo({ message: message.value });
-	const llms = await framework.get_list("Otto LLM", ["name", "size", "provider"]);
+const messages = ref<SessionItem[]>([]);
+const assistant = "5t44lus4lh"; // dummy for now
+const isNew = computed(() => !!props.chatId);
+const isLoading = ref(false);
+
+async function handleSend(query: string) {
+	isLoading.value = true;
+	if (isNew.value) {
+		const chatId = await api.chat.new_chat({ assistant });
+		await router.push({ name: "Chat", params: { chatId } });
+	}
+	appendUserMessage(query);
+
+	assert(props.chatId, "chatId is required");
+	await api.chat.send_query({ chat_id: props.chatId, query });
+	isLoading.value = false;
 }
+
+function appendUserMessage(query: string) {
+	messages.value.push(getUserMessage(query));
+}
+
+socket.on("chat", (message) => {
+	console.log(message);
+});
+
+function handleRealtimeMessage(message: RealtimeChatMessage) {
+	if (message.chat_id !== props.chatId) return;
+	if (received.has(message.id)) return;
+
+	received.add(message.id);
+	switch (message.type) {
+		case "chunk":
+			break;
+		case "item":
+			break;
+		case "request":
+			break;
+		case "tools-executed":
+			break;
+		case "error":
+			break;
+	}
+}
+
+onMounted(() => {
+	socket.on("otto.chat.api", handleRealtimeMessage);
+});
+onUnmounted(() => {
+	socket.off("otto.chat.api", handleRealtimeMessage);
+});
 </script>

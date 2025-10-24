@@ -47,9 +47,8 @@
 <script setup lang="ts">
 import { reactive, ref, type Reactive } from "vue";
 
-import { framework } from "../../client";
-import type { Call } from "../../client/types";
-import router, { defaultRouteName } from "../../router";
+import { framework } from "@/client";
+import router, { defaultRouteName } from "@/router";
 import Button from "../fui/Button/Button.vue";
 import ErrorMessage from "../fui/ErrorMessage.vue";
 import TextInput from "../fui/TextInput.vue";
@@ -57,7 +56,7 @@ import Logo from "../svg/Logo.vue";
 
 const email = ref("");
 const password = ref("");
-const session = reactive({}) as Reactive<{ login?: Call }>;
+const session = reactive({}) as Reactive<{ login?: ReturnType<typeof framework.login> }>;
 
 function submit() {
 	session.login = framework.login(email.value, password.value);

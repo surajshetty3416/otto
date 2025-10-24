@@ -12,9 +12,10 @@ const routes = [
     component: Desktop,
     children: [
       {
-        path: "chat",
+        path: "chat/:chatId?",
         name: "Chat",
         component: Chat,
+        props: true,
       },
     ],
   },
@@ -50,5 +51,10 @@ router.beforeEach(async (to, _from, next) => {
   toLogin();
   return false;
 });
+
+if (window.is_dev_mode) {
+  // @ts-ignore
+  window.router = router;
+}
 
 export default router;

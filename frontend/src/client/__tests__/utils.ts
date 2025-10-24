@@ -46,11 +46,6 @@ export async function waitFor(
   }
 }
 
-/* Sleep for a specified number of milliseconds */
-export function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 /* Test data factory for creating test documents */
 export const testData = {
   /* Create test data for OttoFeedback */

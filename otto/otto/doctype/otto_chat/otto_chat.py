@@ -133,20 +133,26 @@ class OttoChat(Document):
 		return self.session_.interact(query, stream=True), None
 
 	def has_pending_requests(self) -> bool:
+		self._raise_permissions_requests()
 		rm = self._get_requests_map()
 		return any(status == "Pending" for status in rm.values())
 
 	def get_pending_requests(self) -> list[OttoPermissionRequest]:
-		return [
-			otto.get(OttoPermissionRequest, req)
-			for req in frappe.get_all(
-				"Otto Permission Request",
-				filters={"session": self.session, "status": "Pending"},
-				pluck="name",
-			)
-		]
+		new_requests = self._raise_permissions_requests()
+		new_requests_names = [req.name for req in new_requests]
+		old_requests_names = frappe.get_all(
+			"Otto Permission Request",
+			filters={
+				"name": ["not in", new_requests_names],
+				"session": self.session,
+				"status": "Pending",
+			},
+			pluck="name",
+		)
+		old_requests = [otto.get(OttoPermissionRequest, req) for req in old_requests_names]
+		return new_requests + old_requests
 
-	def raise_permissions_requests(self) -> list[OttoPermissionRequest]:
+	def _raise_permissions_requests(self) -> list[OttoPermissionRequest]:
 		requests: list[OttoPermissionRequest] = []
 		pending_tool_use = self.get_pending_tools()
 		for ptu in pending_tool_use:
@@ -192,6 +198,7 @@ class OttoChat(Document):
 			)
 			updates.append(update)
 		self.update_tool_use(updates)
+		return len(updates) > 0
 
 	def get_pending_tools(self, include_external: bool = True) -> list[PendingToolUse]:
 		pending_tool_uses = self.session_.get_pending_tool_use()

@@ -48,7 +48,7 @@ export default defineConfig(() => {
       },
       globals: true,
       include: ["src/client/__tests__/**/*.test.ts"],
-    setupFiles: ["src/client/__tests__/setup.ts"],
+      setupFiles: ["src/client/__tests__/setup.ts"],
       testTimeout: 10_000,
     },
   };
