@@ -1,4 +1,5 @@
 import vue from "@vitejs/plugin-vue";
+imoprt vueDevTools from "vite-plugin-vue-devtools";
 import fs from "fs";
 import path from "path";
 
@@ -23,7 +24,7 @@ export default defineConfig(() => {
   };
 
   return {
-    plugins: [vue(), postBuild()],
+    plugins: [vue(), vueDevTools(), postBuild()],
     base:
       process.env.NODE_ENV === "production" ? "/assets/otto/frontend/" : "/",
     build: {

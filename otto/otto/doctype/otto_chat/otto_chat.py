@@ -110,6 +110,9 @@ class OttoChat(Document):
 
 		tool_schemas: list[lib.types.ToolSchema] = []
 		for tool_ref in assistant_doc.tools:
+			if not tool_ref.is_enabled:
+				continue
+
 			tool_doc = otto.get(OttoTool, tool_ref.tool)
 			schema = tool_doc.get_function_schema(slug=tool_ref.slug)
 			tool_schemas.append(schema)

@@ -17,6 +17,17 @@ All realtime message items have some associated meta data:
 """
 
 
+class Pong(TypedDict):
+	message: Literal["pong"]
+
+
+class RealtimePong(TypedDict):
+	id: str
+	chat_id: str
+	type: Literal["pong"]
+	data: Pong
+
+
 class RealtimeError(TypedDict):
 	id: str
 	chat_id: str
@@ -62,6 +73,7 @@ class RealtimeToolExecutionComplete(TypedDict):
 # @export - used for listening to chat messages
 RealtimeChatMessage = (
 	RealtimeError
+	| RealtimePong
 	| RealtimeChunk
 	| RealtimeItem
 	| RealtimeRequest

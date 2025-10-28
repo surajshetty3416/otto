@@ -32,8 +32,11 @@ from otto.llm.types import (
 	Session,
 	SessionItem,
 	TextContent,
+	TextContentChunk,
 	ThinkingContent,
 	ToolUseContent,
+	ToolUseContentChunk,
+	ToolUseDelta,
 )
 from otto.llm.utils import (
 	DEFAULT_MODEL,
@@ -310,6 +313,7 @@ def _get_tool_use_content(message: dict[str, Any]) -> list[ToolUseContent]:
 				type="tool_use",
 				id=tool_call.get("id"),
 				name=func.get("name"),
+				_args=None,
 				args=json.loads(func.get("arguments")),
 				override=None,
 				status="pending",
@@ -358,7 +362,7 @@ def _stream(
 	timestamps: list[float] = []
 	chunks: list[ContentChunk] = []
 
-	yield ContentChunk(
+	yield TextContentChunk(
 		type="system",
 		message="start",
 		content="",
@@ -369,12 +373,13 @@ def _stream(
 	try:
 		for chunk in completion:
 			timestamps.append(time.time())
-			if cc := _stream_chunk(chunk, item["id"], session_id):
+			ccs = _stream_chunk(chunk, item["id"], session_id)
+			for cc in ccs:
 				logger.debug({"id": item["id"], "content": cc["content"]})
 				chunks.append(cc)
 				yield cc
 	except Exception as e:
-		yield ContentChunk(
+		yield TextContentChunk(
 			type="system",
 			message="error",
 			content=str(e),
@@ -383,7 +388,7 @@ def _stream(
 		)
 		raise e
 
-	yield ContentChunk(
+	yield TextContentChunk(
 		type="system",
 		message="end",
 		content="",
@@ -394,7 +399,7 @@ def _stream(
 	return StreamReturn(chunks, _get_inter_chunk_latency(timestamps))
 
 
-def _stream_chunk(chunk: ModelResponseStream, item_id: str, session_id: str | None):
+def _stream_chunk(chunk: ModelResponseStream, item_id: str, session_id: str | None) -> list[ContentChunk]:
 	"""
 	publish using user, session_id, item_id
 	"""
@@ -408,34 +413,47 @@ def _stream_chunk(chunk: ModelResponseStream, item_id: str, session_id: str | No
 		}
 	)
 
-	cc = ContentChunk(
-		type="text",
-		message="content",
-		content="",
-		item_id=item_id,
-		session_id=session_id or "",
-	)
-
 	if hasattr(delta, "reasoning_content") and delta.reasoning_content:
-		cc["type"] = "thinking"
-		cc["content"] = delta.reasoning_content
+		cc = TextContentChunk(
+			type="thinking",
+			message="content",
+			content=delta.reasoning_content,
+			item_id=item_id,
+			session_id=session_id or "",
+		)
+		return [cc]
 
-	elif hasattr(delta, "content") and delta.content:
-		cc["type"] = "text"
-		cc["content"] = delta.content
+	if hasattr(delta, "content") and delta.content:
+		cc = TextContentChunk(
+			type="text",
+			message="content",
+			content=delta.content,
+			item_id=item_id,
+			session_id=session_id or "",
+		)
+		return [cc]
 
-	elif (
-		hasattr(delta, "tool_calls")
-		and delta.tool_calls
-		and (name := delta.tool_calls[0].function.get("name"))
-	):
-		cc["type"] = "tool_use"
-		cc["content"] = name
+	if not hasattr(delta, "tool_calls") or not delta.tool_calls:
+		return []
 
-	else:
-		return None
+	ccs = []
+	for tool_call in delta.tool_calls:
+		if not hasattr(tool_call, "function"):
+			continue
 
-	return cc
+		cc = ToolUseContentChunk(
+			type="tool_use",
+			message="content",
+			content=ToolUseDelta(
+				id=tool_call.id,
+				name=tool_call.function.name,
+				args=tool_call.function.arguments,
+			),
+			item_id=item_id,
+			session_id=session_id or "",
+		)
+
+	return ccs
 
 
 def _get_end_reason(completion_response: dict):

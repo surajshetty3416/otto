@@ -68,7 +68,7 @@ class OttoAssistant(Document):
 			tool_rows = frappe.get_all("Otto Tool", filters={"name": ["in", tools]}, fields=["name", "slug"])
 			tool_slugs = {row["name"]: row["slug"] for row in tool_rows}
 			for tool in tools:
-				doc.append("tools", {"tool": tool, "slug": tool_slugs.get(tool)})
+				doc.append("tools", {"tool": tool, "slug": tool_slugs.get(tool), "is_enabled": True})
 
 		doc.save()
 		return doc

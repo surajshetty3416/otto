@@ -12,6 +12,7 @@ from otto.api.types import (
 	RealtimeChunk,
 	RealtimeError,
 	RealtimeItem,
+	RealtimePong,
 	RealtimeRequest,
 	RealtimeToolExecutionComplete,
 	RealtimeToolExecutionUpdate,
@@ -20,6 +21,26 @@ from otto.api.types import (
 if TYPE_CHECKING:
 	from otto.lib.types import SessionItem
 	from otto.otto.doctype.otto_chat.otto_chat import OttoChat
+
+
+logger = otto.logger("otto.api.chat", "ERROR")
+
+
+@frappe.whitelist()
+def ping(chat_id: str | None = None) -> None:
+	"""Used to test if realtime is working"""
+	message = RealtimePong(
+		id=frappe.generate_hash(length=10),
+		data={"message": "pong"},
+		chat_id=chat_id or "",
+		type="pong",
+	)
+
+	frappe.enqueue(
+		_publish,
+		at_front=True,
+		message=message,
+	)
 
 
 @frappe.whitelist()
@@ -169,6 +190,9 @@ def _execute_tools(chat: OttoChat, chat_id: str) -> None:
 		_publish(message)
 		count += 1
 
+	if count == 0:
+		return
+
 	message = RealtimeToolExecutionComplete(
 		id=frappe.generate_hash(length=10),
 		chat_id=chat_id,
@@ -183,4 +207,11 @@ def _publish(message: RealtimeChatMessage) -> None:
 		"otto.api.chat",
 		user=frappe.session.user,
 		message=dict(message),
+	)
+	logger.debug(
+		{
+			"message": "published message",
+			"user": frappe.session.user,
+			"data": dict(message),
+		}
 	)
