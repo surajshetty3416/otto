@@ -184,10 +184,10 @@ def get_api_types(found_types: FoundTypes, out_path: Path) -> str | None:
 	To:
 	```typescript
 		export interface API {
-			ping(): Call<string>;
-			echo(args: {message: string}): Call<string>;
+			ping(): string;
+			echo(args: {message: string}): string;
 			example: {
-				some_function(args: {message: string}): Call<string>;
+				some_function(args: {message: string}): string;
 			}
 		}
 	```

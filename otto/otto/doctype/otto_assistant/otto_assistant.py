@@ -64,11 +64,26 @@ class OttoAssistant(Document):
 			doc.reasoning_effort = reasoning_effort
 
 		if tools:
-			tool_slugs = {}
-			tool_rows = frappe.get_all("Otto Tool", filters={"name": ["in", tools]}, fields=["name", "slug"])
-			tool_slugs = {row["name"]: row["slug"] for row in tool_rows}
+			tool_rows = frappe.get_all(
+				"Otto Tool",
+				filters={"name": ["in", tools]},
+				fields=["name", "slug", "requires_permission", "is_enabled"],
+			)
+			tool_map = {row["name"]: row for row in tool_rows}
 			for tool in tools:
-				doc.append("tools", {"tool": tool, "slug": tool_slugs.get(tool), "is_enabled": True})
+				src = tool_map.get(tool)
+				if not src:
+					continue
+
+				doc.append(
+					"tools",
+					{
+						"tool": tool,
+						"slug": src.get("slug"),
+						"is_enabled": src.get("is_enabled", False),
+						"requires_permission": src.get("requires_permission", False),
+					},
+				)
 
 		doc.save()
 		return doc

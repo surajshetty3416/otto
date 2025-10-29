@@ -128,14 +128,28 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
   }
 
   run() {
-    // Run with the same args, returns saved result
+    /**
+     * Use this if auto is false.
+     *
+     * If auto was not set then run will fetch the cached data if available.
+     * To run fetch again while ignoring cached data, use `rerun`.
+     */
     return this._execute();
   }
 
   rerun(args?: Args) {
-    // Update args before running
+    /**
+     * Will reset the call object (i.e. status variables set from the previous
+     * `run`) and then execute the call with new args if provided else it will
+     * use args from the previous `run` or `rerun` call.
+     *
+     * Once `rerun` is called, subsequent calls to `run` will fetch the cached
+     * data again.
+     */
     this._reset();
-    this.body = args ? JSON.stringify(args) : undefined;
+    if (typeof args === "object" && args !== null) {
+      this.body = JSON.stringify(args);
+    }
     return this._execute();
   }
 

@@ -300,7 +300,7 @@ def get_context():
 		self.created_chats.append(chat)
 		self.assertIsNotNone(chat.session)
 		self.assertEqual(chat.assistant, assistant.name)
-		tool_configs = chat.tool_configs
+		tool_configs = chat.tool_config_map
 		self.assertEqual(len(tool_configs), 2)
 		self.assertIn("calculate", tool_configs)
 		self.assertIn("send_email", tool_configs)

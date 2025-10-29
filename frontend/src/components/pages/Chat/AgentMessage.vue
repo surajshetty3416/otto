@@ -1,5 +1,5 @@
 <template>
-	<div class="flex flex-col gap-2">
+	<div>
 		<template v-for="(content, i) in message.content" :key="i">
 			<TextContent v-if="content.type === 'text'" :content="content" />
 			<ThinkingContent v-if="content.type === 'thinking'" :content="content" />

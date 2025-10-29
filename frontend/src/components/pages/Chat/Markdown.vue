@@ -1,5 +1,6 @@
 <template>
 	<div class="markdown-content prose prose-sm max-w-none" v-html="renderedContent"></div>
+	<!-- <div class="markdown-content" v-html="renderedContent"></div> -->
 </template>
 
 <script setup lang="ts">

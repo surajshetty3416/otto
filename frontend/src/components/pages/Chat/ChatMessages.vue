@@ -1,10 +1,17 @@
 <template>
-	<div class="flex flex-col gap-8">
-		<template v-for="message in messages" :key="message.id">
-			<UserMessage v-if="message.meta.role === 'user'" :message="message" class="ml-auto" />
-			<AgentMessage v-if="message.meta.role === 'agent'" :message="message" />
-		</template>
-	</div>
+	<template v-for="(message, i) in messages" :key="message.id">
+		<UserMessage
+			v-if="message.meta.role === 'user'"
+			:message="message"
+			class="ml-auto"
+			:class="{ 'mb-8': messages[i + 1]?.meta.role === 'agent' }"
+		/>
+		<AgentMessage
+			v-if="message.meta.role === 'agent'"
+			:message="message"
+			:class="{ 'mb-8': messages[i + 1]?.meta.role === 'user' }"
+		/>
+	</template>
 </template>
 
 <script setup lang="ts">

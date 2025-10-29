@@ -20,7 +20,8 @@ from otto.api.types import (
 
 if TYPE_CHECKING:
 	from otto.lib.types import SessionItem
-	from otto.otto.doctype.otto_chat.otto_chat import OttoChat
+	from otto.otto.doctype.otto_chat.otto_chat import OttoChat, ToolConfig
+	from otto.otto.doctype.otto_permission_request.otto_permission_request import OttoPermissionRequest
 
 
 logger = otto.logger("otto.api.chat", "ERROR")
@@ -84,6 +85,13 @@ def load_chat(chat_id: str) -> list[SessionItem]:
 
 	chat_doc = otto.get(OttoChat, chat_id)
 	return chat_doc.session_.get_items()
+
+
+@frappe.whitelist()
+def list_tools(chat_id: str) -> list[ToolConfig]:
+	from otto.otto.doctype.otto_chat.otto_chat import OttoChat
+
+	return otto.get(OttoChat, chat_id).tool_configs
 
 
 @frappe.whitelist()
@@ -156,26 +164,36 @@ def _send_query(chat: OttoChat, chat_id: str, query: str | None) -> None:
 	)
 
 
+@frappe.whitelist()
+def get_pending_requests(chat_id: str) -> list[PendingRequest]:
+	from otto.otto.doctype.otto_chat.otto_chat import OttoChat
+
+	chat = otto.get(OttoChat, chat_id)
+	return [_get_req_from_opr(opr) for opr in chat.get_pending_requests()]
+
+
 def _check_pending_requests(chat: OttoChat, chat_id: str) -> None:
 	pending_requests = chat.get_pending_requests()
 	for opr in pending_requests:
-		assert opr.name is not None
-		created_at = opr.creation
-		if isinstance(created_at, datetime.datetime):
-			created_at = created_at.isoformat()
-
-		request = PendingRequest(
-			created_at=created_at,
-			name=opr.name,
-			tool_use_id=opr.tool_use_id,
-		)
 		message = RealtimeRequest(
 			id=frappe.generate_hash(length=10),
-			data=request,
+			data=_get_req_from_opr(opr),
 			chat_id=chat_id,
 			type="request",
 		)
 		_publish(message)
+
+
+def _get_req_from_opr(opr: OttoPermissionRequest) -> PendingRequest:
+	assert opr.name is not None
+	created_at = opr.creation
+	if isinstance(created_at, datetime.datetime):
+		created_at = created_at.isoformat()
+	return PendingRequest(
+		created_at=created_at,
+		name=opr.name,
+		tool_use_id=opr.tool_use_id,
+	)
 
 
 def _execute_tools(chat: OttoChat, chat_id: str) -> None:

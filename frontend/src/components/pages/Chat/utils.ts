@@ -2,19 +2,29 @@ import type {
   Content,
   ContentChunk,
   Meta,
+  PendingRequest,
   SessionItem,
+  ToolConfig,
 } from "@/client/generated.types";
 import { assert, isEqual } from "@/utils";
-import type { ChunkContent, StreamContext } from "./types";
 import type { InjectionKey, Ref } from "vue";
+import type { ChunkContent, StreamContext } from "./types";
 
-export const streamContextKey = Symbol("streamContext") as InjectionKey<
-  Ref<null | StreamContext>
->;
+export const streamContextKey = Symbol(
+  "streamContext"
+) as InjectionKey<StreamContext>;
 
 export const sessionItemKey = Symbol(
   "sessionItem"
 ) as InjectionKey<SessionItem>;
+
+export const toolConfigKey = Symbol("toolConfig") as InjectionKey<
+  Ref<Record<string, ToolConfig>>
+>;
+
+export const pendingRequestsKey = Symbol("pendingRequests") as InjectionKey<
+  Record<string, PendingRequest>
+>;
 
 export function getUserSessionItem(query: string): SessionItem {
   return {
@@ -142,7 +152,6 @@ export function handleContentChunk(
   }
 
   updateItemWithChunk(item, chunk);
-  console.log(isNew, item);
   if (isNew) messages.push(item);
 }
 
@@ -177,6 +186,11 @@ export function handleItem(item: SessionItem, messages: SessionItem[]) {
   for (let i = 0; i < item.content.length; i++) {
     const content = item.content[i];
     const targetContent = target.content[i];
+    if (!targetContent) {
+      if (target.content.length === i) target.content.push(content);
+      else target.content[i] = content;
+      continue;
+    }
 
     if (content.type !== targetContent.type) {
       target.content[i] = content;

@@ -1,32 +1,29 @@
 <template>
-	<div class="mb-2">
-		<div v-if="isOpen" class="bg-gray-50 rounded-md border border-gray-200">
-			<!-- Thought Header -->
-			<div
-				class="flex items-center justify-between border-b border-gray-200 p-2 cursor-pointer"
-				@click.stop="isOpen = false"
-				title="Hide Thought"
-			>
-				<h3 class="text-gray-800 text-sm font-semibold flex items-center gap-2">
-					<Brain class="h-4 w-4 text-gray-600 flex-shrink-0" />
-					{{ isStreaming ? "Thinking..." : "Thought" }}
-				</h3>
-				<button @click="isOpen = false">
-					<X class="h-4 w-4 text-gray-600 flex-shrink-0" />
-				</button>
-			</div>
-
-			<!-- Thought Content -->
-			<Markdown class="p-2 last:pb-0" style="font-style: italic">{{
-				content.text
-			}}</Markdown>
+	<div v-if="isOpen" class="bg-gray-50 rounded-md border border-gray-200 my-2">
+		<!-- Thought Header -->
+		<div
+			class="flex items-center justify-between border-b border-gray-200 p-2 cursor-pointer"
+			@click.stop="isOpen = false"
+			title="Hide Thought"
+		>
+			<h3 class="text-gray-800 text-sm font-semibold flex items-center gap-2">
+				<Brain class="h-4 w-4 text-gray-600 flex-shrink-0" />
+				{{ isStreaming ? "Thinking..." : "Thought" }}
+			</h3>
+			<button @click="isOpen = false">
+				<X class="h-4 w-4 text-gray-600 flex-shrink-0" />
+			</button>
 		</div>
 
-		<!-- Show Thought -->
+		<!-- Thought Content -->
+		<Markdown class="p-2 last:pb-0" style="font-style: italic">{{ content.text }}</Markdown>
+	</div>
+
+	<!-- Show Thought -->
+	<div v-else class="inline-block mr-2 my-1">
 		<button
-			v-else
 			title="Show Thought"
-			class="bg-gray-50 border p-2 w-fit rounded-full"
+			class="bg-gray-50 border border-gray-200 p-2 w-fit rounded-full"
 			@click="isOpen = true"
 		>
 			<Brain class="h-4 w-4 text-gray-600 flex-shrink-0" />
@@ -44,8 +41,7 @@ const streamContext = inject(streamContextKey);
 const sessionItem = inject(sessionItemKey);
 
 // TODO: styling
-// if is streaming show fixed heighted scrolling div a la grok on streaming collapse
-// after streaming show an icon (brain) to expand and show thought, show a hide button to collapse
+// if is streaming show fixed heighted scrolling div streaming collapse
 
 defineProps<{
 	content: ThinkingContent;
@@ -54,14 +50,11 @@ defineProps<{
 const isOpen = ref(false);
 
 const isStreaming = computed(() => {
-	return (
-		sessionItem?.id === streamContext?.value?.itemId &&
-		streamContext?.value?.chunkType === "thinking"
-	);
+	return sessionItem?.id === streamContext?.itemId && streamContext?.chunkType === "thinking";
 });
 
 watch(streamContext!, (newVal) => {
-	if (sessionItem?.id !== streamContext?.value?.itemId || !newVal) return;
+	if (sessionItem?.id !== streamContext?.itemId || !newVal) return;
 	isOpen.value = newVal.chunkType === "thinking";
 });
 </script>

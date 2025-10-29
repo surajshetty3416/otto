@@ -12,18 +12,25 @@
 			class="border-none outline-none rounded-full w-full active:outline-none focus:outline-none focus:ring-0 text-md"
 		/>
 		<button
+			@click="showSettingsDialog"
+			class="hover:bg-gray-100 rounded-full p-1.5 cursor-pointer"
+		>
+			<Settings class="w-6 h-6 text-gray-800" stroke-width="1.5" />
+		</button>
+		<button
 			@click="handleSend"
 			:disabled="disabled || loading || !message.trim()"
 			class="bg-gray-900 rounded-full p-1.5 cursor-pointer"
 		>
-			<SendIcon class="text-white" />
+			<ChevronUp class="w-6 h-6 text-white" />
 		</button>
 	</div>
 </template>
 
 <script setup>
+import { toast } from "@/components/fui/Toast";
+import { ChevronUp, Settings } from "lucide-vue-next";
 import { ref } from "vue";
-import SendIcon from "./SendIcon.vue";
 
 const props = defineProps({
 	loading: {
@@ -47,4 +54,12 @@ const handleSend = () => {
 	emit("send", message.value);
 	message.value = "";
 };
+
+function showSettingsDialog() {
+	toast({
+		title: "Settings",
+		message: "Implement this!",
+		type: "warning",
+	});
+}
 </script>

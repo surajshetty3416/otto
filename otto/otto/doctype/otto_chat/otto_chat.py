@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, NamedTuple, cast
+from typing import TYPE_CHECKING, TypedDict, cast
 
 # Copyright (c) 2025, Alan Tom and contributors
 # For license information, please see license.txt
@@ -19,11 +19,15 @@ if TYPE_CHECKING:
 	from otto.otto.doctype.otto_assistant.otto_assistant import OttoAssistant
 
 
-class ToolConfig(NamedTuple):
+class ToolConfig(TypedDict):
+	title: str
 	slug: str
 	tool: str  # Otto Tool name
 	is_external: bool
 	requires_permission: bool
+	is_valid: bool
+	reason: str | None
+	use_explanation: bool
 
 
 class OttoChat(Document):
@@ -46,15 +50,15 @@ class OttoChat(Document):
 	_session: lib.Session | None = None
 	_assistant: OttoAssistant | None = None
 	_pending_tool_use: list[PendingToolUse] | None = None
-	_tool_configs: dict[str, ToolConfig] | None = None
+	_tool_configs: list[ToolConfig] | None = None
+	_tool_configs_map: dict[str, ToolConfig] | None = None
 
 	@property
-	def tool_configs(self) -> dict[str, ToolConfig]:
+	def tool_configs(self) -> list[ToolConfig]:
 		"""Returns: dict[slug, otto_tool_name]"""
 		if self._tool_configs is not None:
 			return self._tool_configs
 
-		map: dict[str, ToolConfig] = {}
 		tool_names = [tool.tool for tool in self.tools]
 
 		tools = {
@@ -62,24 +66,46 @@ class OttoChat(Document):
 			for t in frappe.get_all(
 				"Otto Tool",
 				filters={"name": ["in", tool_names]},
-				fields=["name", "slug", "is_external", "requires_permission"],
+				fields=[
+					"title",
+					"name",
+					"slug",
+					"is_external",
+					"use_explanation",
+					"is_valid",
+					"reason",
+				],
 			)
 		}
 
+		configs: list[ToolConfig] = []
 		for tool in self.tools:
 			if not tool.slug:
 				continue
 
 			td = tools[tool.tool]
-			map[tool.slug] = ToolConfig(
+			config = ToolConfig(
 				slug=tool.slug,
 				tool=tool.tool,
 				is_external=bool(td.is_external),
-				requires_permission=bool(tools[tool.tool].requires_permission or td.requires_permission),
+				requires_permission=bool(tool.requires_permission),
+				title=td.title,
+				is_valid=bool(td.is_valid),
+				reason=td.reason or None,
+				use_explanation=bool(td.use_explanation),
 			)
+			configs.append(config)
+		self._tool_configs = configs
+		return configs
 
-		self._tool_configs = map
-		return map
+	@property
+	def tool_config_map(self) -> dict[str, ToolConfig]:
+		if self._tool_configs_map is not None:
+			return self._tool_configs_map
+
+		tc_map = {config["slug"]: config for config in self.tool_configs}
+		self._tool_configs_map = tc_map
+		return tc_map
 
 	@property
 	def session_(self) -> lib.Session:
@@ -158,8 +184,8 @@ class OttoChat(Document):
 		requests: list[OttoPermissionRequest] = []
 		pending_tool_use = self.get_pending_tools()
 		for ptu in pending_tool_use:
-			config = self.tool_configs.get(ptu.name)
-			if not config or not config.requires_permission:
+			config = self.tool_config_map.get(ptu.name)
+			if not config or not config["requires_permission"]:
 				continue
 
 			req = OttoPermissionRequest.new(session=self.session, tool_use_id=ptu.id)
@@ -173,12 +199,12 @@ class OttoChat(Document):
 		req_map = self._get_requests_map()
 		updates: list[ToolUseUpdate] = []
 		for ptu in self.get_pending_tools():
-			config = self.tool_configs.get(ptu.name)
+			config = self.tool_config_map.get(ptu.name)
 			if not config:
 				continue
 
-			fn = fn_map.get(config.slug)
-			if config.is_external and not fn:
+			fn = fn_map.get(config["slug"])
+			if config["is_external"] and not fn:
 				# External tool call managed by caller
 				continue
 
@@ -187,7 +213,7 @@ class OttoChat(Document):
 				continue
 
 			update = execute_tool(
-				tool=config.tool,
+				tool=config["tool"],
 				args=ptu.args,
 				tool_use_id=ptu.id,
 				env_str=None,
@@ -210,8 +236,8 @@ class OttoChat(Document):
 
 		pending: list[PendingToolUse] = []
 		for ptu in pending_tool_uses:
-			config = self.tool_configs.get(ptu.name)
-			if not config or not config.is_external:
+			config = self.tool_config_map.get(ptu.name)
+			if not config or not config["is_external"]:
 				continue
 
 			pending.append(ptu)
