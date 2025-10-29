@@ -10,13 +10,13 @@ from frappe.model.document import Document
 import otto
 import otto.lib as lib
 from otto.llm.utils import DEFAULT_MODEL
-from otto.otto.doctype.otto_assistant.otto_assistant import OttoAssistant
 from otto.otto.doctype.otto_permission_request.otto_permission_request import OttoPermissionRequest
 
 if TYPE_CHECKING:
 	from collections.abc import Callable
 
 	from otto.lib.types import PendingToolUse, Query, ToolUseUpdate
+	from otto.otto.doctype.otto_assistant.otto_assistant import OttoAssistant
 
 
 class ToolConfig(NamedTuple):
@@ -35,9 +35,12 @@ class OttoChat(Document):
 	if TYPE_CHECKING:
 		from frappe.types import DF
 
+		from otto.otto.doctype.otto_chat_tool_ct.otto_chat_tool_ct import OttoChatToolCT
+
 		assistant: DF.Link
 		session: DF.Link
 		title: DF.Data | None
+		tools: DF.Table[OttoChatToolCT]
 	# end: auto-generated types
 
 	_session: lib.Session | None = None
@@ -52,7 +55,7 @@ class OttoChat(Document):
 			return self._tool_configs
 
 		map: dict[str, ToolConfig] = {}
-		tool_names = [tool.tool for tool in self.assistant_.tools]
+		tool_names = [tool.tool for tool in self.tools]
 
 		tools = {
 			t.name: t
@@ -63,7 +66,7 @@ class OttoChat(Document):
 			)
 		}
 
-		for tool in self.assistant_.tools:
+		for tool in self.tools:
 			if not tool.slug:
 				continue
 
@@ -77,12 +80,6 @@ class OttoChat(Document):
 
 		self._tool_configs = map
 		return map
-
-	@property
-	def assistant_(self) -> OttoAssistant:
-		if not self._assistant:
-			self._assistant = otto.get(OttoAssistant, self.assistant)
-		return self._assistant
 
 	@property
 	def session_(self) -> lib.Session:
@@ -124,6 +121,7 @@ class OttoChat(Document):
 			tools=tool_schemas,
 		)
 		doc.session_ = session
+		doc._copy_tools(assistant_doc)
 
 		doc.save()
 		return doc
@@ -133,6 +131,7 @@ class OttoChat(Document):
 		if self.has_pending_requests():
 			return None, "Resolve all pending requests before resuming chat"
 
+		self._update_session_tools()
 		return self.session_.interact(query, stream=True), None
 
 	def has_pending_requests(self) -> bool:
@@ -228,3 +227,54 @@ class OttoChat(Document):
 			fields=["tool_use_id", "status", "denied_reason"],
 		)
 		return {req.tool_use_id: req.status for req in requests}
+
+	def _copy_tools(self, assistant: OttoAssistant):
+		for tool in assistant.tools:
+			self.append(
+				"tools",
+				{
+					"tool": tool.tool,
+					"slug": tool.slug,
+					"is_enabled": tool.is_enabled,
+					"requires_permission": tool.requires_permission,
+				},
+			)
+
+	def _update_session_tools(self):
+		from otto.otto.doctype.otto_tool.otto_tool import OttoTool
+
+		if not self._should_update_session_tools():
+			return
+
+		tool_schemas: list[lib.types.ToolSchema] = []
+		for tool in self.tools:
+			if not tool.is_enabled:
+				continue
+
+			schema = otto.get(
+				OttoTool,
+				tool.tool,
+			).get_function_schema(tool.slug)
+			tool_schemas.append(schema)
+		self.session_.set_tools(tool_schemas)
+
+	def _should_update_session_tools(self) -> bool:
+		# Assumes that a tool's schema doesn't change mid session
+		# only the list of tools used changes.
+		tools = [tool for tool in self.tools if tool.is_enabled]
+		if len(tools) != len(self.session_.tools):
+			return True
+
+		tool_map = {tool.slug: tool for tool in tools}
+		for tool in self.session_.tools:
+			if tool["name"] in tool_map:
+				continue
+			return True
+
+		session_tool_map = {tool["name"]: tool for tool in self.session_.tools}
+		for tool in tools:
+			if tool.slug in session_tool_map:
+				continue
+			return True
+
+		return False

@@ -7,8 +7,11 @@
  "engine": "InnoDB",
  "field_order": [
   "title",
+  "column_break_xksj",
   "assistant",
-  "session"
+  "session",
+  "section_break_ggvx",
+  "tools"
  ],
  "fields": [
   {
@@ -35,12 +38,27 @@
    "label": "Session",
    "options": "Otto Session",
    "reqd": 1
+  },
+  {
+   "fieldname": "column_break_xksj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_ggvx",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "The tools are copied over from the Assistant definition, it can be edited during the chat.\n\nAdditional tools can be added, but not removed (they can still be disabled).",
+   "fieldname": "tools",
+   "fieldtype": "Table",
+   "label": "Tools",
+   "options": "Otto Chat Tool CT"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-01 15:19:39.201403",
+ "modified": "2025-10-29 13:21:42.523050",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Chat",

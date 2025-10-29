@@ -21,7 +21,6 @@ class OttoSessionToolCT(Document):
 		from frappe.types import DF
 
 		description: DF.SmallText
-		is_enabled: DF.Check
 		parent: DF.Data
 		parentfield: DF.Data
 		parenttype: DF.Data
