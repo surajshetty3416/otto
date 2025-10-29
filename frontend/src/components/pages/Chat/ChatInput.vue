@@ -15,7 +15,7 @@
 			@click="showSettingsDialog"
 			class="hover:bg-gray-100 rounded-full p-1.5 cursor-pointer"
 		>
-			<Settings class="w-6 h-6 text-gray-800" stroke-width="1.5" />
+			<Settings class="w-6 h-6 text-gray-800" stroke-width="1.25" />
 		</button>
 		<button
 			@click="handleSend"

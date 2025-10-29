@@ -1,14 +1,14 @@
 <template>
 	<!-- Tool Use Details -->
-	<div v-if="isOpen" class="bg-gray-50 rounded-md border border-gray-200 my-2">
+	<div v-if="isOpen" class="bg-gray-50 rounded-md border border-gray-200 my-1.5">
 		<!-- Tool Use Header -->
 		<div
-			class="flex items-center justify-between border-b border-gray-200 p-2 cursor-pointer"
+			class="flex items-center justify-between border-b border-gray-200 p-1.5 cursor-pointer"
 			@click.stop="isOpen = false"
 			title="Hide Tool Use"
 		>
-			<h3 class="text-gray-800 text-sm font-semibold flex items-center gap-2">
-				<Wrench class="h-4 w-4 text-gray-600 flex-shrink-0" />
+			<h3 class="text-gray-800 text-xs font-semibold flex items-center gap-1.5">
+				<Wrench class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
 				{{ title }}
 
 				<span
@@ -23,30 +23,34 @@
 			</h3>
 
 			<button @click="isOpen = false">
-				<X class="h-4 w-4 text-gray-600 flex-shrink-0" />
+				<X class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
 			</button>
 		</div>
 
 		<!-- Tool Use Details -->
 		<div>
 			<div class="border-b">
-				<p class="text-sm font-medium text-gray-600 px-2 pt-2">Args</p>
+				<p class="text-xs font-medium text-gray-600 px-1.5 pt-1.5">Args</p>
 				<template v-for="arg in Object.keys(content.args)" :key="arg">
 					<div v-if="!(config?.use_explanation && arg === 'explanation')">
-						<p class="text-xs italic font-medium text-gray-600 px-2 pt-2">{{ arg }}</p>
-						<pre class="text-sm text-gray-800 px-2 pb-2">{{ content.args[arg] }}</pre>
+						<p class="text-xs italic font-medium text-gray-600 px-1.5 pt-1.5">
+							{{ arg }}
+						</p>
+						<pre class="text-sm text-gray-800 px-1.5 pb-1.5">{{
+							content.args[arg]
+						}}</pre>
 					</div>
 				</template>
 				<p
 					v-if="config?.use_explanation && content.args.explanation"
 					title="Explanation given by the LLM for using this tool"
-					class="text-xs text-gray-600 border-t border-dashed border-gray-300 p-2"
+					class="text-xs text-gray-600 border-t border-dashed border-gray-300 p-1.5"
 				>
 					{{ content.args.explanation }}
 				</p>
 			</div>
 
-			<div class="p-2" title="Result of the tool use">
+			<div class="p-1.5" title="Result of the tool use">
 				<p class="text-sm font-medium text-gray-600">Result</p>
 				<pre class="text-sm text-gray-800 pt-2">{{ content.result }}</pre>
 			</div>
@@ -54,13 +58,13 @@
 	</div>
 
 	<!-- Open Tool Use -->
-	<div v-else class="inline-block mr-2 my-1">
+	<div v-else class="inline-block mr-1.5 my-1.5">
 		<button
 			@click="isOpen = true"
-			class="bg-gray-50 border border-gray-200 p-2 w-fit rounded-full flex items-center gap-2"
+			class="bg-gray-50 border border-gray-200 py-1.5 px-2 w-fit rounded-full flex items-center gap-1.5"
 		>
-			<Wrench class="h-4 w-4 text-gray-600 flex-shrink-0" />
-			<p class="text-sm font-medium text-gray-800">
+			<Wrench class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
+			<p class="text-sm font-medium text-gray-700">
 				{{ title }}
 			</p>
 			<div

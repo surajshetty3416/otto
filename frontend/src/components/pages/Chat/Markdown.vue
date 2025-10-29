@@ -51,14 +51,15 @@ const renderedContent = computed(() => {
 <style scoped>
 .markdown-content {
 	/* CSS Variables for easy customization */
-	--md-font-size-base: 1rem;
-	--md-font-size-h1: 1.65rem;
-	--md-font-size-h2: 1.35rem;
-	--md-font-size-h3: 1.25rem;
-	--md-font-size-h4: 1.15rem;
-	--md-font-size-h5: 1.1rem;
-	--md-font-size-h6: 1.05rem;
-	--md-font-size-code: 0.9125rem;
+	/* All font sizes are now in 'em' units to scale with parent font-size */
+	--md-font-size-base: 1em;
+	--md-font-size-h1: 1.65em;
+	--md-font-size-h2: 1.35em;
+	--md-font-size-h3: 1.25em;
+	--md-font-size-h4: 1.15em;
+	--md-font-size-h5: 1.1em;
+	--md-font-size-h6: 1.05em;
+	--md-font-size-code: 0.9125em;
 
 	--md-font-weight-normal: 400;
 	--md-font-weight-medium: 500;
@@ -70,11 +71,12 @@ const renderedContent = computed(() => {
 
 	--md-color-code-bg: theme(colors.gray.50);
 
-	--md-spacing-paragraph: 0.75rem;
-	--md-spacing-heading-top: 1.65rem;
-	--md-spacing-heading-bottom: 0.75rem;
+	--md-spacing-paragraph: 0.75em;
+	--md-spacing-heading-top: 1.65em;
+	--md-spacing-heading-bottom: 0.75em;
 
-	font-size: var(--md-font-size-base);
+	/* Default base font size - can be overridden via inline styles */
+	font-size: 1rem;
 	line-height: var(--md-line-height-base);
 }
 
