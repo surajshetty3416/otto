@@ -1,5 +1,5 @@
 <template>
-	<div class="bg-gray-200 py-2 px-4 w-fit rounded-md">
+	<div class="bg-gray-100 py-2 px-4 w-fit rounded-lg">
 		<template v-for="(content, i) in message.content" :key="i">
 			<p v-if="content.type === 'text'">{{ content.text }}</p>
 		</template>

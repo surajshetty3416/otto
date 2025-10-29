@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div class="w-full overflow-x-auto">
 		<p>{{ content.name }}</p>
 		<pre>{{ content.args }}</pre>
 	</div>

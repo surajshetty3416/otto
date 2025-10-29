@@ -12,7 +12,7 @@ import type { SessionItem } from "@/client/generated.types";
 import AgentMessage from "./AgentMessage.vue";
 import UserMessage from "./UserMessage.vue";
 
-const props = defineProps<{
+defineProps<{
 	messages: SessionItem[];
 }>();
 </script>

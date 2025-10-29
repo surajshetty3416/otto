@@ -1,6 +1,7 @@
 <template>
 	<div
-		class="border border-gray-200 rounded-full p-2 flex items-center gap-2 bg-white shadow-lg"
+		class="border border-gray-200 rounded-full p-2 flex items-center gap-2 bg-white"
+		style="box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.06), 0px 1px 2px rgba(0, 0, 0, 0.08)"
 	>
 		<input
 			v-model="message"

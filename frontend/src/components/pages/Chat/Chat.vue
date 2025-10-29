@@ -10,9 +10,13 @@
 		</div>
 
 		<!-- Messages -->
-		<div style="width: 768px" class="border-l border-r border-gray-200 h-full relative">
-			<ChatMessages :messages="messages" />
-			<ChatInput :loading="isLoading" @send="handleSend" class="w-full absolute bottom-2" />
+		<div class="border-gray-200 h-full overflow-y-scroll container-ch chat-messages">
+			<ChatMessages :messages="[...messages, ...messages]" />
+		</div>
+
+		<!-- Input -->
+		<div class="fixed bottom-4 w-screen container-ch chat-input">
+			<ChatInput :loading="isLoading" @send="handleSend" class="w-full" />
 		</div>
 	</div>
 </template>
@@ -133,42 +137,18 @@ onMounted(async () => {
 onUnmounted(() => {
 	socket.off("otto.api.chat", handleRealtimeMessage);
 });
-
-/**
- * Stack:
- * - [x] handled important streaming types
- * - [ ] complete handling of different content types
- * 	- [ ] agent responses:
- * 		- [ ] handle tool use responses (silent tools, hide tool use in user config)
- * 		- [ ] ui improvements in thinking blocks
- * 	- [ ] user inputs (if markdown detected, syntax highlight as markdown)
- * 	- [ ] add permission request handling (maintain pending requests separately append on receiving)
- * - [ ] error handling
- * - [ ] add support for images and pdfs (create file and do something don't append file to chat (very heavy))
- * 
- * all messages should have an (i) button, on clicking the i button the ui
- * should show sessionitem details, all agent responses should have a thumbs up
- * and down button (this logs feedback) 
- * 
- * TODO: Plan for assistant implementation:
- *
- * handle the realtime messages
- *
- * on chunk message append dummy item which will be filled out with the values
- * from the actual item when the actual item is received
- *
- * on tool execution changes indicate completion of tool calls, on complete resume chat
- *
- * on request show a request block which on click should call the permission endpoints
- *
- * on error show a toast or something to indicate the error
- *
- * - build out the chat interface for the dummy assistant
- * - complete the new chat page, on user query move input to the bottom and show query message
- * - add sidebar, auto set sidebar title (from user message, assistant title or autogen)
- * - add support for images and pdfs (create file and do something don't append file to chat (very heavy))
- * - add support for agent selection
- * - create and experiment with framework assistant
- * - experiment with ui gen
- */
 </script>
+<style scoped>
+.container-ch {
+	--lr-spacing: 12rem;
+}
+
+.chat-messages {
+	padding: 0 var(--lr-spacing);
+	padding-bottom: 20vh;
+}
+
+.chat-input {
+	padding: 0 var(--lr-spacing);
+}
+</style>
