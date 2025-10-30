@@ -111,6 +111,16 @@ const toolConfigs = computed(() => {
 	}
 	return configs;
 });
+const hasPendingToolExecutions = computed(() => {
+	for (let i = messages.length - 1; i >= 0; i--) {
+		const message = messages[i];
+		for (const content of message.content) {
+			if (content.type !== "tool_use") continue;
+			if (content.status === "pending") return true;
+		}
+	}
+	return false;
+});
 
 provide(toolConfigKey, toolConfigs);
 provide(streamContextKey, streamContext);
@@ -170,6 +180,13 @@ function canSend(query: string) {
 
 		return false;
 	}
+
+	if (hasPendingToolExecutions.value) {
+		toast.warning("Tool execution pending", {
+			description: "Please wait until pending tools have completed running",
+		});
+		return false;
+	}
 	return true;
 }
 
@@ -203,14 +220,14 @@ function handleRealtimeMessage(message: RealtimeChatMessage) {
 		case "request":
 			handleRequest(message.data);
 			return;
-		case "tool-execution-complete":
-			handleToolExecutionComplete();
-			return;
 		case "tool-execution-update":
 			handleToolUseUpdate(message.data, messages);
 			return;
+		case "tool-execution-complete":
+			updateRequestsAndResume();
+			return;
 		case "request-acknowledge":
-			updatePendingRequests(message.data);
+			updateRequestsAndResume(message.data);
 			return;
 		case "error":
 			toast.error("Error in chat", {
@@ -266,6 +283,12 @@ function scrollToBottom() {
 	});
 }
 
+async function updateRequestsAndResume(toolUseIds?: string[]) {
+	await updatePendingRequests(toolUseIds);
+	if (Object.keys(pendingRequests).length > 0) return;
+	await handleResume();
+}
+
 async function updatePendingRequests(toolUseIds?: string[]) {
 	if (!toolUseIds) {
 		toolUseIds = Object.keys(pendingRequests);
@@ -274,14 +297,9 @@ async function updatePendingRequests(toolUseIds?: string[]) {
 	for (const toolUseId of toolUseIds) {
 		delete pendingRequests[toolUseId];
 	}
+
 	const prs = await get_pending_requests.run({ chat_id: props.chatId! }, false);
 	for (const pr of prs) pendingRequests[pr.tool_use_id] = pr;
-}
-
-async function handleToolExecutionComplete() {
-	await updatePendingRequests();
-	if (Object.keys(pendingRequests).length > 0) return;
-	await handleResume();
 }
 </script>
 <style scoped>
