@@ -221,6 +221,15 @@ export interface OttoDocTypes {
 // <API Types for Otto>
 // Auto-generated using `bench generate-types`. Do not edit.
 
+// otto/otto/llm/types.py
+export interface SessionItem {
+  id: ID;
+  next: ID[];
+  selected_next: number;
+  content: Content[];
+  meta: Meta;
+}
+
 // otto/otto/otto/doctype/otto_chat/otto_chat.py
 export interface ToolConfig {
   title: string;
@@ -234,15 +243,6 @@ export interface ToolConfig {
 }
 
 // otto/otto/llm/types.py
-export interface SessionItem {
-  id: ID;
-  next: ID[];
-  selected_next: number;
-  content: Content[];
-  meta: Meta;
-}
-
-// otto/otto/llm/types.py
 export type Content =
   | TextContent
   | ThinkingContent
@@ -251,49 +251,17 @@ export type Content =
   | FileContent;
 
 // otto/otto/llm/types.py
-export interface ImageContent {
-  type: "image";
-  url: string | null;
-  data: string | null;
-}
-
-// otto/otto/llm/types.py
-export type ID = string;
-
-// otto/otto/llm/types.py
-export interface TextContent {
-  type: "text";
-  text: string;
-}
-
-// otto/otto/llm/types.py
-export interface ToolUseContent {
-  type: "tool_use";
-  id: string;
-  name: string;
-  status: "pending" | "success" | "error";
-  result: string | null;
-  _args: string | null;
-  args: Record<string, unknown>;
-  override: Record<string, unknown> | null;
-  start_time: number;
-  end_time: number;
-  stdout: string | null;
-  stderr: string | null;
-}
-
-// otto/otto/llm/types.py
-export interface ThinkingContent {
-  type: "thinking";
-  text: string;
-  signature: string | null;
-}
-
-// otto/otto/llm/types.py
 export interface FileContent {
   type: "file";
   name: string;
   data: string;
+}
+
+// otto/otto/llm/types.py
+export interface ImageContent {
+  type: "image";
+  url: string | null;
+  data: string | null;
 }
 
 // otto/otto/llm/types.py
@@ -312,7 +280,39 @@ export interface Meta {
 }
 
 // otto/otto/llm/types.py
+export interface TextContent {
+  type: "text";
+  text: string;
+}
+
+// otto/otto/llm/types.py
+export type ID = string;
+
+// otto/otto/llm/types.py
+export interface ToolUseContent {
+  type: "tool_use";
+  id: string;
+  name: string;
+  status: "pending" | "success" | "error";
+  result: string | null;
+  _args: string | null;
+  args: Record<string, unknown>;
+  override: Record<string, unknown> | null;
+  start_time: number;
+  end_time: number;
+  stdout: string | null;
+  stderr: string | null;
+}
+
+// otto/otto/llm/types.py
 export type EndReason = "turn_end" | "tool_use";
+
+// otto/otto/llm/types.py
+export interface ThinkingContent {
+  type: "thinking";
+  text: string;
+  signature: string | null;
+}
 
 // otto/otto/llm/types.py
 export type SessionRole = "user" | "agent";
@@ -340,7 +340,7 @@ export interface API {
     resume_chat(args: { chat_id: string }): null;
     load_chat(args: { chat_id: string }): SessionItem[];
     list_tools(args: { chat_id: string }): ToolConfig[];
-    list_chats(): unknown;
+    list_chats(): Record<string, string>[];
     list_assistants(): unknown;
     get_pending_requests(args: { chat_id: string }): PendingRequest[];
     acknowledge_request(args: {
@@ -407,14 +407,6 @@ type _ = AssertTrue<CheckIsRawAPI<API>>;
 // Auto-generated using `bench generate-types`. Do not edit.
 
 // otto/otto/api/types.py
-export interface RealtimeError {
-  id: string;
-  chat_id: string;
-  type: "error";
-  data: string;
-}
-
-// otto/otto/api/types.py
 export interface RealtimeRequest {
   id: string;
   chat_id: string;
@@ -423,18 +415,18 @@ export interface RealtimeRequest {
 }
 
 // otto/otto/api/types.py
-export interface RealtimeItem {
-  id: string;
-  chat_id: string;
-  type: "item";
-  data: SessionItem;
-}
-
-// otto/otto/api/types.py
 export interface PendingRequest {
   created_at: string;
   name: string;
   tool_use_id: string;
+}
+
+// otto/otto/api/types.py
+export interface RealtimeError {
+  id: string;
+  chat_id: string;
+  type: "error";
+  data: string;
 }
 
 // otto/otto/api/types.py
@@ -454,11 +446,27 @@ export interface RealtimeToolExecutionComplete {
 }
 
 // otto/otto/api/types.py
+export interface RealtimePong {
+  id: string;
+  chat_id: string;
+  type: "pong";
+  data: Pong;
+}
+
+// otto/otto/api/types.py
 export interface RealtimeChunk {
   id: string;
   chat_id: string;
   type: "chunk";
   data: ContentChunk;
+}
+
+// otto/otto/api/types.py
+export interface RealtimeItem {
+  id: string;
+  chat_id: string;
+  type: "item";
+  data: SessionItem;
 }
 
 // otto/otto/api/types.py
@@ -469,20 +477,30 @@ export interface RealtimeToolExecutionUpdate {
   data: ToolUseUpdate;
 }
 
-// otto/otto/api/types.py
-export interface RealtimePong {
-  id: string;
-  chat_id: string;
-  type: "pong";
-  data: Pong;
-}
-
 // otto/otto/llm/types.py
 export type ContentChunk = TextContentChunk | ToolUseContentChunk;
 
 // otto/otto/api/types.py
 export interface Pong {
   message: "pong";
+}
+
+// otto/otto/llm/types.py
+export interface TextContentChunk {
+  type: "text" | "thinking" | "system";
+  message: "start" | "end" | "error" | "content";
+  content: string;
+  item_id: string;
+  session_id: string;
+}
+
+// otto/otto/llm/types.py
+export interface ToolUseContentChunk {
+  type: "tool_use";
+  message: "start" | "end" | "error" | "content";
+  content: ToolUseDelta;
+  item_id: string;
+  session_id: string;
 }
 
 // otto/otto/llm/types.py
@@ -497,28 +515,10 @@ export interface ToolUseUpdate {
 }
 
 // otto/otto/llm/types.py
-export interface ToolUseContentChunk {
-  type: "tool_use";
-  message: "start" | "end" | "error" | "content";
-  content: ToolUseDelta;
-  item_id: string;
-  session_id: string;
-}
-
-// otto/otto/llm/types.py
 export interface ToolUseDelta {
   id: string | null;
   name: string | null;
   args: string | null;
-}
-
-// otto/otto/llm/types.py
-export interface TextContentChunk {
-  type: "text" | "thinking" | "system";
-  message: "start" | "end" | "error" | "content";
-  content: string;
-  item_id: string;
-  session_id: string;
 }
 
 // otto/otto/api/types.py

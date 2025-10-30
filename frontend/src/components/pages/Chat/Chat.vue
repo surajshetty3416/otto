@@ -1,19 +1,14 @@
 <template>
 	<div class="w-screen h-screen flex items-center justify-center flex-col">
 		<!-- Header -->
-		<div class="border-b h-14 w-full p-4 flex items-center justify-between mb-4">
-			<h1 class="text-xl font-bold">Otto Chat</h1>
-			<LoadingIndicator
-				v-if="isLoading || isStreaming || isWaitingForStream"
-				class="w-5 h-5"
-			/>
-		</div>
+		<ChatHeader :currentChatId="chatId" />
 
-		<!-- Messages -->
+		<!-- Body -->
 		<div
 			class="w-full h-full overflow-y-scroll flex flex-col items-center"
 			ref="messagesContainer"
 		>
+			<!-- Messages -->
 			<div class="border-gray-200 h-full container-ch chat-messages">
 				<ChatMessages :messages="messages" />
 				<div style="height: 20vh; flex-shrink: 0"></div>
@@ -50,11 +45,12 @@ import type {
 	TextContentChunk,
 	ToolConfig,
 } from "@/client/generated.types";
-import LoadingIndicator from "@/components/fui/LoadingIndicator.vue";
 import router from "@/router";
 import socket from "@/socket";
 import { assert } from "@/utils";
 import { computed, onMounted, onUnmounted, provide, reactive, ref } from "vue";
+import { toast } from "vue-sonner";
+import ChatHeader from "./ChatHeader.vue";
 import ChatIndicator from "./ChatIndicator.vue";
 import ChatInput from "./ChatInput.vue";
 import ChatMessages from "./ChatMessages.vue";
@@ -70,7 +66,6 @@ import {
 	toolConfigKey,
 	updateStreamContext,
 } from "./utils";
-import { toast } from "vue-sonner";
 
 /**
  * When streaming show a spinner above the input about what is going on, e.g.
@@ -267,6 +262,7 @@ onUnmounted(() => socket.off("otto.api.chat", handleRealtimeMessage));
 function scrollToBottom() {
 	messagesContainer.value?.scrollTo({
 		top: messagesContainer.value?.scrollHeight,
+		behavior: "smooth",
 	});
 }
 

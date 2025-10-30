@@ -96,7 +96,7 @@ def list_tools(chat_id: str) -> list[ToolConfig]:
 
 
 @frappe.whitelist()
-def list_chats():
+def list_chats() -> list[dict[str, str]]:
 	"""
 	List sessions for the sidebar, on clicking load will be called and the user
 	can then resume a chat
@@ -104,7 +104,13 @@ def list_chats():
 	List should pull up the sessions along with assistant that was used to create
 	the session
 	"""
-	pass
+	return frappe.get_all(
+		"Otto Chat",
+		fields=["name", "title", "assistant"],
+		filters={
+			"owner": frappe.session.user,
+		},
+	)
 
 
 @frappe.whitelist()

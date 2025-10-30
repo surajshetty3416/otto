@@ -26,10 +26,10 @@
 				<template v-for="arg in args" :key="arg.name">
 					<div>
 						<p
-							class="text-xs italic font-medium text-gray-600 px-1.5 pt-1.5"
+							class="text-xs italic font-medium text-gray-600 px-1.5 pt-1.5 capitalize"
 							:title="`Argument name: ${arg.name}`"
 						>
-							{{ titlecase(arg.name) }}
+							{{ arg.name }}
 						</p>
 						<pre
 							class="text-sm text-gray-800 px-1.5 pb-1.5 pt-0.5"
@@ -140,7 +140,6 @@ import { pendingRequestsKey, toolConfigKey } from "./utils";
 import IndicatorDot from "@/components/ui/IndicatorDot.vue";
 import SmallButton from "./SmallButton.vue";
 import { api } from "@/client";
-import { titlecase } from "@/components/format";
 
 /**
  * show a semi-collapsed div (hide args) when permission request is required

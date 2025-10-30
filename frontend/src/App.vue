@@ -1,5 +1,5 @@
 <template>
-	<router-view />
+	<router-view :key="$route.fullPath" />
 	<Toaster position="bottom-right" :close-button="true" close-button-position="top-right" />
 </template>
 

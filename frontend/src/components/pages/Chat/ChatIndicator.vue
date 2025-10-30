@@ -1,9 +1,14 @@
 <template>
 	<div class="px-6 py-1 flex flex-col gap-1 items-center">
-		<!-- Indicator-->
+		<!-- Loading Indicator-->
+		<div class="bg-white/75 backdrop-blur-lg rounded-full p-0.5">
+			<LoadingIndicator v-if="isLoading" class="h-3 w-3 text-gray-600 flex-shrink-0" />
+		</div>
+
+		<!-- Labelled Indicator-->
 		<div
 			v-if="indicatorText"
-			class="w-fit px-1 py-0.5 bg-white/50 rounded-full flex items-center justify-center gap-1 backdrop-blur-lg"
+			class="w-fit px-1 py-0.5 rounded-full flex items-center justify-center gap-1 bg-white/75 backdrop-blur-lg"
 		>
 			<Brain
 				v-if="isThinking"

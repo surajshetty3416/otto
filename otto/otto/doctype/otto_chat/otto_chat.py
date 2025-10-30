@@ -148,9 +148,14 @@ class OttoChat(Document):
 		)
 		doc.session_ = session
 		doc._copy_tools(assistant_doc)
+		doc.title = "New Chat with " + (assistant_doc.title or "Assistant")
 
 		doc.save()
 		return doc
+
+	def autoset_title(self):
+		# TODO: use a small model to generate a title from the first 4 exchanges
+		...
 
 	def chat(self, query: Query | None = None):
 		"""query can be None when resuming after a tool use request"""
