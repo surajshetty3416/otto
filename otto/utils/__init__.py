@@ -33,7 +33,7 @@ def _safe_dumps_default(value: Any):
 		return "<unserializable>"
 
 
-# TODO: use this when 3.12 is the minimum
+# Use this when 3.12 is the minimum
 # def drain[T](generator: Generator[Any, None, T]) -> T:
 # 	while True:
 # 		try:

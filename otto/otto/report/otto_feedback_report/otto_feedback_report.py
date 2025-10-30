@@ -8,8 +8,6 @@ from frappe import _
 
 from otto.otto.report.utils import get_group_by_and_period, set_periodicity
 
-# TODO: add task and llm filters
-
 
 def execute(filters: dict | None = None):
 	"""Return columns and data for the report.

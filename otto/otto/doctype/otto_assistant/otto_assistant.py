@@ -13,8 +13,6 @@ from jinja2 import Template
 if TYPE_CHECKING:
 	from otto.lib.types import ReasoningEffort
 
-# TODO:
-# - re-render instruction on every message (?)
 DEFAULT_INSTRUCTION = (
 	"You are Otto, a helpful assistant. You are currently speaking to {{user}} and the date is {{date}}."
 )

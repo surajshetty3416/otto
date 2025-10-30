@@ -36,6 +36,12 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * TODO:
+ * - add tasteful animation when popping indicators, collapsing sections
+ * - add better error handling
+ * - make the streaming of content smoother
+ */
 import { api } from "@/client";
 import type {
 	PendingRequest,
@@ -212,7 +218,6 @@ function handleRealtimeMessage(message: RealtimeChatMessage) {
 			updatePendingRequests(message.data);
 			return;
 		case "error":
-			// TODO: need better error handling
 			toast.error("Error in chat", {
 				description: message.data,
 			});

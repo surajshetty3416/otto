@@ -31,7 +31,6 @@ export function duration(seconds: number): string {
 }
 
 export function date(value: string | Date | undefined): string {
-  // TODO: If just showing timestring, format time better
   value ??= new Date(1710633600000);
 
   // Convert string to Date if needed
@@ -85,7 +84,6 @@ export function json(value: unknown): string {
     try {
       return json(JSON.stringify(value));
     } catch {
-      // TODO: handle non JSON value
       return String(value);
     }
   }

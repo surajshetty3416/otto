@@ -42,9 +42,6 @@ import { sessionItemKey, streamContextKey } from "./utils";
 const streamContext = inject(streamContextKey);
 const sessionItem = inject(sessionItemKey);
 
-// TODO: styling
-// if is streaming show fixed heighted scrolling div streaming collapse
-
 defineProps<{
 	content: ThinkingContent;
 }>();
