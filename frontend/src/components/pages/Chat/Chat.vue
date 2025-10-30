@@ -4,7 +4,7 @@
 		<div class="border-b h-14 w-full p-4 flex items-center justify-between mb-4">
 			<h1 class="text-xl font-bold">Otto Chat</h1>
 			<LoadingIndicator
-				v-if="isLoading || isStreaming || waitingForStream"
+				v-if="isLoading || isStreaming || isWaitingForStream"
 				class="w-5 h-5"
 			/>
 		</div>
@@ -26,7 +26,7 @@
 					:chatId="chatId"
 					:isLoading="isLoading"
 					:isStreaming="isStreaming"
-					:waitingForStream="waitingForStream"
+					:isWaitingForStream="isWaitingForStream"
 					:pendingRequests="pendingRequests"
 				/>
 				<ChatInput :loading="_loading" @send="handleSend" />
@@ -54,6 +54,7 @@ import ChatInput from "./ChatInput.vue";
 import ChatMessages from "./ChatMessages.vue";
 import type { StreamContext } from "./types";
 import {
+	getToolUseContent,
 	getUserSessionItem,
 	handleContentChunk,
 	handleItem,
@@ -81,10 +82,10 @@ const props = defineProps<{
 
 const _loading = ref(false); // true if request is being sent
 const isStreaming = ref(false); // true if chat is streaming
-const waitingForStream = ref(false); // true if waiting for stream to start
+const isWaitingForStream = ref(false); // true if waiting for stream to start
 const messagesContainer = ref<HTMLDivElement | null>(null);
 const messages = reactive<SessionItem[]>([]);
-const streamContext = reactive<StreamContext>({ chunks: [], isStreamingResponse: false });
+const streamContext = reactive<StreamContext>({ messages: [], isStreamingResponse: false });
 const pendingRequests = reactive<Record<string, PendingRequest>>({});
 
 // API calls
@@ -128,7 +129,7 @@ async function handleSend(query: string) {
 	assert(props.chatId, "chatId is required");
 	await api.chat.send_query({ chat_id: props.chatId, query });
 	_loading.value = false;
-	waitingForStream.value = true;
+	isWaitingForStream.value = true;
 	await list_tools.run({ chat_id: props.chatId! }, false);
 }
 
@@ -147,7 +148,7 @@ function canSend(query: string) {
 		return false;
 	}
 
-	if (waitingForStream.value) {
+	if (isWaitingForStream.value) {
 		toast.info("Waiting for response", {
 			description: "Please wait for the current response to complete",
 		});
@@ -173,7 +174,7 @@ function canSend(query: string) {
 
 async function handleResume() {
 	await resume_chat.run({ chat_id: props.chatId! }, false);
-	waitingForStream.value = true;
+	isWaitingForStream.value = true;
 }
 
 function appendUserMessage(query: string) {
@@ -183,7 +184,7 @@ function appendUserMessage(query: string) {
 function handleRealtimeMessage(message: RealtimeChatMessage) {
 	if (window.is_dev_mode) console.log(message);
 
-	waitingForStream.value = false;
+	isWaitingForStream.value = false;
 	updateStreamContext(message, streamContext);
 
 	if (message.chat_id !== props.chatId) return;
@@ -199,7 +200,7 @@ function handleRealtimeMessage(message: RealtimeChatMessage) {
 			handleItem(message.data, messages);
 			return;
 		case "request":
-			pendingRequests[message.data.tool_use_id] = message.data;
+			handleRequest(message.data);
 			return;
 		case "tool-execution-complete":
 			handleToolExecutionComplete();
@@ -217,6 +218,19 @@ function handleRealtimeMessage(message: RealtimeChatMessage) {
 			});
 			return;
 	}
+}
+
+function handleRequest(pr: PendingRequest) {
+	pendingRequests[pr.tool_use_id] = pr;
+	const tool = getToolUseContent(pr.tool_use_id, messages);
+	if (!tool) return;
+
+	const config = toolConfigs.value[tool.name];
+	if (!config) return;
+
+	toast.info("Permission request", {
+		description: `Requested to run ${config.title}`,
+	});
 }
 
 function handleSystemChunk(chunk: TextContentChunk) {

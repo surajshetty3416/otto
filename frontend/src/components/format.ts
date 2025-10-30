@@ -1,5 +1,3 @@
-import { deUi, isUi } from "../utils";
-
 export function duration(seconds: number): string {
   if (!seconds || seconds === 0) return "0s";
 
@@ -118,6 +116,18 @@ export function reasons(reasons?: string, defaultReason?: string): string[] {
   return filtered;
 }
 
+export function titlecase(value: string): string {
+  if (!value) return "";
+  return value
+    .toLowerCase()
+    .split(" ")
+    .map((word) => {
+      if (!word) return "";
+      return word[0].toUpperCase() + word.slice(1);
+    })
+    .join(" ");
+}
+
 export function argType(type: string): string {
   const argTypes: Record<string, string> = {
     str: "String",
@@ -133,11 +143,11 @@ export function argType(type: string): string {
 }
 
 export function error(error: unknown): string {
-  if (!(error instanceof Error) || !isUi(error.message)) {
+  if (!(error instanceof Error)) {
     return "Something went wrong";
   }
 
-  return deUi(error.message);
+  return error.message;
 }
 
 export default { duration, date, json, reasons, argType, error };

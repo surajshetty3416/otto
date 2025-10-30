@@ -6,6 +6,7 @@ import type {
   RealtimeChatMessage,
   SessionItem,
   ToolConfig,
+  ToolUseContent,
   ToolUseUpdate,
 } from "@/client/generated.types";
 import { assert, isEqual } from "@/utils";
@@ -211,7 +212,8 @@ export function handleToolUseUpdate(
   update: ToolUseUpdate,
   messages: SessionItem[]
 ) {
-  for (const message of messages) {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i];
     for (const content of message.content) {
       if (content.type !== "tool_use" || content.id !== update.id) continue;
 
@@ -234,6 +236,21 @@ export function handleToolUseUpdate(
       content.result = result;
     }
   }
+}
+
+export function getToolUseContent(
+  toolUseId: string,
+  messages: SessionItem[]
+): ToolUseContent | null {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i];
+    for (const content of message.content) {
+      if (content.type === "tool_use" && content.id === toolUseId) {
+        return content;
+      }
+    }
+  }
+  return null;
 }
 
 export function updateStreamContext(
@@ -259,29 +276,33 @@ export function updateStreamContext(
     return;
   }
 
-  if (streamContext.chunks.at(0)?.type !== message.type) {
-    streamContext.chunks.length = 0;
+  if (streamContext.messages.at(0)?.type !== message.type) {
+    streamContext.messages.length = 0;
   }
 
-  if (streamContext.chunks.length === 0) {
-    streamContext.chunks.push(message);
+  if (streamContext.messages.length === 0) {
+    streamContext.messages.push(message);
     return;
   }
 
   if (message.type !== "chunk" || message.data.type === "system") return;
-  const last = streamContext.chunks.at(-1)!;
+  const last = streamContext.messages.at(-1)!;
   assert(last.type === "chunk", "type check");
 
   if (
     last.data.type !== message.data.type ||
     last.data.item_id !== message.data.item_id
   ) {
-    streamContext.chunks.length = 0;
+    streamContext.messages.length = 0;
   }
 
-  streamContext.chunks.push(message);
-}
+  streamContext.messages.push(message);
 
+  /**
+   * Update thinking and tool use content as stream changes
+   * Update chat indicator to show sensible messages as stream changes
+   */
+}
 
 function getItem(id: string, messages: SessionItem[]) {
   for (let i = messages.length - 1; i >= 0; i--) {

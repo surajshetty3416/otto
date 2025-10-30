@@ -50,8 +50,12 @@ defineProps<{
 }>();
 
 const isOpen = ref(false);
-
 const isStreaming = computed(() => {
-	return sessionItem?.id === streamContext?.itemId && streamContext?.chunkType === "thinking";
+	if (!streamContext?.isStreamingResponse) return false;
+	const message = streamContext?.messages.at(-1);
+	if (message?.type !== "chunk") return false;
+
+	const chunk = message?.data;
+	return chunk?.type === "thinking" && chunk?.item_id === sessionItem?.id;
 });
 </script>

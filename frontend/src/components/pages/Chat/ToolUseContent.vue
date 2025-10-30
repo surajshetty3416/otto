@@ -22,26 +22,32 @@
 		<!-- Tool Use Details -->
 		<div>
 			<!-- Args container -->
-			<div>
-				<p class="text-xs font-medium text-gray-600 px-1.5 pt-1.5">Args</p>
-				<template v-for="arg in Object.keys(content.args)" :key="arg">
-					<div v-if="!(config?.use_explanation && arg === 'explanation')">
-						<p class="text-xs italic font-medium text-gray-600 px-1.5 pt-1.5">
-							{{ arg }}
+			<div v-if="Object.keys(content.args).length > 0">
+				<template v-for="arg in args" :key="arg.name">
+					<div>
+						<p
+							class="text-xs italic font-medium text-gray-600 px-1.5 pt-1.5"
+							:title="`Argument name: ${arg.name}`"
+						>
+							{{ titlecase(arg.name) }}
 						</p>
-						<pre class="text-sm text-gray-800 px-1.5 pb-1.5">{{
-							content.args[arg]
-						}}</pre>
+						<pre
+							class="text-sm text-gray-800 px-1.5 pb-1.5 pt-0.5"
+							:title="`Argument value: ${arg.value}`"
+							>{{ arg.value }}</pre
+						>
 					</div>
 				</template>
-				<p
-					v-if="config?.use_explanation && content.args.explanation"
-					title="Explanation given by the LLM for using this tool"
-					class="text-xs text-gray-600 border-t border-dashed border-gray-300 p-1.5"
-				>
-					{{ content.args.explanation }}
-				</p>
 			</div>
+
+			<!-- Explanation  -->
+			<p
+				v-if="config?.use_explanation && content.args.explanation"
+				title="Explanation given by the LLM for using this tool"
+				class="text-xs text-gray-600 border-t border-gray-200 p-1.5"
+			>
+				{{ content.args.explanation }}
+			</p>
 
 			<!-- Result container -->
 			<div
@@ -49,8 +55,8 @@
 				class="p-1.5 border-t"
 				title="Result of the tool use"
 			>
-				<p class="text-sm font-medium text-gray-600">Result</p>
-				<pre class="text-sm text-gray-800 pt-2">{{ content.result }}</pre>
+				<p class="text-xs italic font-medium text-gray-600">Result</p>
+				<pre class="text-sm text-gray-800 pt-0.5">{{ content.result }}</pre>
 			</div>
 
 			<!-- Permission container -->
@@ -134,6 +140,7 @@ import { pendingRequestsKey, toolConfigKey } from "./utils";
 import IndicatorDot from "@/components/ui/IndicatorDot.vue";
 import SmallButton from "./SmallButton.vue";
 import { api } from "@/client";
+import { titlecase } from "@/components/format";
 
 /**
  * show a semi-collapsed div (hide args) when permission request is required
@@ -155,6 +162,14 @@ const isOpen = ref(false);
 const slug = computed(() => props.content.name);
 const config = computed(() => toolConfigs?.value[slug.value]);
 const title = computed(() => config.value?.title ?? slug.value);
+const args = computed(() => {
+	const args: { name: string; value: unknown }[] = [];
+	for (const [name, value] of Object.entries(props.content.args)) {
+		if (config.value?.use_explanation && name === "explanation") continue;
+		args.push({ name, value });
+	}
+	return args;
+});
 
 const request = computed(() => pendingRequests?.[props.content.id]);
 

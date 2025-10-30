@@ -7,6 +7,6 @@ import type {
 
 export type ChunkContent = TextContent | ThinkingContent | ToolUseContent;
 export interface StreamContext {
-  chunks: RealtimeChatMessage[];
+  messages: RealtimeChatMessage[];
   isStreamingResponse: boolean;
 }
