@@ -71,7 +71,6 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
   ) {
     this.method = method;
     this.url = url;
-    this.body = body ? JSON.stringify(body) : undefined;
     this.params = params ? getParams(params) : undefined;
 
     this._promise = undefined;
@@ -84,6 +83,7 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     this._isFFCall = isFFCall;
     this._isStale = false;
 
+    this._setBody(body);
     const obj = reactive(this) as any as Call<Args, Return>;
     if (this._config?.cache) this._loadFromCache();
     if (this._config?.auto !== false) obj.run();
@@ -127,29 +127,19 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     return this._isStale;
   }
 
-  run() {
+  run(args?: Args, useCache: boolean = true) {
     /**
-     * Use this if auto is false.
+     * Tun used to ensure only a single call is made, for multiple calls use
+     * `rerun`. Use this if auto is false.
      *
      * If auto was not set then run will fetch the cached data if available.
      * To run fetch again while ignoring cached data, use `rerun`.
-     */
-    return this._execute();
-  }
-
-  rerun(args?: Args) {
-    /**
-     * Will reset the call object (i.e. status variables set from the previous
-     * `run`) and then execute the call with new args if provided else it will
-     * use args from the previous `run` or `rerun` call.
      *
-     * Once `rerun` is called, subsequent calls to `run` will fetch the cached
-     * data again.
+     * Note:
+     * - if `run` was already called, the passed args will be ignored.
      */
-    this._reset();
-    if (typeof args === "object" && args !== null) {
-      this.body = JSON.stringify(args);
-    }
+    if (!useCache) this._reset();
+    if (!this._promise) this._setBody(args);
     return this._execute();
   }
 
@@ -270,6 +260,12 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
       this.params ?? "<noparams>",
     ].join(":");
     return hash(raw);
+  }
+
+  private _setBody(args?: unknown) {
+    if (typeof args !== "object" || args === null) return;
+
+    this.body = JSON.stringify(args);
   }
 }
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import frappe
 
@@ -14,6 +14,7 @@ from otto.api.types import (
 	RealtimeItem,
 	RealtimePong,
 	RealtimeRequest,
+	RealtimeRequestAcknowledge,
 	RealtimeToolExecutionComplete,
 	RealtimeToolExecutionUpdate,
 )
@@ -170,6 +171,48 @@ def get_pending_requests(chat_id: str) -> list[PendingRequest]:
 
 	chat = otto.get(OttoChat, chat_id)
 	return [_get_req_from_opr(opr) for opr in chat.get_pending_requests()]
+
+
+@frappe.whitelist()
+def acknowledge_request(
+	request_id: str,
+	status: Literal["Granted", "Denied"],
+) -> None:
+	from otto.otto.doctype.otto_permission_request.otto_permission_request import OttoPermissionRequest
+
+	opr = otto.get(OttoPermissionRequest, request_id)
+	opr.acknowledge(status=status)
+
+	message = RealtimeRequestAcknowledge(
+		id=frappe.generate_hash(length=10),
+		chat_id=opr.session,
+		type="request-acknowledge",
+		data=[opr.tool_use_id],
+	)
+	_publish(message)
+
+
+@frappe.whitelist()
+def acknowledge_all_requests(
+	chat_id: str,
+	status: Literal["Granted", "Denied"],
+) -> None:
+	from otto.otto.doctype.otto_chat.otto_chat import OttoChat
+
+	tool_use_ids = []
+
+	chat = otto.get(OttoChat, chat_id)
+	for opr in chat.get_pending_requests():
+		tool_use_ids.append(opr.tool_use_id)
+		opr.acknowledge(status=status)
+
+	message = RealtimeRequestAcknowledge(
+		id=frappe.generate_hash(length=10),
+		chat_id=chat_id,
+		type="request-acknowledge",
+		data=tool_use_ids,
+	)
+	_publish(message)
 
 
 def _check_pending_requests(chat: OttoChat, chat_id: str) -> None:

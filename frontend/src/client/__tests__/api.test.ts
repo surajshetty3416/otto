@@ -277,7 +277,7 @@ describe("api object", () => {
       await waitForCall(result);
       expect(result.data).toBe("first");
 
-      result.rerun({ message: "second" });
+      result.run({ message: "second" }, false);
       await waitForCall(result);
       expect(result.data).toBe("second");
     });
@@ -292,7 +292,7 @@ describe("api object", () => {
       const random2 = await result.run();
       expect(random2).toBe(random1);
 
-      const random3 = await result.rerun();
+      const random3 = await result.run(undefined, false);
       expect(random3).not.toBe(random1);
     });
   });

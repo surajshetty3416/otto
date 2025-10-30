@@ -1,6 +1,5 @@
 <template>
 	<div class="markdown-content prose prose-sm max-w-none" v-html="renderedContent"></div>
-	<!-- <div class="markdown-content" v-html="renderedContent"></div> -->
 </template>
 
 <script setup lang="ts">
@@ -77,6 +76,7 @@ const renderedContent = computed(() => {
 
 	/* Default base font size - can be overridden via inline styles */
 	font-size: 1rem;
+	font-weight: var(--md-font-weight-medium);
 	line-height: var(--md-line-height-base);
 }
 
@@ -114,7 +114,7 @@ const renderedContent = computed(() => {
 
 .markdown-content :deep(h5) {
 	font-size: var(--md-font-size-h5);
-	font-weight: var(--md-font-weight-medium);
+	font-weight: var(--md-font-weight-semibold);
 	line-height: var(--md-line-height-heading);
 	margin-top: var(--md-spacing-heading-top);
 	margin-bottom: var(--md-spacing-heading-bottom);
@@ -122,7 +122,7 @@ const renderedContent = computed(() => {
 
 .markdown-content :deep(h6) {
 	font-size: var(--md-font-size-h6);
-	font-weight: var(--md-font-weight-medium);
+	font-weight: var(--md-font-weight-semibold);
 	line-height: var(--md-line-height-heading);
 	margin-top: var(--md-spacing-heading-top);
 	margin-bottom: var(--md-spacing-heading-bottom);
@@ -130,12 +130,7 @@ const renderedContent = computed(() => {
 
 .markdown-content :deep(p) {
 	font-size: var(--md-font-size-base);
-	font-weight: var(--md-font-weight-normal);
 	margin-bottom: var(--md-spacing-paragraph);
-}
-
-.markdown-content :deep(a) {
-	font-weight: var(--md-font-weight-medium);
 }
 
 .markdown-content :deep(code) {

@@ -11,25 +11,18 @@
 				<Wrench class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
 				{{ title }}
 
-				<span
-					:title="content.status"
-					class="w-1 h-1 bg-gray-300 rounded-full"
-					:class="{
-						'bg-yellow-400': content.status === 'pending',
-						'bg-green-400': content.status === 'success',
-						'bg-red-400': content.status === 'error',
-					}"
-				></span>
+				<IndicatorDot :color="statusColor" />
 			</h3>
 
 			<button @click="isOpen = false">
-				<X class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
+				<X class="h-3.5 w-3.5 text-gray-800 flex-shrink-0" stroke-width="1.5" />
 			</button>
 		</div>
 
 		<!-- Tool Use Details -->
 		<div>
-			<div class="border-b">
+			<!-- Args container -->
+			<div>
 				<p class="text-xs font-medium text-gray-600 px-1.5 pt-1.5">Args</p>
 				<template v-for="arg in Object.keys(content.args)" :key="arg">
 					<div v-if="!(config?.use_explanation && arg === 'explanation')">
@@ -50,14 +43,51 @@
 				</p>
 			</div>
 
-			<div class="p-1.5" title="Result of the tool use">
+			<!-- Result container -->
+			<div
+				v-if="content.status !== 'pending'"
+				class="p-1.5 border-t"
+				title="Result of the tool use"
+			>
 				<p class="text-sm font-medium text-gray-600">Result</p>
 				<pre class="text-sm text-gray-800 pt-2">{{ content.result }}</pre>
+			</div>
+
+			<!-- Permission container -->
+			<div v-if="request" class="p-1.5 flex items-center justify-between border-t">
+				<div class="flex items-center gap-2">
+					<IndicatorDot color="yellow" />
+					<p class="text-sm font-medium text-gray-700">Allow running this tool?</p>
+				</div>
+
+				<div class="ml-2 flex items-center gap-1">
+					<SmallButton
+						:loading="acknowledge_request.loading"
+						@click="
+							acknowledge_request.run({
+								request_id: request.name,
+								status: 'Denied',
+							})
+						"
+						>No</SmallButton
+					>
+					<SmallButton
+						:loading="acknowledge_request.loading"
+						:isPrimary="true"
+						@click="
+							acknowledge_request.run({
+								request_id: request.name,
+								status: 'Granted',
+							})
+						"
+						>Yes</SmallButton
+					>
+				</div>
 			</div>
 		</div>
 	</div>
 
-	<!-- Open Tool Use -->
+	<!-- Collapsed Tool Use Pill -->
 	<div v-else class="inline-block mr-1.5 my-1.5">
 		<button
 			@click="isOpen = true"
@@ -67,22 +97,52 @@
 			<p class="text-sm font-medium text-gray-700">
 				{{ title }}
 			</p>
+			<IndicatorDot v-if="content.status !== 'success' && !request" :color="statusColor" />
 			<div
-				v-if="content.status !== 'success'"
-				class="w-1 h-1 bg-gray-300 rounded-full"
-				:class="{
-					'bg-yellow-400': content.status === 'pending',
-					'bg-red-400': content.status === 'error',
-				}"
-			></div>
+				v-if="request"
+				class="ml-2 flex items-center gap-1"
+				title="Permission required to run this tool"
+			>
+				<SmallButton
+					:rounded="true"
+					:loading="acknowledge_request.loading"
+					@click="
+						acknowledge_request.run({ request_id: request.name, status: 'Denied' })
+					"
+				>
+					<X class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
+				</SmallButton>
+				<SmallButton
+					:isPrimary="true"
+					:rounded="true"
+					:loading="acknowledge_request.loading"
+					@click="
+						acknowledge_request.run({ request_id: request.name, status: 'Granted' })
+					"
+				>
+					<Check class="h-3.5 w-3.5 text-gray-700 flex-shrink-0" stroke-width="1.5" />
+				</SmallButton>
+			</div>
 		</button>
 	</div>
 </template>
 <script setup lang="ts">
 import type { ToolUseContent } from "@/client/generated.types";
-import { Wrench, X } from "lucide-vue-next";
+import { Check, Wrench, X } from "lucide-vue-next";
 import { computed, inject, ref } from "vue";
 import { pendingRequestsKey, toolConfigKey } from "./utils";
+import IndicatorDot from "@/components/ui/IndicatorDot.vue";
+import SmallButton from "./SmallButton.vue";
+import { api } from "@/client";
+
+/**
+ * show a semi-collapsed div (hide args) when permission request is required
+ * pill is inline, i.e. multiple tool calls should be shown in a row
+ * full width is when user clicks the i button
+ *
+ * When 'show detailed stats' is enabled show: duration, begin time, end time,
+ * stdout, stderr, permission
+ */
 
 const props = defineProps<{
 	content: ToolUseContent;
@@ -96,17 +156,17 @@ const slug = computed(() => props.content.name);
 const config = computed(() => toolConfigs?.value[slug.value]);
 const title = computed(() => config.value?.title ?? slug.value);
 
-const isAwaitingPermission = computed(() => {
-	if (!pendingRequests) return false;
-	return !!pendingRequests[props.content.id];
-});
+const request = computed(() => pendingRequests?.[props.content.id]);
 
-/**
- * show a semi-collapsed div (hide args) when permission request is required
- * pill is inline, i.e. multiple tool calls should be shown in a row
- * full width is when user clicks the i button
- *
- * When 'show detailed stats' is enabled show: duration, begin time, end time,
- * stdout, stderr, permission
- */
+const acknowledge_request = api.chat.acknowledge_request(
+	{ request_id: "", status: "Granted" },
+	{ auto: false }
+);
+
+const statusColor = computed(() => {
+	if (props.content.status === "pending") return "yellow";
+	if (props.content.status === "error") return "red";
+	if (props.content.status === "success") return "green";
+	return "gray";
+});
 </script>

@@ -14,8 +14,7 @@ if TYPE_CHECKING:
 	from otto.lib.types import ReasoningEffort
 
 # TODO:
-# - tools
-# - re-render instruction on every message
+# - re-render instruction on every message (?)
 DEFAULT_INSTRUCTION = (
 	"You are Otto, a helpful assistant. You are currently speaking to {{user}} and the date is {{date}}."
 )

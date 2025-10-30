@@ -20,8 +20,16 @@
 			</div>
 
 			<!-- Input -->
-			<div class="fixed bottom-4 w-full container-ch chat-input">
-				<ChatInput :loading="isLoading" @send="handleSend" />
+			<div class="fixed bottom-8 w-full container-ch chat-input">
+				<ChatIndicator
+					v-if="chatId"
+					:chatId="chatId"
+					:isLoading="isLoading"
+					:isStreaming="isStreaming"
+					:waitingForStream="waitingForStream"
+					:pendingRequests="pendingRequests"
+				/>
+				<ChatInput :loading="_loading" @send="handleSend" />
 			</div>
 		</div>
 	</div>
@@ -41,6 +49,7 @@ import router from "@/router";
 import socket from "@/socket";
 import { assert } from "@/utils";
 import { computed, onMounted, onUnmounted, provide, reactive, ref } from "vue";
+import ChatIndicator from "./ChatIndicator.vue";
 import ChatInput from "./ChatInput.vue";
 import ChatMessages from "./ChatMessages.vue";
 import type { StreamContext } from "./types";
@@ -48,10 +57,13 @@ import {
 	getUserSessionItem,
 	handleContentChunk,
 	handleItem,
+	handleToolUseUpdate,
 	pendingRequestsKey,
 	streamContextKey,
 	toolConfigKey,
+	updateStreamContext,
 } from "./utils";
+import { toast } from "vue-sonner";
 
 /**
  * When streaming show a spinner above the input about what is going on, e.g.
@@ -61,21 +73,35 @@ import {
  * the dialog below and highlight that the item is open.
  */
 
-// sanity check to avoid duplicates
-const received = new Set<string>();
+const assistant = "1rv777j9m3"; // dummy for now
+const received = new Set<string>(); // sanity check to avoid duplicates
 const props = defineProps<{
 	chatId?: string;
 }>();
 
-const isNew = computed(() => !props.chatId);
-const assistant = "1rv777j9m3"; // dummy for now
-const isLoading = ref(false); // true if request is being sent
+const _loading = ref(false); // true if request is being sent
 const isStreaming = ref(false); // true if chat is streaming
 const waitingForStream = ref(false); // true if waiting for stream to start
 const messagesContainer = ref<HTMLDivElement | null>(null);
 const messages = reactive<SessionItem[]>([]);
-const streamContext = reactive<StreamContext>({ itemId: "", chunkType: "" });
-const list_tools = api.chat.list_tools({ chat_id: props.chatId! }, { auto: false });
+const streamContext = reactive<StreamContext>({ chunks: [], isStreamingResponse: false });
+const pendingRequests = reactive<Record<string, PendingRequest>>({});
+
+// API calls
+const list_tools = api.chat.list_tools({ chat_id: "" }, { auto: false });
+const get_pending_requests = api.chat.get_pending_requests({ chat_id: "" }, { auto: false });
+const resume_chat = api.chat.resume_chat({ chat_id: "" }, { auto: false });
+const load_chat = api.chat.load_chat({ chat_id: "" }, { auto: false });
+
+const isNew = computed(() => !props.chatId);
+const isLoading = computed(
+	() =>
+		resume_chat.loading ||
+		list_tools.loading ||
+		load_chat.loading ||
+		get_pending_requests.loading ||
+		_loading.value
+);
 const toolConfigs = computed(() => {
 	const configs: Record<string, ToolConfig> = {};
 	for (const tool of list_tools.data ?? []) {
@@ -83,13 +109,15 @@ const toolConfigs = computed(() => {
 	}
 	return configs;
 });
-const pendingRequests = reactive<Record<string, PendingRequest>>({});
-provide(streamContextKey, streamContext);
+
 provide(toolConfigKey, toolConfigs);
+provide(streamContextKey, streamContext);
 provide(pendingRequestsKey, pendingRequests);
 
 async function handleSend(query: string) {
-	isLoading.value = true;
+	if (!canSend(query)) return;
+
+	_loading.value = true;
 	if (isNew.value) {
 		const chatId = await api.chat.new_chat({ assistant });
 		await router.replace({ name: "Chat", params: { chatId } });
@@ -99,15 +127,52 @@ async function handleSend(query: string) {
 
 	assert(props.chatId, "chatId is required");
 	await api.chat.send_query({ chat_id: props.chatId, query });
-	isLoading.value = false;
+	_loading.value = false;
 	waitingForStream.value = true;
-	await list_tools.rerun({ chat_id: props.chatId! });
+	await list_tools.run({ chat_id: props.chatId! }, false);
+}
+
+function canSend(query: string) {
+	if (resume_chat.loading) {
+		toast.info("Resuming chat", {
+			description: "Please wait a response is in progress",
+		});
+		return false;
+	}
+
+	if (isStreaming.value) {
+		toast.info("Model is responding", {
+			description: "Please wait for the current response to complete",
+		});
+		return false;
+	}
+
+	if (waitingForStream.value) {
+		toast.info("Waiting for response", {
+			description: "Please wait for the current response to complete",
+		});
+		return false;
+	}
+
+	if (!query.trim()) {
+		toast.warning("Empty message", {
+			description: "Please enter a message to send",
+		});
+		return false;
+	}
+
+	if (Object.keys(pendingRequests).length > 0) {
+		toast.warning("Request pending", {
+			description: "Please acknowledge all pending requests",
+		});
+
+		return false;
+	}
+	return true;
 }
 
 async function handleResume() {
-	isLoading.value = true;
-	await api.chat.resume_chat({ chat_id: props.chatId! });
-	isLoading.value = false;
+	await resume_chat.run({ chat_id: props.chatId! }, false);
 	waitingForStream.value = true;
 }
 
@@ -119,7 +184,7 @@ function handleRealtimeMessage(message: RealtimeChatMessage) {
 	if (window.is_dev_mode) console.log(message);
 
 	waitingForStream.value = false;
-	setStreamContext(message);
+	updateStreamContext(message, streamContext);
 
 	if (message.chat_id !== props.chatId) return;
 	if (received.has(message.id)) return;
@@ -140,23 +205,18 @@ function handleRealtimeMessage(message: RealtimeChatMessage) {
 			handleToolExecutionComplete();
 			return;
 		case "tool-execution-update":
+			handleToolUseUpdate(message.data, messages);
+			return;
+		case "request-acknowledge":
+			updatePendingRequests(message.data);
 			return;
 		case "error":
+			// TODO: need better error handling
+			toast.error("Error in chat", {
+				description: message.data,
+			});
 			return;
 	}
-}
-
-function setStreamContext(message: RealtimeChatMessage) {
-	if (message.type !== "chunk") {
-		streamContext.itemId = "";
-		streamContext.chunkType = "";
-		return;
-	}
-
-	const chunk = message.data;
-
-	if (chunk.item_id !== streamContext.itemId) streamContext.itemId = chunk.item_id;
-	if (chunk.type !== streamContext.chunkType) streamContext.chunkType = chunk.type;
 }
 
 function handleSystemChunk(chunk: TextContentChunk) {
@@ -174,14 +234,12 @@ onMounted(async () => {
 	socket.on("otto.api.chat", handleRealtimeMessage);
 	if (isNew.value) return;
 
-	isLoading.value = true;
-	for (const message of await api.chat.load_chat({ chat_id: props.chatId! })) {
+	for (const message of await load_chat.run({ chat_id: props.chatId! }, false)) {
 		messages.push(message);
 	}
 
-	await list_tools.run();
+	await list_tools.run({ chat_id: props.chatId! });
 	await updatePendingRequests();
-	isLoading.value = false;
 	scrollToBottom();
 });
 
@@ -193,11 +251,15 @@ function scrollToBottom() {
 	});
 }
 
-async function updatePendingRequests() {
-	Object.keys(pendingRequests).forEach((key) => delete pendingRequests[key]);
-	isLoading.value = true;
-	const prs = await api.chat.get_pending_requests({ chat_id: props.chatId! });
-	isLoading.value = false;
+async function updatePendingRequests(toolUseIds?: string[]) {
+	if (!toolUseIds) {
+		toolUseIds = Object.keys(pendingRequests);
+	}
+
+	for (const toolUseId of toolUseIds) {
+		delete pendingRequests[toolUseId];
+	}
+	const prs = await get_pending_requests.run({ chat_id: props.chatId! }, false);
 	for (const pr of prs) pendingRequests[pr.tool_use_id] = pr;
 }
 

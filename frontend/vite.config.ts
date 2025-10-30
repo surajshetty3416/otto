@@ -1,5 +1,5 @@
 import vue from "@vitejs/plugin-vue";
-imoprt vueDevTools from "vite-plugin-vue-devtools";
+import vueDevTools from "vite-plugin-vue-devtools";
 import fs from "fs";
 import path from "path";
 

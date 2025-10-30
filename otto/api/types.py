@@ -70,6 +70,13 @@ class RealtimeToolExecutionComplete(TypedDict):
 	data: int
 
 
+class RealtimeRequestAcknowledge(TypedDict):
+	id: str
+	chat_id: str
+	type: Literal["request-acknowledge"]
+	data: list[str]  # list of tool use ids that were acknowledged
+
+
 # @export - used for listening to chat messages
 RealtimeChatMessage = (
 	RealtimeError
@@ -79,4 +86,5 @@ RealtimeChatMessage = (
 	| RealtimeRequest
 	| RealtimeToolExecutionUpdate
 	| RealtimeToolExecutionComplete
+	| RealtimeRequestAcknowledge
 )

@@ -3,8 +3,10 @@ import type {
   ContentChunk,
   Meta,
   PendingRequest,
+  RealtimeChatMessage,
   SessionItem,
   ToolConfig,
+  ToolUseUpdate,
 } from "@/client/generated.types";
 import { assert, isEqual } from "@/utils";
 import type { InjectionKey, Ref } from "vue";
@@ -204,6 +206,82 @@ export function handleItem(item: SessionItem, messages: SessionItem[]) {
     }
   }
 }
+
+export function handleToolUseUpdate(
+  update: ToolUseUpdate,
+  messages: SessionItem[]
+) {
+  for (const message of messages) {
+    for (const content of message.content) {
+      if (content.type !== "tool_use" || content.id !== update.id) continue;
+
+      content.status = update.is_error ? "error" : "success";
+      content.stdout = update.stdout;
+      content.stderr = update.stderr;
+      content.start_time = update.start_time;
+      content.end_time = update.end_time;
+
+      let result = update.result;
+      if (typeof result != "string") {
+        try {
+          result = JSON.stringify(result);
+        } catch {
+          result = String(result);
+        }
+      }
+
+      assert(typeof result === "string", "type check");
+      content.result = result;
+    }
+  }
+}
+
+export function updateStreamContext(
+  message: RealtimeChatMessage,
+  streamContext: StreamContext
+) {
+  /**
+   * Stream context will maintain a contiguous stream of similar message chunks
+   * it's mainly used for indicators and to update various UI elements as stream
+   * changes.
+   */
+  if (message.type === "pong") return;
+
+  if (message.type === "chunk" && message.data.type === "system") {
+    switch (message.data.message) {
+      case "start":
+        streamContext.isStreamingResponse = true;
+        break;
+      case "end":
+        streamContext.isStreamingResponse = false;
+        break;
+    }
+    return;
+  }
+
+  if (streamContext.chunks.at(0)?.type !== message.type) {
+    streamContext.chunks.length = 0;
+  }
+
+  if (streamContext.chunks.length === 0) {
+    streamContext.chunks.push(message);
+    return;
+  }
+
+  if (message.type !== "chunk" || message.data.type === "system") return;
+  const last = streamContext.chunks.at(-1)!;
+  assert(last.type === "chunk", "type check");
+
+  if (
+    last.data.type !== message.data.type ||
+    last.data.item_id !== message.data.item_id
+  ) {
+    streamContext.chunks.length = 0;
+  }
+
+  streamContext.chunks.push(message);
+}
+
 
 function getItem(id: string, messages: SessionItem[]) {
   for (let i = messages.length - 1; i >= 0; i--) {

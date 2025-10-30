@@ -188,6 +188,14 @@ class OttoChat(Document):
 			if not config or not config["requires_permission"]:
 				continue
 
+			if bool(
+				frappe.db.exists(
+					"Otto Permission Request",
+					{"session": self.session, "tool_use_id": ptu.id},
+				)
+			):
+				continue
+
 			req = OttoPermissionRequest.new(session=self.session, tool_use_id=ptu.id)
 			requests.append(req)
 		return requests

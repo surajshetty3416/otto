@@ -5,6 +5,7 @@
 			:message="message"
 			class="ml-auto"
 			:class="{ 'mb-8': messages[i + 1]?.meta.role === 'agent' }"
+			style="max-width: 85%"
 		/>
 		<AgentMessage
 			v-if="message.meta.role === 'agent'"

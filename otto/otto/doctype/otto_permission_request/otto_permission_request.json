@@ -65,7 +65,8 @@
    "label": "Status",
    "options": "Pending\nGranted\nDenied",
    "read_only": 1,
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "fieldname": "session",
@@ -195,7 +196,7 @@
  "in_create": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-16 14:35:27.378276",
+ "modified": "2025-10-29 17:58:15.205912",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Permission Request",

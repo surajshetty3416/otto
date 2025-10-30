@@ -17,20 +17,16 @@
 		>
 			<Settings class="w-6 h-6 text-gray-800" stroke-width="1.25" />
 		</button>
-		<button
-			@click="handleSend"
-			:disabled="disabled || loading || !message.trim()"
-			class="bg-gray-900 rounded-full p-1.5 cursor-pointer"
-		>
+		<button @click="handleSend" class="bg-gray-900 rounded-full p-1.5 cursor-pointer">
 			<ChevronUp class="w-6 h-6 text-white" />
 		</button>
 	</div>
 </template>
 
 <script setup>
-import { toast } from "@/components/fui/Toast";
 import { ChevronUp, Settings } from "lucide-vue-next";
 import { ref } from "vue";
+import { toast } from "vue-sonner";
 
 const props = defineProps({
 	loading: {
@@ -49,17 +45,11 @@ const message = ref("");
 
 const handleSend = () => {
 	message.value = message.value.trim();
-	if (props.loading || props.disabled || !message.value) return;
-
 	emit("send", message.value);
 	message.value = "";
 };
 
 function showSettingsDialog() {
-	toast({
-		title: "Settings",
-		message: "Implement this!",
-		type: "warning",
-	});
+	toast.info("Implement this!");
 }
 </script>
