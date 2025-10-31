@@ -18,15 +18,12 @@
 			</div>
 
 			<!-- New chat welcome message -->
-			<div v-if="messages.length === 0" class="mb-8" style="margin-top: 35vh">
+			<div v-if="showNew" class="mb-8" style="margin-top: 35vh">
 				<p class="text-gray-800 text-4xl font-medium">What can I help you with?</p>
 			</div>
 
 			<!-- Input -->
-			<div
-				class="w-full container-ch chat-input"
-				:class="{ 'fixed bottom-8': messages.length !== 0 }"
-			>
+			<div class="w-full container-ch chat-input" :class="{ 'fixed bottom-8': !showNew }">
 				<ChatIndicator
 					v-if="chatId"
 					:chatId="chatId"
@@ -132,6 +129,13 @@ const hasPendingToolExecutions = computed(() => {
 		}
 	}
 	return false;
+});
+const showNew = computed(() => {
+	if (load_chat.loading) return false;
+	if (messages.length > 0) return false;
+	if (props.chatId) return false;
+	if (!load_chat.loading && messages.length === 0 && props.chatId) return true;
+	return true;
 });
 
 provide(toolConfigKey, toolConfigs);

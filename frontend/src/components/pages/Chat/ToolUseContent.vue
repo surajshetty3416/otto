@@ -1,51 +1,45 @@
 <template>
-	<!-- Collapsed Tool Use Pill -->
-	<div class="inline-block mr-1.5">
-		<button
-			@click="isOpen = !isOpen"
-			class="bg-gray-50 border border-gray-200 py-1.5 px-2 w-fit rounded-full flex items-center gap-1.5"
-			:class="isOpen ? 'ring-2 ring-gray-400' : ''"
+	<!-- Toggle Tool Use Details -->
+	<CollapsedContentToggle v-model="isOpen">
+		<Wrench class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
+		<p class="text-sm font-medium text-gray-700">
+			{{ title }}
+		</p>
+		<IndicatorDot v-if="content.status !== 'success' && !request" :color="statusColor" />
+		<div
+			v-if="request"
+			class="ml-2 flex items-center gap-1"
+			title="Permission required to run this tool"
 		>
-			<Wrench class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
-			<p class="text-sm font-medium text-gray-700">
-				{{ title }}
-			</p>
-			<IndicatorDot v-if="content.status !== 'success' && !request" :color="statusColor" />
-			<div
-				v-if="request"
-				class="ml-2 flex items-center gap-1"
-				title="Permission required to run this tool"
+			<SmallButton
+				:rounded="true"
+				:loading="acknowledge_request.loading"
+				@click.stop="
+					acknowledge_request.run({ request_id: request.name, status: 'Denied' })
+				"
 			>
-				<SmallButton
-					:rounded="true"
-					:loading="acknowledge_request.loading"
-					@click.stop="
-						acknowledge_request.run({ request_id: request.name, status: 'Denied' })
-					"
-				>
-					<X class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
-				</SmallButton>
-				<SmallButton
-					:isPrimary="true"
-					:rounded="true"
-					:loading="acknowledge_request.loading"
-					@click.stop="
-						acknowledge_request.run({ request_id: request.name, status: 'Granted' })
-					"
-				>
-					<Check class="h-3.5 w-3.5 text-gray-700 flex-shrink-0" stroke-width="1.5" />
-				</SmallButton>
-			</div>
-		</button>
-	</div>
+				<X class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
+			</SmallButton>
+			<SmallButton
+				:isPrimary="true"
+				:rounded="true"
+				:loading="acknowledge_request.loading"
+				@click.stop="
+					acknowledge_request.run({ request_id: request.name, status: 'Granted' })
+				"
+			>
+				<Check class="h-3.5 w-3.5 text-gray-700 flex-shrink-0" stroke-width="1.5" />
+			</SmallButton>
+		</div>
+	</CollapsedContentToggle>
 
 	<!-- Tool Use Details -->
-	<div v-if="isOpen" class="bg-gray-50 rounded-md border border-gray-200 my-1.5">
+	<ContentContainer v-if="isOpen">
 		<!-- Tool Use Header -->
 		<div
-			class="flex items-center justify-between border-b border-gray-200 p-1.5 cursor-pointer"
+			class="flex items-center justify-between border-b border-gray-300 p-1.5 cursor-pointer"
 			@click.stop="isOpen = false"
-			title="Hide Tool Use"
+			:title="`Tool used: ${title}, Status: ${titlecase(content.status)}`"
 		>
 			<h3 class="text-gray-800 text-xs font-semibold flex items-center gap-1.5">
 				<Wrench class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
@@ -54,7 +48,7 @@
 				<IndicatorDot :color="statusColor" />
 			</h3>
 
-			<button @click="isOpen = false">
+			<button @click="isOpen = false" title="Hide Tool Use">
 				<X class="h-3.5 w-3.5 text-gray-800 flex-shrink-0" stroke-width="1.5" />
 			</button>
 		</div>
@@ -72,7 +66,7 @@
 							{{ arg.name }}
 						</p>
 						<pre
-							class="text-sm text-gray-800 px-1.5 pb-1.5 pt-0.5"
+							class="text-sm text-gray-800 px-1.5 pb-1.5 pt-0.5 whitespace-pre-wrap"
 							:title="`Argument value: ${arg.value}`"
 							>{{ arg.value }}</pre
 						>
@@ -84,7 +78,7 @@
 			<p
 				v-if="config?.use_explanation && content.args.explanation"
 				title="Explanation given by the LLM for using this tool"
-				class="text-xs text-gray-600 border-t border-gray-200 p-1.5"
+				class="text-xs text-gray-600 border-t border-gray-300 p-1.5"
 			>
 				{{ content.args.explanation }}
 			</p>
@@ -92,7 +86,7 @@
 			<!-- Result container -->
 			<div
 				v-if="content.status !== 'pending'"
-				class="p-1.5 border-t"
+				class="p-1.5 border-t border-gray-300"
 				title="Result of the tool use"
 			>
 				<p class="text-xs italic font-medium text-gray-600">Result</p>
@@ -100,7 +94,10 @@
 			</div>
 
 			<!-- Permission container -->
-			<div v-if="request" class="p-1.5 flex items-center justify-between border-t">
+			<div
+				v-if="request"
+				class="p-1.5 flex items-center justify-between border-t border-gray-300"
+			>
 				<div class="flex items-center gap-2">
 					<IndicatorDot color="yellow" />
 					<p class="text-sm font-medium text-gray-700">Allow running this tool?</p>
@@ -131,7 +128,7 @@
 				</div>
 			</div>
 		</div>
-	</div>
+	</ContentContainer>
 </template>
 <script setup lang="ts">
 import type { ToolUseContent } from "@/client/generated.types";
@@ -141,6 +138,9 @@ import { pendingRequestsKey, toolConfigKey } from "./utils";
 import IndicatorDot from "@/components/ui/IndicatorDot.vue";
 import SmallButton from "./SmallButton.vue";
 import { api } from "@/client";
+import CollapsedContentToggle from "./CollapsedContentToggle.vue";
+import ContentContainer from "./ContentContainer.vue";
+import { titlecase } from "@/components/format";
 
 /**
  * show a semi-collapsed div (hide args) when permission request is required
@@ -149,6 +149,9 @@ import { api } from "@/client";
  *
  * When 'show detailed stats' is enabled show: duration, begin time, end time,
  * stdout, stderr, permission
+ * 
+ * Click arg to copy args object or individual arg value
+ * Click result to copy result
  */
 
 const props = defineProps<{
