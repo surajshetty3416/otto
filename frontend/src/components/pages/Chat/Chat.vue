@@ -9,13 +9,24 @@
 			ref="messagesContainer"
 		>
 			<!-- Messages -->
-			<div class="border-gray-200 h-full container-ch chat-messages">
+			<div
+				v-if="messages.length > 0"
+				class="border-gray-200 h-full container-ch chat-messages"
+			>
 				<ChatMessages :messages="messages" />
 				<div style="height: 20vh; flex-shrink: 0"></div>
 			</div>
 
+			<!-- New chat welcome message -->
+			<div v-if="messages.length === 0" class="mb-8" style="margin-top: 35vh">
+				<p class="text-gray-800 text-4xl font-medium">What can I help you with?</p>
+			</div>
+
 			<!-- Input -->
-			<div class="fixed bottom-8 w-full container-ch chat-input">
+			<div
+				class="w-full container-ch chat-input"
+				:class="{ 'fixed bottom-8': messages.length !== 0 }"
+			>
 				<ChatIndicator
 					v-if="chatId"
 					:chatId="chatId"
@@ -47,8 +58,8 @@ import type {
 } from "@/client/generated.types";
 import router from "@/router";
 import socket from "@/socket";
-import { assert } from "@/utils";
-import { computed, nextTick, onMounted, onUnmounted, provide, reactive, ref, watch } from "vue";
+import { assert, sleep } from "@/utils";
+import { computed, onMounted, onUnmounted, provide, reactive, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 import ChatHeader from "./ChatHeader.vue";
 import ChatIndicator from "./ChatIndicator.vue";
@@ -82,6 +93,7 @@ const props = defineProps<{
 	chatId?: string;
 }>();
 
+// Refs and reactives
 const _loading = ref(false); // true if request is being sent
 const isStreaming = ref(false); // true if chat is streaming
 const isWaitingForStream = ref(false); // true if waiting for stream to start
@@ -261,21 +273,6 @@ function handleSystemChunk(chunk: TextContentChunk) {
 	}
 }
 
-onMounted(async () => {
-	socket.on("otto.api.chat", handleRealtimeMessage);
-	if (!props.chatId) return;
-
-	for (const message of await load_chat.run({ chat_id: props.chatId }, false)) {
-		messages.push(message);
-	}
-
-	await list_tools.run({ chat_id: props.chatId });
-	await updatePendingRequests();
-	scrollToBottom();
-});
-
-onUnmounted(() => socket.off("otto.api.chat", handleRealtimeMessage));
-
 function scrollToBottom() {
 	messagesContainer.value?.scrollTo({
 		top: messagesContainer.value?.scrollHeight,
@@ -302,6 +299,68 @@ async function updatePendingRequests(toolUseIds?: string[], clearAll: boolean = 
 	const prs = await get_pending_requests.run({ chat_id: props.chatId! }, false);
 	for (const pr of prs) pendingRequests[pr.tool_use_id] = pr;
 }
+
+onMounted(async () => {
+	socket.on("otto.api.chat", handleRealtimeMessage);
+	await set();
+});
+
+onUnmounted(() => {
+	socket.off("otto.api.chat", handleRealtimeMessage);
+	clear(); // no-op
+});
+
+function clear() {
+	// Since the component is reused, local state should be reset
+	_loading.value = false;
+	isStreaming.value = false;
+	isWaitingForStream.value = false;
+	messages.length = 0;
+	streamContext.messages.length = 0;
+	streamContext.isStreamingResponse = false;
+	Object.keys(pendingRequests).forEach((key) => delete pendingRequests[key]);
+
+	list_tools.reset();
+	get_pending_requests.reset();
+	resume_chat.reset();
+	load_chat.reset();
+}
+
+async function set() {
+	if (!props.chatId) return;
+	await list_tools.run({ chat_id: props.chatId }, false);
+	await updatePendingRequests();
+	await loadChat();
+}
+
+async function loadChat() {
+	assert(props.chatId, "chatId is required"); // type check (caller should ensure)
+	const messageIds = messages.map((message) => message.id);
+	for (const message of await load_chat.run({ chat_id: props.chatId }, false)) {
+		if (messageIds.includes(message.id)) continue;
+		messages.push(message);
+	}
+
+	sleep(10).then(() => scrollToBottom());
+}
+
+watch(
+	() => props.chatId,
+	(newVal, oldVal, onCleanup) => {
+		if (newVal === oldVal) return;
+
+		// cancel requests called in `set` if id change
+		const controller = new AbortController();
+		list_tools.signal = controller.signal;
+		get_pending_requests.signal = controller.signal;
+		load_chat.signal = controller.signal;
+		onCleanup(() => controller.abort());
+
+		clear();
+		set();
+	},
+	{ immediate: true, flush: "sync" }
+);
 </script>
 <style scoped>
 .container-ch {

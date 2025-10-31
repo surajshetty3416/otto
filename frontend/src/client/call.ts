@@ -60,6 +60,8 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
   private _isFFCall: boolean;
   private _isStale: boolean;
   private _promise?: Promise<Return>;
+  private _signal?: AbortSignal;
+  private _aborted: boolean;
 
   constructor(
     method: string,
@@ -76,10 +78,11 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     this._promise = undefined;
     this._loading = false;
     this._failed = false;
+    this._aborted = false;
     this._response = undefined;
     this._error = undefined;
     this._exception = undefined;
-    this._config = config;
+    this._config = { ...config };
     this._isFFCall = isFFCall;
     this._isStale = false;
 
@@ -101,6 +104,10 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
 
   get failed() {
     return this._failed;
+  }
+
+  get aborted() {
+    return this._aborted;
   }
 
   get promise() {
@@ -127,7 +134,11 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     return this._isStale;
   }
 
-  run(args?: Args, useCache: boolean = true) {
+  set signal(signal: AbortSignal) {
+    this._signal = signal;
+  }
+
+  run(args?: Args, useCache: boolean = true, signal?: AbortSignal) {
     /**
      * Tun used to ensure only a single call is made, for multiple calls use
      * `rerun`. Use this if auto is false.
@@ -137,9 +148,11 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
      *
      * Note:
      * - if `run` was already called, the passed args will be ignored.
+     * - if `signal` is provided it will be used instead of config.signal.
      */
     if (!useCache) this._reset();
     if (!this._promise) this._setBody(args);
+    if (signal) this._signal = signal;
     return this._execute();
   }
 
@@ -178,6 +191,7 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
       method: this.method,
       body: this.body,
       headers: getHeaders(this._isFFCall),
+      signal: this._signal, // ?? this._config?.signal;
     };
 
     let data: Return;
@@ -200,6 +214,9 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
         this._exception = getError(json);
       }
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError")
+        this._aborted = true;
+
       this._setClientError(error);
       throw error;
     } finally {
@@ -217,6 +234,10 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     window.LOG_ERRORS && logClientError(this.url, this.method, error);
   }
 
+  reset() {
+    this._reset();
+  }
+
   private _reset() {
     this._promise = undefined;
     this._data = undefined;
@@ -225,6 +246,9 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     this._response = undefined;
     this._exception = undefined;
     this._error = undefined;
+    this._aborted = false;
+    this._signal = undefined;
+    // if (this._config) this._config.signal = undefined;
   }
 
   private async _saveToCache(): Promise<void> {

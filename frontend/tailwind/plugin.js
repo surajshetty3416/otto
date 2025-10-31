@@ -148,6 +148,14 @@ module.exports = plugin(
             letterSpacing: '0.005em',
           },
         ],
+        '4xl': [
+          '28px',
+          {
+            lineHeight: '1.15',
+            fontWeight: 400,
+            letterSpacing: '0.005em',
+          },
+        ],
         // font size for paragraphs
         'p-2xs': [
           '11px',

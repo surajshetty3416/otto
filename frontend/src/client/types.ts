@@ -31,6 +31,7 @@ export interface Config {
   ttl?: number; // seconds, if not set cache invalidate only on api response
   key?: string; // if not set, hash of url, method, body, params is used
   auto?: boolean; // default true, if false then call is not executed
+  // signal?: AbortSignal; // if set, the call is aborted when the signal is aborted
 }
 
 export type API = _API<OttoAPI>;
