@@ -32,7 +32,7 @@
 					:isWaitingForStream="isWaitingForStream"
 					:pendingRequests="pendingRequests"
 				/>
-				<ChatInput :loading="_loading" @send="handleSend" />
+				<ChatInput :loading="_loading" @send="handleSend" v-model="query" />
 			</div>
 		</div>
 	</div>
@@ -56,7 +56,7 @@ import type {
 import router from "@/router";
 import socket from "@/socket";
 import { assert, sleep } from "@/utils";
-import { computed, onMounted, onUnmounted, provide, reactive, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, provide, reactive, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 import ChatHeader from "./ChatHeader.vue";
 import ChatIndicator from "./ChatIndicator.vue";
@@ -64,7 +64,6 @@ import ChatInput from "./ChatInput.vue";
 import ChatMessages from "./ChatMessages.vue";
 import type { StreamContext } from "./types";
 import {
-	getToolUseContent,
 	getUserSessionItem,
 	handleContentChunk,
 	handleItem,
@@ -92,6 +91,7 @@ const props = defineProps<{
 
 // Refs and reactives
 const _loading = ref(false); // true if request is being sent
+const query = ref("");
 const isStreaming = ref(false); // true if chat is streaming
 const isWaitingForStream = ref(false); // true if waiting for stream to start
 const messagesContainer = ref<HTMLDivElement | null>(null);
@@ -142,21 +142,26 @@ provide(toolConfigKey, toolConfigs);
 provide(streamContextKey, streamContext);
 provide(pendingRequestsKey, pendingRequests);
 
-async function handleSend(query: string) {
-	if (!canSend(query)) return;
+async function handleSend() {
+	const _query = query.value.trim();
+	if (!canSend(_query)) return;
 
 	_loading.value = true;
+	await nextTick(); // ensure loading is shown
+
 	if (!props.chatId) {
 		const chatId = await api.chat.new_chat({ assistant });
 		await router.replace({ name: "Chat", params: { chatId } });
-		await updatePendingRequests();
+		await nextTick(); // ensure chatId updates post routing
 	}
-	appendUserMessage(query);
 
-	assert(props.chatId, "chatId is required");
-	await api.chat.send_query({ chat_id: props.chatId, query });
+	assert(props.chatId, "sanity check");
+	appendUserMessage(query.value);
+	await api.chat.send_query({ chat_id: props.chatId, query: _query });
+	query.value = "";
 	_loading.value = false;
 	isWaitingForStream.value = true;
+	await nextTick(); // dom state change
 	await list_tools.run({ chat_id: props.chatId! }, false);
 }
 
@@ -182,7 +187,7 @@ function canSend(query: string) {
 		return false;
 	}
 
-	if (!query.trim()) {
+	if (!query) {
 		toast.warning("Empty message", {
 			description: "Please enter a message to send",
 		});
@@ -234,16 +239,16 @@ function handleRealtimeMessage(message: RealtimeChatMessage) {
 			handleItem(message.data, messages);
 			return;
 		case "request":
-			handleRequest(message.data);
+			pendingRequests[message.data.tool_use_id] = message.data;
 			return;
 		case "tool-execution-update":
 			handleToolUseUpdate(message.data, messages);
 			return;
 		case "tool-execution-complete":
-			updateRequestsAndResume();
+			updatePendingRequestsAndResume();
 			return;
 		case "request-acknowledge":
-			updateRequestsAndResume(message.data);
+			updatePendingRequestsAndResume(message.data);
 			return;
 		case "error":
 			toast.error("Error in chat", {
@@ -251,19 +256,6 @@ function handleRealtimeMessage(message: RealtimeChatMessage) {
 			});
 			return;
 	}
-}
-
-function handleRequest(pr: PendingRequest) {
-	pendingRequests[pr.tool_use_id] = pr;
-	const tool = getToolUseContent(pr.tool_use_id, messages);
-	if (!tool) return;
-
-	const config = toolConfigs.value[tool.name];
-	if (!config) return;
-
-	toast.info("Permission request", {
-		description: `Requested to run ${config.title}`,
-	});
 }
 
 function handleSystemChunk(chunk: TextContentChunk) {
@@ -284,35 +276,18 @@ function scrollToBottom() {
 	});
 }
 
-async function updateRequestsAndResume(toolUseIds?: string[]) {
-	await updatePendingRequests(toolUseIds);
-	if (Object.keys(pendingRequests).length > 0) return;
+async function updatePendingRequestsAndResume(toolUseIds?: string[]) {
+	if (toolUseIds) {
+		toolUseIds.forEach((toolUseId) => delete pendingRequests[toolUseId]);
+		await nextTick(); // indicator update before refetch
+	}
+
+	await get_pending_requests.run({ chat_id: props.chatId! }, false);
+	assert(get_pending_requests.data, "sanity check");
+
+	if (get_pending_requests.data.length > 0) return;
 	await handleResume();
 }
-
-async function updatePendingRequests(toolUseIds?: string[], clearAll: boolean = false) {
-	if (!toolUseIds) {
-		toolUseIds = clearAll ? Object.keys(pendingRequests) : [];
-	}
-
-	for (const toolUseId of toolUseIds) {
-		delete pendingRequests[toolUseId];
-	}
-
-	if (!props.chatId) return;
-	const prs = await get_pending_requests.run({ chat_id: props.chatId! }, false);
-	for (const pr of prs) pendingRequests[pr.tool_use_id] = pr;
-}
-
-onMounted(async () => {
-	socket.on("otto.api.chat", handleRealtimeMessage);
-	await set();
-});
-
-onUnmounted(() => {
-	socket.off("otto.api.chat", handleRealtimeMessage);
-	clear(); // no-op
-});
 
 function clear() {
 	// Since the component is reused, local state should be reset
@@ -333,7 +308,7 @@ function clear() {
 async function set() {
 	if (!props.chatId) return;
 	await list_tools.run({ chat_id: props.chatId }, false);
-	await updatePendingRequests();
+	await get_pending_requests.run({ chat_id: props.chatId }, false);
 	await loadChat();
 }
 
@@ -348,10 +323,15 @@ async function loadChat() {
 	sleep(10).then(() => scrollToBottom());
 }
 
+onMounted(async () => socket.on("otto.api.chat", handleRealtimeMessage));
+onUnmounted(() => socket.off("otto.api.chat", handleRealtimeMessage));
+
 watch(
 	() => props.chatId,
 	(newVal, oldVal, onCleanup) => {
 		if (newVal === oldVal) return;
+
+		clear();
 
 		// cancel requests called in `set` if id change
 		const controller = new AbortController();
@@ -360,10 +340,21 @@ watch(
 		load_chat.signal = controller.signal;
 		onCleanup(() => controller.abort());
 
-		clear();
 		set();
 	},
 	{ immediate: true, flush: "sync" }
+);
+
+watch(
+	() => get_pending_requests.data,
+	(newVal) => {
+		if (!newVal) return; // new value empty on clear, it will be set again
+		Object.keys(pendingRequests).forEach((key) => delete pendingRequests[key]);
+		for (const pr of newVal) {
+			pendingRequests[pr.tool_use_id] = pr;
+		}
+	},
+	{ immediate: true }
 );
 </script>
 <style scoped>

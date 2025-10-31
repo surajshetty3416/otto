@@ -1,7 +1,12 @@
 <template>
 	<!-- Dont destroy the chat component, reuse it (reset, refetch) -->
 	<router-view />
-	<Toaster position="bottom-right" :close-button="true" close-button-position="top-right" />
+	<Toaster
+		position="bottom-right"
+		:close-button="true"
+		close-button-position="top-right"
+		:duration="3000"
+	/>
 </template>
 
 <script setup lang="ts">

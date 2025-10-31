@@ -76,7 +76,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-16 14:35:56.163561",
+ "modified": "2025-10-31 13:44:35.691996",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Assistant",
@@ -96,6 +96,7 @@
   }
  ],
  "row_format": "Dynamic",
+ "show_title_field_in_link": 1,
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],

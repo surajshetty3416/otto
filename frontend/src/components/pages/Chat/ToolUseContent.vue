@@ -5,28 +5,20 @@
 		<p class="text-sm font-medium text-gray-700">
 			{{ title }}
 		</p>
-		<IndicatorDot v-if="content.status !== 'success' && !request" :color="statusColor" />
+		<IndicatorDot v-if="content.status !== 'success' && !hasPending" :color="statusColor" />
 		<div
-			v-if="request"
+			v-if="hasPending"
 			class="ml-2 flex items-center gap-1"
 			title="Permission required to run this tool"
 		>
-			<SmallButton
-				:rounded="true"
-				:loading="acknowledge_request.loading"
-				@click.stop="
-					acknowledge_request.run({ request_id: request.name, status: 'Denied' })
-				"
-			>
+			<SmallButton :rounded="true" :loading="acknowledge_request.loading" @click.stop="deny">
 				<X class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
 			</SmallButton>
 			<SmallButton
 				:isPrimary="true"
 				:rounded="true"
 				:loading="acknowledge_request.loading"
-				@click.stop="
-					acknowledge_request.run({ request_id: request.name, status: 'Granted' })
-				"
+				@click.stop="grant"
 			>
 				<Check class="h-3.5 w-3.5 text-gray-700 flex-shrink-0" stroke-width="1.5" />
 			</SmallButton>
@@ -41,11 +33,24 @@
 			@click.stop="isOpen = false"
 			:title="`Tool used: ${title}, Status: ${titlecase(content.status)}`"
 		>
-			<h3 class="text-gray-800 text-xs font-semibold flex items-center gap-1.5">
+			<h3 class="text-gray-800 text-xs font-semibold flex items-baseline gap-2">
 				<Wrench class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
-				{{ title }}
+				<span title="Tool label">
+					{{ title }}
+				</span>
+				<span
+					title="Tool slug"
+					v-if="config"
+					class="font-mono text-xs font-medium text-gray-500"
+				>
+					{{ config.slug }}
+				</span>
 
-				<IndicatorDot :color="statusColor" />
+				<IndicatorDot
+					class="self-center"
+					:title="`Tool status: ${content.status}`"
+					:color="statusColor"
+				/>
 			</h3>
 
 			<button @click="isOpen = false" title="Hide Tool Use">
@@ -95,34 +100,22 @@
 
 			<!-- Permission container -->
 			<div
-				v-if="request"
+				v-if="hasPending"
 				class="p-1.5 flex items-center justify-between border-t border-gray-300"
 			>
 				<div class="flex items-center gap-2">
 					<IndicatorDot color="yellow" />
-					<p class="text-sm font-medium text-gray-700">Allow running this tool?</p>
+					<p class="text-sm font-medium text-gray-700">Run this tool?</p>
 				</div>
 
 				<div class="ml-2 flex items-center gap-1">
-					<SmallButton
-						:loading="acknowledge_request.loading"
-						@click="
-							acknowledge_request.run({
-								request_id: request.name,
-								status: 'Denied',
-							})
-						"
+					<SmallButton :loading="acknowledge_request.loading" @click="deny"
 						>No</SmallButton
 					>
 					<SmallButton
 						:loading="acknowledge_request.loading"
 						:isPrimary="true"
-						@click="
-							acknowledge_request.run({
-								request_id: request.name,
-								status: 'Granted',
-							})
-						"
+						@click="grant"
 						>Yes</SmallButton
 					>
 				</div>
@@ -149,7 +142,7 @@ import { titlecase } from "@/components/format";
  *
  * When 'show detailed stats' is enabled show: duration, begin time, end time,
  * stdout, stderr, permission
- * 
+ *
  * Click arg to copy args object or individual arg value
  * Click result to copy result
  */
@@ -173,15 +166,24 @@ const args = computed(() => {
 	}
 	return args;
 });
-
 const request = computed(() => pendingRequests?.[props.content.id]);
 
 const acknowledge_request = api.chat.acknowledge_request(
 	{ request_id: "", status: "Granted" },
 	{ auto: false }
 );
+const hasPending = computed(() => !!request.value && !acknowledge_request.done);
+function grant() {
+	if (!request.value) return;
+	acknowledge_request.run({ request_id: request.value.name, status: "Granted" }, false);
+}
+function deny() {
+	if (!request.value) return;
+	acknowledge_request.run({ request_id: request.value.name, status: "Denied" }, false);
+}
 
 const statusColor = computed(() => {
+	if (hasPending.value) return "orange";
 	if (props.content.status === "pending") return "yellow";
 	if (props.content.status === "error") return "red";
 	if (props.content.status === "success") return "green";

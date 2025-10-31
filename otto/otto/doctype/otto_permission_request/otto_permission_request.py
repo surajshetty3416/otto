@@ -26,14 +26,8 @@ class OttoPermissionRequest(Document):
 
 		args_updated: DF.Check
 		denied_reason: DF.Data | None
-		execution: DF.Link | None
 		session: DF.Link
 		status: DF.Literal["Pending", "Granted", "Denied"]
-		target: DF.DynamicLink | None
-		target_doctype: DF.Link | None
-		task: DF.Link | None
-		tool_name: DF.Link | None
-		tool_use_args: DF.Code | None
 		tool_use_id: DF.Data
 	# end: auto-generated types
 
@@ -63,6 +57,7 @@ class OttoPermissionRequest(Document):
 				"Otto Chat",
 				filters={"session": self.session},
 				fields=["name", "title", "assistant"],
+				limit=1,
 			)
 			self._chat = chats[0] if chats else None
 		return self._chat or {}

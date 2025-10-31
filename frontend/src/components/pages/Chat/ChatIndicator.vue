@@ -38,8 +38,8 @@
 				<p class="text-sm text-gray-600">
 					{{
 						pendingRequestsCount > 1
-							? `Allow running ${pendingRequestsCount} pending tools?`
-							: "Allow running pending tool?"
+							? `Run ${pendingRequestsCount} pending tools?`
+							: "Run pending tool?"
 					}}
 				</p>
 			</div>

@@ -58,10 +58,11 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
   private _exception?: ServerException;
   private _config?: Config;
   private _isFFCall: boolean;
-  private _isStale: boolean;
+  private _stale: boolean;
   private _promise?: Promise<Return>;
   private _signal?: AbortSignal;
   private _aborted: boolean;
+  private _done: boolean;
 
   constructor(
     method: string,
@@ -84,7 +85,8 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     this._exception = undefined;
     this._config = { ...config };
     this._isFFCall = isFFCall;
-    this._isStale = false;
+    this._stale = false;
+    this._done = false;
 
     this._setBody(body);
     const obj = reactive(this) as any as Call<Args, Return>;
@@ -130,8 +132,14 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     return this._response?.status;
   }
 
-  get isStale() {
-    return this._isStale;
+  get stale() {
+    return this._stale;
+  }
+
+  // Indicates that the request has been completed. Useful for
+  // when data may be `undefined` or `null`.
+  get done() {
+    return this._done;
   }
 
   set signal(signal: AbortSignal) {
@@ -209,7 +217,8 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
       }
 
       this._data = data;
-      this._isStale = false;
+      this._stale = false;
+      this._done = true;
       if (this._failed && this._isFFCall) {
         this._exception = getError(json);
       }
@@ -239,6 +248,7 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
   }
 
   private _reset() {
+    this._done = false;
     this._promise = undefined;
     this._data = undefined;
     this._loading = false;
@@ -273,7 +283,7 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
 
     if (typeof data === "undefined") return;
     this._data = data as Return;
-    this._isStale = true;
+    this._stale = true;
   }
 
   private _getkey(): number {

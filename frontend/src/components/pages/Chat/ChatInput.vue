@@ -4,7 +4,7 @@
 		style="box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.06), 0px 1px 2px rgba(0, 0, 0, 0.08)"
 	>
 		<input
-			v-model="message"
+			v-model="model"
 			type="text"
 			placeholder="Ask..."
 			:disabled="disabled || loading"
@@ -25,7 +25,6 @@
 
 <script setup>
 import { ChevronUp, Settings } from "lucide-vue-next";
-import { ref } from "vue";
 import { toast } from "vue-sonner";
 
 const props = defineProps({
@@ -40,13 +39,10 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["send"]);
-
-const message = ref("");
+const model = defineModel({ type: String, required: true });
 
 const handleSend = () => {
-	message.value = message.value.trim();
-	emit("send", message.value);
-	message.value = "";
+	emit("send");
 };
 
 function showSettingsDialog() {

@@ -187,11 +187,15 @@ def acknowledge_request(
 	from otto.otto.doctype.otto_permission_request.otto_permission_request import OttoPermissionRequest
 
 	opr = otto.get(OttoPermissionRequest, request_id)
+	old_status = opr.status
+
 	opr.acknowledge(status=status)
+	if not opr.chat or old_status != "Pending":  # prevent double publish
+		return
 
 	message = RealtimeRequestAcknowledge(
 		id=frappe.generate_hash(length=10),
-		chat_id=opr.session,
+		chat_id=opr.chat,
 		type="request-acknowledge",
 		data=[opr.tool_use_id],
 	)
