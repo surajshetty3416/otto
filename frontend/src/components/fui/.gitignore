@@ -6,6 +6,7 @@
 /*.vue
 
 !Button/
+!Select/
 !LoadingIndicator.vue
 !ErrorMessage.vue
 !TextInput.vue

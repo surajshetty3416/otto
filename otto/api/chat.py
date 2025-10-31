@@ -221,6 +221,16 @@ def acknowledge_all_requests(
 	_publish(message)
 
 
+@frappe.whitelist()
+def delete_chat(chat_id: str) -> None:
+	from otto.otto.doctype.otto_chat.otto_chat import OttoChat
+
+	for scrapbook_name in frappe.get_all("Otto Scrapbook", filters={"chat": chat_id}, pluck="name"):
+		frappe.set_value("Otto Scrapbook", scrapbook_name, "chat", None)
+
+	otto.get(OttoChat, chat_id).delete()
+
+
 def _check_pending_requests(chat: OttoChat, chat_id: str) -> None:
 	pending_requests = chat.get_pending_requests()
 	for opr in pending_requests:

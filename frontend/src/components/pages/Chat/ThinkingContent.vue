@@ -1,4 +1,15 @@
 <template>
+	<!-- Show Thought -->
+	<div class="inline-block rounded-full mr-1.5" :class="isOpen ? 'ring-2 ring-gray-400' : ''">
+		<button
+			title="Show Thought"
+			class="bg-gray-50 border border-gray-200 p-1.5 w-fit rounded-full items-center justify-center"
+			@click="isOpen = !isOpen"
+		>
+			<Brain class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
+		</button>
+	</div>
+
 	<div v-if="isOpen || isStreaming" class="bg-gray-50 rounded-md border border-gray-200 my-1.5">
 		<!-- Thought Header -->
 		<div
@@ -19,17 +30,6 @@
 		<Markdown class="p-1.5 last:pb-0" style="font-style: italic; font-size: 85%">{{
 			content.text
 		}}</Markdown>
-	</div>
-
-	<!-- Show Thought -->
-	<div v-else class="inline-block mr-1.5 my-1.5">
-		<button
-			title="Show Thought"
-			class="bg-gray-50 border border-gray-200 p-1.5 w-fit rounded-full items-center justify-center"
-			@click="isOpen = true"
-		>
-			<Brain class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
-		</button>
 	</div>
 </template>
 <script setup lang="ts">

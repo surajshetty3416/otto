@@ -48,7 +48,7 @@ import type {
 import router from "@/router";
 import socket from "@/socket";
 import { assert } from "@/utils";
-import { computed, onMounted, onUnmounted, provide, reactive, ref } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, provide, reactive, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 import ChatHeader from "./ChatHeader.vue";
 import ChatIndicator from "./ChatIndicator.vue";
@@ -75,7 +75,8 @@ import {
  * the dialog below and highlight that the item is open.
  */
 
-const assistant = "1rv777j9m3"; // dummy for now
+// const assistant = "1rv777j9m3"; // Sonnet 4.5 with reasoning
+const assistant = "5t44lus4lh"; // Haiku
 const received = new Set<string>(); // sanity check to avoid duplicates
 const props = defineProps<{
 	chatId?: string;
@@ -95,7 +96,6 @@ const get_pending_requests = api.chat.get_pending_requests({ chat_id: "" }, { au
 const resume_chat = api.chat.resume_chat({ chat_id: "" }, { auto: false });
 const load_chat = api.chat.load_chat({ chat_id: "" }, { auto: false });
 
-const isNew = computed(() => !props.chatId);
 const isLoading = computed(
 	() =>
 		resume_chat.loading ||
@@ -130,7 +130,7 @@ async function handleSend(query: string) {
 	if (!canSend(query)) return;
 
 	_loading.value = true;
-	if (isNew.value) {
+	if (!props.chatId) {
 		const chatId = await api.chat.new_chat({ assistant });
 		await router.replace({ name: "Chat", params: { chatId } });
 		await updatePendingRequests();
@@ -263,13 +263,13 @@ function handleSystemChunk(chunk: TextContentChunk) {
 
 onMounted(async () => {
 	socket.on("otto.api.chat", handleRealtimeMessage);
-	if (isNew.value) return;
+	if (!props.chatId) return;
 
-	for (const message of await load_chat.run({ chat_id: props.chatId! }, false)) {
+	for (const message of await load_chat.run({ chat_id: props.chatId }, false)) {
 		messages.push(message);
 	}
 
-	await list_tools.run({ chat_id: props.chatId! });
+	await list_tools.run({ chat_id: props.chatId });
 	await updatePendingRequests();
 	scrollToBottom();
 });
@@ -289,15 +289,16 @@ async function updateRequestsAndResume(toolUseIds?: string[]) {
 	await handleResume();
 }
 
-async function updatePendingRequests(toolUseIds?: string[]) {
+async function updatePendingRequests(toolUseIds?: string[], clearAll: boolean = false) {
 	if (!toolUseIds) {
-		toolUseIds = Object.keys(pendingRequests);
+		toolUseIds = clearAll ? Object.keys(pendingRequests) : [];
 	}
 
 	for (const toolUseId of toolUseIds) {
 		delete pendingRequests[toolUseId];
 	}
 
+	if (!props.chatId) return;
 	const prs = await get_pending_requests.run({ chat_id: props.chatId! }, false);
 	for (const pr of prs) pendingRequests[pr.tool_use_id] = pr;
 }

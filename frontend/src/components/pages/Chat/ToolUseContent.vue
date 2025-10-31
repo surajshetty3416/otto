@@ -1,4 +1,44 @@
 <template>
+	<!-- Collapsed Tool Use Pill -->
+	<div class="inline-block mr-1.5">
+		<button
+			@click="isOpen = !isOpen"
+			class="bg-gray-50 border border-gray-200 py-1.5 px-2 w-fit rounded-full flex items-center gap-1.5"
+			:class="isOpen ? 'ring-2 ring-gray-400' : ''"
+		>
+			<Wrench class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
+			<p class="text-sm font-medium text-gray-700">
+				{{ title }}
+			</p>
+			<IndicatorDot v-if="content.status !== 'success' && !request" :color="statusColor" />
+			<div
+				v-if="request"
+				class="ml-2 flex items-center gap-1"
+				title="Permission required to run this tool"
+			>
+				<SmallButton
+					:rounded="true"
+					:loading="acknowledge_request.loading"
+					@click.stop="
+						acknowledge_request.run({ request_id: request.name, status: 'Denied' })
+					"
+				>
+					<X class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
+				</SmallButton>
+				<SmallButton
+					:isPrimary="true"
+					:rounded="true"
+					:loading="acknowledge_request.loading"
+					@click.stop="
+						acknowledge_request.run({ request_id: request.name, status: 'Granted' })
+					"
+				>
+					<Check class="h-3.5 w-3.5 text-gray-700 flex-shrink-0" stroke-width="1.5" />
+				</SmallButton>
+			</div>
+		</button>
+	</div>
+
 	<!-- Tool Use Details -->
 	<div v-if="isOpen" class="bg-gray-50 rounded-md border border-gray-200 my-1.5">
 		<!-- Tool Use Header -->
@@ -91,45 +131,6 @@
 				</div>
 			</div>
 		</div>
-	</div>
-
-	<!-- Collapsed Tool Use Pill -->
-	<div v-else class="inline-block mr-1.5 my-1.5">
-		<button
-			@click="isOpen = true"
-			class="bg-gray-50 border border-gray-200 py-1.5 px-2 w-fit rounded-full flex items-center gap-1.5"
-		>
-			<Wrench class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
-			<p class="text-sm font-medium text-gray-700">
-				{{ title }}
-			</p>
-			<IndicatorDot v-if="content.status !== 'success' && !request" :color="statusColor" />
-			<div
-				v-if="request"
-				class="ml-2 flex items-center gap-1"
-				title="Permission required to run this tool"
-			>
-				<SmallButton
-					:rounded="true"
-					:loading="acknowledge_request.loading"
-					@click="
-						acknowledge_request.run({ request_id: request.name, status: 'Denied' })
-					"
-				>
-					<X class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
-				</SmallButton>
-				<SmallButton
-					:isPrimary="true"
-					:rounded="true"
-					:loading="acknowledge_request.loading"
-					@click="
-						acknowledge_request.run({ request_id: request.name, status: 'Granted' })
-					"
-				>
-					<Check class="h-3.5 w-3.5 text-gray-700 flex-shrink-0" stroke-width="1.5" />
-				</SmallButton>
-			</div>
-		</button>
 	</div>
 </template>
 <script setup lang="ts">
