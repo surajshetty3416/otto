@@ -42,6 +42,7 @@ const delete_chat = api.chat.delete_chat({ chat_id: "" }, { auto: false });
 
 async function deleteChat() {
 	await delete_chat.run({ chat_id: props.currentChatId! }, false);
+  await list_chats.run(undefined, false);
 	newChat();
 }
 

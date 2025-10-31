@@ -44,6 +44,10 @@
  * - add tasteful animation when popping indicators, collapsing sections
  * - add better error handling
  * - make the streaming of content smoother
+ *
+ * Error handling:
+ * - check if any of the api calls are erroring out, and show an appropriate toast
+ * - set a time out on isWaitingForStream, and show a toast if it times out
  */
 import { api } from "@/client";
 import type {
@@ -55,7 +59,7 @@ import type {
 } from "@/client/generated.types";
 import router from "@/router";
 import socket from "@/socket";
-import { assert, sleep } from "@/utils";
+import { assert } from "@/utils";
 import { computed, nextTick, onMounted, onUnmounted, provide, reactive, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 import ChatHeader from "./ChatHeader.vue";
@@ -73,14 +77,6 @@ import {
 	toolConfigKey,
 	updateStreamContext,
 } from "./utils";
-
-/**
- * When streaming show a spinner above the input about what is going on, e.g.
- * thinking, calling tool, responding, waiting for permission, etc.
- *
- * when showing a list of item pills (thought, tool calls, etc) on clicking open
- * the dialog below and highlight that the item is open.
- */
 
 // const assistant = "1rv777j9m3"; // Sonnet 4.5 with reasoning
 const assistant = "5t44lus4lh"; // Haiku
@@ -134,7 +130,10 @@ const showNew = computed(() => {
 	if (load_chat.loading) return false;
 	if (messages.length > 0) return false;
 	if (props.chatId) return false;
+
+	// For when there's a non-new chat that is empty, show the welcome message
 	if (!load_chat.loading && messages.length === 0 && props.chatId) return true;
+
 	return true;
 });
 
@@ -189,7 +188,7 @@ function canSend(query: string) {
 
 	if (!query) {
 		toast.warning("Empty message", {
-			description: "Please enter a message to send",
+			description: "Please enter a message before sending",
 		});
 		return false;
 	}
@@ -212,6 +211,7 @@ function canSend(query: string) {
 }
 
 async function handleResume() {
+	if (resume_chat.loading) return; // prevent double resume
 	await resume_chat.run({ chat_id: props.chatId! }, false);
 	isWaitingForStream.value = true;
 }
@@ -234,6 +234,7 @@ function handleRealtimeMessage(message: RealtimeChatMessage) {
 		case "chunk":
 			if (message.data.type === "system") handleSystemChunk(message.data);
 			else handleContentChunk(message.data, messages);
+			scrollToBottom("instant");
 			return;
 		case "item":
 			handleItem(message.data, messages);
@@ -269,10 +270,10 @@ function handleSystemChunk(chunk: TextContentChunk) {
 	}
 }
 
-function scrollToBottom() {
+function scrollToBottom(behavior: "smooth" | "instant") {
 	messagesContainer.value?.scrollTo({
 		top: messagesContainer.value?.scrollHeight,
-		behavior: "smooth",
+		behavior,
 	});
 }
 
@@ -297,6 +298,7 @@ function clear() {
 	messages.length = 0;
 	streamContext.messages.length = 0;
 	streamContext.isStreamingResponse = false;
+	received.clear();
 	Object.keys(pendingRequests).forEach((key) => delete pendingRequests[key]);
 
 	list_tools.reset();
@@ -320,7 +322,7 @@ async function loadChat() {
 		messages.push(message);
 	}
 
-	sleep(10).then(() => scrollToBottom());
+	nextTick().then(() => scrollToBottom("smooth"));
 }
 
 onMounted(async () => socket.on("otto.api.chat", handleRealtimeMessage));

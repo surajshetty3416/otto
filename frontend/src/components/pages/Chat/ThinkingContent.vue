@@ -13,7 +13,7 @@
 		>
 			<h3 class="text-gray-800 text-xs font-semibold flex items-center gap-1.5">
 				<Brain class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
-				{{ isStreaming ? "Thinking..." : "Thought" }}f
+				{{ isStreaming ? "Thinking..." : "Thought" }}
 			</h3>
 			<button @click="isOpen = false">
 				<X class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
@@ -21,9 +21,11 @@
 		</div>
 
 		<!-- Thought Content -->
-		<Markdown class="p-1.5 last:pb-0 text-gray-700" style="font-style: italic; font-size: 85%">{{
-			content.text
-		}}</Markdown>
+		<Markdown
+			class="p-1.5 last:pb-0 text-gray-700"
+			style="font-style: italic; font-size: 85%"
+			>{{ content.text }}</Markdown
+		>
 	</ContentContainer>
 </template>
 <script setup lang="ts">

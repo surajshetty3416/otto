@@ -103,6 +103,15 @@ function updateContent(content: Content, chunk: ContentChunk) {
       assert(content.type === "tool_use", "content must be a tool use content");
       content.name = chunk.content.name || content.name;
       content.id = chunk.content.id || content.id;
+
+      /**
+       * _args aren't actually used as of now, once the stream completes
+       * a final item is sent with the complete args, this is used directly
+       *
+       * in the case of multiple tool calls the _args object may be used to
+       * show once a ToolUseContent has been generated completely.
+       */
+
       if (typeof content._args !== "string") content._args = "";
       if (typeof chunk.content.args === "string") {
         content._args += chunk.content.args;
@@ -200,7 +209,7 @@ export function handleItem(item: SessionItem, messages: SessionItem[]) {
       continue;
     }
 
-    if ((isEqual(targetContent, content), 2)) continue;
+    if (isEqual(targetContent, content, 2)) continue;
 
     for (const key in content) {
       targetContent[key as keyof Content] = content[key as keyof Content];
