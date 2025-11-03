@@ -4,28 +4,25 @@
 		style="box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.06), 0px 1px 2px rgba(0, 0, 0, 0.08)"
 	>
 		<input
-			v-model="model"
+			v-model="query"
 			type="text"
 			placeholder="Ask..."
 			:disabled="disabled || loading"
-			@keyup.enter="handleSend"
+			@keyup.enter="emit('send')"
 			class="border-none outline-none rounded-full w-full active:outline-none focus:outline-none focus:ring-0 text-md bg-transparent"
 		/>
-		<button
-			@click="showSettingsDialog"
-			class="hover:bg-gray-100 rounded-full p-1.5 cursor-pointer"
-		>
-			<Settings class="w-6 h-6 text-gray-800" stroke-width="1.25" />
-		</button>
-		<button @click="handleSend" class="bg-gray-900 rounded-full p-1.5 cursor-pointer">
+		<ConfigDropdown v-model="assistant" :disabled="!!chatId" />
+
+		<button @click="emit('send')" class="bg-gray-900 rounded-full p-1.5 cursor-pointer">
 			<ChevronUp class="w-6 h-6 text-white" />
 		</button>
 	</div>
 </template>
 
-<script setup>
-import { ChevronUp, Settings } from "lucide-vue-next";
-import { toast } from "vue-sonner";
+<script setup lang="ts">
+import { ChevronUp } from "lucide-vue-next";
+import ConfigDropdown from "./ConfigDropdown.vue";
+import type { AssistantConfig } from "./types";
 
 const props = defineProps({
 	loading: {
@@ -36,16 +33,13 @@ const props = defineProps({
 		type: Boolean,
 		default: false,
 	},
+	chatId: {
+		type: String,
+		required: true,
+	},
 });
 
 const emit = defineEmits(["send"]);
-const model = defineModel({ type: String, required: true });
-
-const handleSend = () => {
-	emit("send");
-};
-
-function showSettingsDialog() {
-	toast.info("Implement this!");
-}
+const query = defineModel({ type: String, required: true });
+const assistant = defineModel<AssistantConfig>("assistant", { required: true });
 </script>

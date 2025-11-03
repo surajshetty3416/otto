@@ -32,7 +32,13 @@
 					:isWaitingForStream="isWaitingForStream"
 					:pendingRequests="pendingRequests"
 				/>
-				<ChatInput :loading="_loading" @send="handleSend" v-model="query" />
+				<ChatInput
+					:chatId="chatId"
+					:loading="_loading"
+					@send="handleSend"
+					v-model="query"
+					v-model:assistant="assistant"
+				/>
 			</div>
 		</div>
 	</div>
@@ -48,6 +54,13 @@
  * Error handling:
  * - check if any of the api calls are erroring out, and show an appropriate toast
  * - set a time out on isWaitingForStream, and show a toast if it times out
+ *
+ * - [ ] titling
+ * - [ ] header new chat button
+ * - [ ] sidebar (select chat, nav to assistants, tools, etc)
+ * - [ ] allow assistant config llm, tools, etc (default?)
+ * - [ ] images and pdfs
+ * - [ ] input commands etc `/` and `@` for doctype refs
  */
 import { api } from "@/client";
 import type {
@@ -66,7 +79,7 @@ import ChatHeader from "./ChatHeader.vue";
 import ChatIndicator from "./ChatIndicator.vue";
 import ChatInput from "./ChatInput.vue";
 import ChatMessages from "./ChatMessages.vue";
-import type { StreamContext } from "./types";
+import type { AssistantConfig, StreamContext } from "./types";
 import {
 	getUserSessionItem,
 	handleContentChunk,
@@ -78,8 +91,7 @@ import {
 	updateStreamContext,
 } from "./utils";
 
-// const assistant = "1rv777j9m3"; // Sonnet 4.5 with reasoning
-const assistant = "5t44lus4lh"; // Haiku
+const assistant = ref<AssistantConfig>({ assistant: "5t44lus4lh" });
 const received = new Set<string>(); // sanity check to avoid duplicates
 const props = defineProps<{
 	chatId?: string;
@@ -149,7 +161,7 @@ async function handleSend() {
 	await nextTick(); // ensure loading is shown
 
 	if (!props.chatId) {
-		const chatId = await api.chat.new_chat({ assistant });
+		const chatId = await api.chat.new_chat({ assistant: assistant.value.assistant });
 		await router.replace({ name: "Chat", params: { chatId } });
 		await nextTick(); // ensure chatId updates post routing
 	}

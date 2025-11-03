@@ -1,6 +1,6 @@
 from typing import Literal, TypedDict
 
-from otto.lib.types import ContentChunk, SessionItem, ToolUseUpdate
+from otto.lib.types import ContentChunk, ReasoningEffort, SessionItem, ToolUseUpdate
 
 
 class PendingRequest(TypedDict):
@@ -88,3 +88,10 @@ RealtimeChatMessage = (
 	| RealtimeToolExecutionComplete
 	| RealtimeRequestAcknowledge
 )
+
+
+class Assistant(TypedDict):
+	name: str
+	title: str
+	llm: str
+	reasoning_effort: ReasoningEffort

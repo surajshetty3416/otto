@@ -6,7 +6,9 @@ from typing import TYPE_CHECKING, Literal
 import frappe
 
 import otto
+from otto import lib
 from otto.api.types import (
+	Assistant,
 	PendingRequest,
 	RealtimeChatMessage,
 	RealtimeChunk,
@@ -21,6 +23,7 @@ from otto.api.types import (
 
 if TYPE_CHECKING:
 	from otto.lib.types import SessionItem
+	from otto.llm.types import ModelDetails
 	from otto.otto.doctype.otto_chat.otto_chat import OttoChat, ToolConfig
 	from otto.otto.doctype.otto_permission_request.otto_permission_request import OttoPermissionRequest
 
@@ -114,15 +117,16 @@ def list_chats() -> list[dict[str, str]]:
 
 
 @frappe.whitelist()
-def list_assistants():
-	"""
-	List assistants that the user can use to chat with.
+def list_models() -> list[ModelDetails]:
+	return lib.get_models(get_details=True, include_unavailable=True)
 
-	Once an assistant is selected the user cannot change it for a
-	chat session. The user can configure the underlying session by
-	selecting the LLM and available tools but not the assistant.
-	"""
-	pass
+
+@frappe.whitelist()
+def list_assistants() -> list[Assistant]:
+	return frappe.get_all(
+		"Otto Assistant",
+		fields=["name", "title", "llm", "reasoning_effort"],
+	)
 
 
 def _chat(chat_id: str, query: str | None = None) -> None:

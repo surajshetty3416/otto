@@ -16,8 +16,6 @@
     "lucide-vue-next": "^0.474.0",
     "marked": "^15.0.7",
     "marked-highlight": "^2.2.1",
-    "monaco-editor": "^0.52.2",
-    "radix-vue": "^1.9.15",
     "socket.io-client": "^4.8.1",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0",
