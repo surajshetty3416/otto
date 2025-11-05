@@ -33,7 +33,7 @@
 					:pendingRequests="pendingRequests"
 				/>
 				<ChatInput
-					:chatId="chatId"
+					:chatId="chatId ?? ''"
 					:loading="_loading"
 					@send="handleSend"
 					v-model="query"
@@ -62,7 +62,7 @@
  * - [ ] images and pdfs
  * - [ ] input commands etc `/` and `@` for doctype refs
  */
-import { api } from "@/client";
+import { api, list_chats } from "@/client";
 import type {
 	PendingRequest,
 	RealtimeChatMessage,
@@ -164,6 +164,7 @@ async function handleSend() {
 		const chatId = await api.chat.new_chat({ assistant: assistant.value.assistant });
 		await router.replace({ name: "Chat", params: { chatId } });
 		await nextTick(); // ensure chatId updates post routing
+		list_chats.run(undefined, false);
 	}
 
 	assert(props.chatId, "sanity check");

@@ -24,7 +24,7 @@ import { ChevronUp } from "lucide-vue-next";
 import ConfigDropdown from "./ConfigDropdown.vue";
 import type { AssistantConfig } from "./types";
 
-const props = defineProps({
+defineProps({
 	loading: {
 		type: Boolean,
 		default: false,

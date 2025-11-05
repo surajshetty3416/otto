@@ -5,13 +5,6 @@
 			<span class="text-sm font-mono text-gray-500 font-semibold ml-2">temp header</span>
 		</h1>
 		<div class="flex items-center gap-3">
-			<Select
-				v-if="list_chats.data"
-				v-model="selected"
-				@change="onChange"
-				:disabled="list_chats.loading || !list_chats.data"
-				:options="chatOptions"
-			/>
 			<Button
 				:loading="delete_chat.loading"
 				variant="subtle"
@@ -32,17 +25,16 @@
 <script setup lang="ts">
 import { api } from "@/client";
 import Button from "@/components/fui/Button/Button.vue";
-import Select from "@/components/fui/Select/Select.vue";
 import router from "@/router";
 import { Plus, Trash } from "lucide-vue-next";
 import { computed, onMounted, ref, watch } from "vue";
 
-const list_chats = api.chat.list_chats(undefined);
 const delete_chat = api.chat.delete_chat({ chat_id: "" }, { auto: false });
+const list_chats = api.chat.list_chats(undefined);
 
 async function deleteChat() {
 	await delete_chat.run({ chat_id: props.currentChatId! }, false);
-  await list_chats.run(undefined, false);
+	await list_chats.run(undefined, false);
 	newChat();
 }
 
@@ -53,13 +45,6 @@ const props = defineProps<{
 
 function newChat() {
 	router.push({ name: "Chat", params: { chatId: "" } });
-}
-
-function onChange(event: Event) {
-	const target = event.target as HTMLSelectElement;
-	const value = target.value;
-	if (!value || value === props.currentChatId) return;
-	router.push({ name: "Chat", params: { chatId: value } });
 }
 
 const names = computed(() => {

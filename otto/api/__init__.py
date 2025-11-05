@@ -2,6 +2,8 @@ from typing import Literal
 
 import frappe
 
+from otto.api.types import UserInfo
+
 
 @frappe.whitelist(allow_guest=True)
 def ping() -> Literal["pong"]:
@@ -14,9 +16,44 @@ def echo(message: str) -> str:
 
 
 @frappe.whitelist()
-def get_user() -> dict[str, str]:
+def get_user() -> str:
 	assert isinstance(frappe.session.user, str), "User is not logged in"
-	return {"user": frappe.session.user}
+	return frappe.session.user
+
+
+@frappe.whitelist()
+def get_user_info() -> UserInfo | None:
+	if not frappe.session.user:
+		return None
+
+	info = frappe.get_cached_value(
+		"User",
+		frappe.session.user,
+		[
+			"first_name",
+			"last_name",
+			"full_name",
+			"email",
+		],
+		as_dict=True,
+	)
+
+	name: str = info["full_name"]
+	if not name:
+		name = " ".join(
+			filter(
+				lambda x: x,
+				[
+					info["first_name"],
+					info["last_name"],
+				],
+			)
+		)
+
+	return UserInfo(
+		name=name,
+		email=info["email"],
+	)
 
 
 @frappe.whitelist(allow_guest=True, methods=["GET"])

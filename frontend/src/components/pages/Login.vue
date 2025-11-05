@@ -45,9 +45,9 @@
 	</div>
 </template>
 <script setup lang="ts">
-import { reactive, ref, type Reactive } from "vue";
+import { onMounted, reactive, ref, type Reactive } from "vue";
 
-import { framework } from "@/client";
+import { framework, get_user, get_user_info } from "@/client";
 import router, { defaultRouteName } from "@/router";
 import Button from "../fui/Button/Button.vue";
 import ErrorMessage from "../fui/ErrorMessage.vue";
@@ -60,6 +60,18 @@ const session = reactive({}) as Reactive<{ login?: ReturnType<typeof framework.l
 
 function submit() {
 	session.login = framework.login(email.value, password.value);
-	session.login.then(() => router.push({ name: defaultRouteName }));
+	session.login.then(() => {
+		router.push({ name: defaultRouteName });
+		get_user_info.run(undefined, false);
+	});
 }
+
+onMounted(async () => {
+	try {
+		await get_user.run(undefined, false);
+		await framework.logout();
+	} catch (e) {
+		console.error(e);
+	}
+});
 </script>

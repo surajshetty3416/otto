@@ -95,3 +95,16 @@ class Assistant(TypedDict):
 	title: str
 	llm: str
 	reasoning_effort: ReasoningEffort
+
+
+class ListChatItem(TypedDict):
+	creation: str
+	modified: str
+	name: str
+	title: str
+	assistant: str
+
+
+class UserInfo(TypedDict):
+	name: str
+	email: str

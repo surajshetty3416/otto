@@ -4,6 +4,8 @@ import { api, framework } from "./client";
 import { useGlobals } from "./globals";
 import router from "./router";
 import "./style.css";
+import { watcher } from "./client/watcher";
+import { toLogin } from "./client/utils";
 
 setIsDevMode();
 function initApp() {
@@ -34,3 +36,13 @@ function setIsDevMode() {
     window.is_dev_mode = false;
   }
 }
+
+watcher.add(
+  () => {
+    console.log(router.currentRoute.value.name);
+    console.log(router.currentRoute.value);
+    if (router.currentRoute.value.name === "Login") return;
+    toLogin();
+  },
+  { status: 403 }
+);

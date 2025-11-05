@@ -8,17 +8,17 @@
 	</span>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from "vue";
 
 const dots = ref("");
-let interval = null;
+let timeout: NodeJS.Timeout | null = null;
 
 onMounted(() => {
-	interval = setInterval(() => {
+	timeout = setInterval(() => {
 		dots.value = ".".repeat((dots.value.length + 1) % 4);
 	}, 500);
 });
 
-onBeforeUnmount(() => clearInterval(interval));
+onBeforeUnmount(() => timeout && clearInterval(timeout));
 </script>

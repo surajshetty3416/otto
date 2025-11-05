@@ -52,7 +52,7 @@
 								@click="select(assistant.name)"
 								class="w-full p-1"
 								:title="`${assistant.title}\nLLM: ${modelName(
-									assistant.llm
+									models[assistant.llm]
 								)}\nReasoning Effort: ${assistant.reasoning_effort}`"
 							>
 								<div
@@ -93,7 +93,7 @@
 											{{ assistant.title }}
 										</p>
 										<p class="text-sm text-gray-600 text-left text-nowrap">
-											{{ modelName(assistant.llm) }}
+											{{ modelName(models[assistant.llm]) }}
 										</p>
 									</div>
 
@@ -141,15 +141,17 @@
 </template>
 
 <script setup lang="ts">
-import { api } from "@/client";
-import type { Assistant, ModelDetails } from "@/client/generated.types";
+import { list_assistants, list_models } from "@/client";
+import type { ModelDetails } from "@/client/generated.types";
+import { assistants, models } from "@/common";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/vue";
 import { Bolt, Bot, Brain, Check, Zap } from "lucide-vue-next";
 import { computed } from "vue";
 import { toast } from "vue-sonner";
 import type { AssistantConfig } from "./types";
+import { modelName } from "@/components/utils";
 
-const props = defineProps({
+defineProps({
 	disabled: {
 		type: Boolean,
 		default: false,
@@ -157,35 +159,9 @@ const props = defineProps({
 });
 
 const selected = defineModel<AssistantConfig>({ required: true });
-const list_assistants = api.chat.list_assistants();
-const list_models = api.chat.list_models();
-
-const assistants = computed(() => {
-	if (!list_assistants.data) return {};
-	return list_assistants.data.reduce((acc, assistant) => {
-		acc[assistant.name] = assistant;
-		return acc;
-	}, {} as Record<string, Assistant>);
-});
-
-const models = computed(() => {
-	if (!list_models.data) return {};
-
-	return list_models.data.reduce((acc, model) => {
-		acc[model.name] = model;
-		return acc;
-	}, {} as Record<string, ModelDetails>);
-});
 
 function select(assistant: string) {
 	selected.value = { assistant };
-}
-
-function modelName(llm: string): string {
-	const config = models.value[llm];
-	if (!config) return llm;
-
-	return config.title.slice(config.provider.length + 1);
 }
 
 function config(llm: string): ModelDetails | undefined {
@@ -201,12 +177,12 @@ const isLoading = computed(() => {
 	return list_assistants.loading || list_models.loading;
 });
 
-const isCustomized = computed(() => {
-	return (
+// @ts-ignore
+const isCustomized = computed(
+	() =>
 		typeof selected.value.llm !== "undefined" &&
 		typeof selected.value.reasoningEffort !== "undefined"
-	);
-});
+);
 
 function showCannotChange() {
 	toast.warning("Cannot change assistant", {

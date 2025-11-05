@@ -68,7 +68,7 @@ import IndicatorDot from "@/components/ui/IndicatorDot.vue";
 import { assert } from "@/utils";
 import { Brain, Wrench } from "lucide-vue-next";
 import { computed, inject } from "vue";
-import Ellipsis from "./Ellipsis.vue";
+import Ellipsis from "@/components/ui/Ellipsis.vue";
 import SmallButton from "./SmallButton.vue";
 import { streamContextKey, toolConfigKey } from "./utils";
 import LoadingIndicator from "@/components/fui/LoadingIndicator.vue";

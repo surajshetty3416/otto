@@ -3,6 +3,7 @@ import type { CallArgs, CallAPIArgs, Config, ServerException } from "./types";
 import { hash } from "./utils";
 import { Store } from "./store";
 import { logError } from "../utils";
+import { watcher } from "./watcher";
 
 const cachestore = new Store<unknown>("cache");
 
@@ -206,6 +207,7 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     try {
       const url = [encodeURI(this.url), this.params].join("");
       const res = await fetch(url, request);
+      watcher.run(res);
       this._response = res;
       this._failed = !res.ok;
 

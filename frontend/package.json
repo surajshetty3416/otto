@@ -11,12 +11,17 @@
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.23",
-    "@vueuse/core": "^12.7.0",
+    "@vueuse/core": "^12.8.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "highlight.js": "^11.11.1",
     "lucide-vue-next": "^0.474.0",
     "marked": "^15.0.7",
     "marked-highlight": "^2.2.1",
+    "reka-ui": "^2.6.0",
     "socket.io-client": "^4.8.1",
+    "tailwind-merge": "^3.3.1",
+    "tailwindcss-animate": "^1.0.7",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0",
     "vue-sonner": "^2.0.9"

@@ -3,13 +3,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, useSlots } from "vue";
-import { marked } from "marked";
-import { markedHighlight } from "marked-highlight";
 import hljs from "highlight.js";
 import "highlight.js/styles/github.css";
+import { marked } from "marked";
+import { markedHighlight } from "marked-highlight";
+import { computed, type VNode } from "vue";
 
-const slots = useSlots();
+const slots = defineSlots<{
+	default: () => VNode[];
+}>();
 const props = defineProps<{
 	isStreaming?: boolean;
 }>();

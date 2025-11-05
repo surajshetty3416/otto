@@ -3,16 +3,6 @@ import { callV2 } from "./call";
 import { handlers as frameworkHandlers } from "./framework";
 import type { API } from "./types";
 
-/**
- * The `api` object is used to call APIs defined in Otto (using v2).
- */
-export const api = getApi() as API;
-
-/**
- * The `framework` object is used to call APIs defined in Frappe Framework (using v1 & v2).
- */
-export const framework = getApi() as typeof frameworkHandlers;
-
 function getApi() {
   const api = new Proxy(
     {},
@@ -73,3 +63,13 @@ function _getApi(path: string): unknown {
 
   return self;
 }
+
+/**
+ * The `api` object is used to call APIs defined in Otto (using v2).
+ */
+export const api = getApi() as API;
+
+/**
+ * The `framework` object is used to call APIs defined in Frappe Framework (using v1 & v2).
+ */
+export const framework = getApi() as typeof frameworkHandlers;

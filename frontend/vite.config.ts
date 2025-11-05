@@ -24,7 +24,11 @@ export default defineConfig(() => {
   };
 
   return {
-    plugins: [vue(), vueDevTools(), postBuild()],
+    plugins: [
+      vue(),
+      vueDevTools(),
+      postBuild()
+    ],
     base:
       process.env.NODE_ENV === "production" ? "/assets/otto/frontend/" : "/",
     build: {

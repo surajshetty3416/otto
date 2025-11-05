@@ -9,6 +9,7 @@ import otto
 from otto import lib
 from otto.api.types import (
 	Assistant,
+	ListChatItem,
 	PendingRequest,
 	RealtimeChatMessage,
 	RealtimeChunk,
@@ -99,7 +100,7 @@ def list_tools(chat_id: str) -> list[ToolConfig]:
 
 
 @frappe.whitelist()
-def list_chats() -> list[dict[str, str]]:
+def list_chats() -> list[ListChatItem]:
 	"""
 	List sessions for the sidebar, on clicking load will be called and the user
 	can then resume a chat
@@ -109,10 +110,11 @@ def list_chats() -> list[dict[str, str]]:
 	"""
 	return frappe.get_all(
 		"Otto Chat",
-		fields=["name", "title", "assistant"],
+		fields=["creation", "modified", "name", "title", "assistant"],
 		filters={
 			"owner": frappe.session.user,
 		},
+		order_by="modified desc",
 	)
 
 
