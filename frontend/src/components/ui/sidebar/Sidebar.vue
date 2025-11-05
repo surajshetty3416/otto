@@ -82,17 +82,17 @@ const navigationItems: SidebarItemType[] = [
 	{
 		name: "Assistants",
 		icon: Bot,
-		href: "/app/otto-assistants",
+		href: "/app/otto-assistant",
 	},
 	{
 		name: "Tools",
 		icon: Wrench,
-		href: "/app/otto-tools",
+		href: "/app/otto-tool",
 	},
 	{
 		name: "Tasks",
 		icon: ClipboardList,
-		href: "/app/otto-tasks",
+		href: "/app/otto-task",
 	},
 ];
 
