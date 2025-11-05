@@ -147,7 +147,7 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     this._signal = signal;
   }
 
-  run(args?: Args, useCache: boolean = true, signal?: AbortSignal) {
+  run(args?: Args | null, useCache: boolean = true, signal?: AbortSignal) {
     /**
      * Tun used to ensure only a single call is made, for multiple calls use
      * `rerun`. Use this if auto is false.

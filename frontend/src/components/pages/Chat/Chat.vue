@@ -5,7 +5,7 @@
 
 		<!-- Body -->
 		<div
-			class="w-full h-full overflow-y-scroll flex flex-col items-center"
+			class="w-full h-screen overflow-y-scroll flex flex-col items-center pt16"
 			ref="messagesContainer"
 		>
 			<!-- Messages -->

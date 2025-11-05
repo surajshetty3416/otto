@@ -24,7 +24,7 @@
 			leave-from-class="opacity-100 max-h-[1000px]"
 			leave-to-class="opacity-0 max-h-0"
 		>
-			<div v-if="list_chats.data && isOpen" class="mt-2 h-full overflow-hidden">
+			<div v-if="list_chats.data && isOpen" class="h-full overflow-hidden pt-2 flex flex-col gap-4">
 				<template v-for="chat in chats" :key="chat.name">
 					<ChatListItem :chat="chat" />
 				</template>
@@ -49,6 +49,8 @@ import TextLoadingIndicator from "../TextLoadingIndicator.vue";
 import ChatListItem from "./ChatListItem.vue";
 import type { ChatListItem as ChatListItemType } from "./types";
 import { sidebarState } from "./utils";
+
+// TODO: pagination and max height
 
 const isOpen = ref(sidebarState.get("isChatListOpen") ?? true);
 watch(isOpen, (value) => sidebarState.set("isChatListOpen", value));

@@ -1,6 +1,7 @@
 <template>
 	<Tooltip
-		class="flex flex-col rounded-md hover:bg-gray-100 cursor-pointer overflow-hidden p-2 -my-2 text-base text-gray-900 w-full text-start text-nowrap"
+		class="flex flex-col rounded-md hover:bg-gray-50 cursor-pointer overflow-hidden p-2 -my-2 text-base text-gray-800 w-full text-start text-nowrap"
+		:class="{ italic: !chat.title, 'bg-gray-100': isActive }"
 		@click="openChat(chat.name)"
 		side="right"
 		align="start"
@@ -34,9 +35,14 @@ import router from "@/router";
 import { Bot, Clock, Sparkle } from "lucide-vue-next";
 import Tooltip from "../tooltip/Tooltip.vue";
 import type { ChatListItem as ChatListItemType } from "./types";
-defineProps<{ chat: ChatListItemType }>();
+import { computed } from "vue";
+const props = defineProps<{ chat: ChatListItemType }>();
 
 function openChat(chatName: string) {
 	router.push({ name: "Chat", params: { chatId: chatName } });
 }
+
+const isActive = computed(() => {
+	return router.currentRoute.value.path.startsWith(`/chat/${props.chat.name}`);
+});
 </script>
