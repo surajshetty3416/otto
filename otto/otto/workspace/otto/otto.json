@@ -1,7 +1,7 @@
 {
  "app": "otto",
  "charts": [],
- "content": "[{\"id\":\"4eVkcmtiVn\",\"type\":\"card\",\"data\":{\"card_name\":\"Definitions\",\"col\":4}},{\"id\":\"OMj0VoZNL6\",\"type\":\"card\",\"data\":{\"card_name\":\"Executions\",\"col\":4}},{\"id\":\"lmh9Z242qd\",\"type\":\"card\",\"data\":{\"card_name\":\"Configs\",\"col\":4}},{\"id\":\"jyxJ06Ba8C\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"NaFHRr9umu\",\"type\":\"card\",\"data\":{\"card_name\":\"Management\",\"col\":4}}]",
+ "content": "[{\"id\":\"v1eAuT7Wt-\",\"type\":\"paragraph\",\"data\":{\"text\":\"<a href=\\\"/otto/chat\\\" draggable=\\\"false\\\">Chat</a>\",\"col\":12}},{\"id\":\"4eVkcmtiVn\",\"type\":\"card\",\"data\":{\"card_name\":\"Definitions\",\"col\":4}},{\"id\":\"OMj0VoZNL6\",\"type\":\"card\",\"data\":{\"card_name\":\"Executions\",\"col\":4}},{\"id\":\"lmh9Z242qd\",\"type\":\"card\",\"data\":{\"card_name\":\"Configs\",\"col\":4}},{\"id\":\"jyxJ06Ba8C\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"NaFHRr9umu\",\"type\":\"card\",\"data\":{\"card_name\":\"Management\",\"col\":4}}]",
  "creation": "2025-06-04 10:38:24.349553",
  "custom_blocks": [],
  "docstatus": 0,
@@ -15,35 +15,6 @@
  "label": "Otto",
  "link_type": "DocType",
  "links": [
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Definitions",
-   "link_count": 2,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Otto Task",
-   "link_count": 0,
-   "link_to": "Otto Task",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Otto Tool",
-   "link_count": 0,
-   "link_to": "Otto Tool",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
   {
    "hidden": 0,
    "is_query_report": 0,
@@ -79,55 +50,6 @@
    "label": "Otto Tool Group",
    "link_count": 0,
    "link_to": "Otto Tool Group",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Executions",
-   "link_count": 4,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Otto Session",
-   "link_count": 0,
-   "link_to": "Otto Session",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Otto Scrapbook",
-   "link_count": 0,
-   "link_to": "Otto Scrapbook",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Otto Execution",
-   "link_count": 0,
-   "link_to": "Otto Execution",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Otto Feedback",
-   "link_count": 0,
-   "link_to": "Otto Feedback",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -200,9 +122,107 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Definitions",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Otto Task",
+   "link_count": 0,
+   "link_to": "Otto Task",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Otto Tool",
+   "link_count": 0,
+   "link_to": "Otto Tool",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Otto Assistant",
+   "link_count": 0,
+   "link_to": "Otto Assistant",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Executions",
+   "link_count": 5,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Otto Session",
+   "link_count": 0,
+   "link_to": "Otto Session",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Otto Scrapbook",
+   "link_count": 0,
+   "link_to": "Otto Scrapbook",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Otto Execution",
+   "link_count": 0,
+   "link_to": "Otto Execution",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Otto Feedback",
+   "link_count": 0,
+   "link_to": "Otto Feedback",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Otto Chat",
+   "link_count": 0,
+   "link_to": "Otto Chat",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2025-09-16 11:19:23.005597",
+ "modified": "2025-11-05 16:21:40.086672",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto",

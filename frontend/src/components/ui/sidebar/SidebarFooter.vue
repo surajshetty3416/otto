@@ -17,12 +17,17 @@
 			{{ get_user_info.data.name }}
 		</p>
 
-		<Tooltip class="p-0" :delay="700" @click="logout()">
-			<LogOutIcon class="w-3.5 h-3.5 text-gray-600 hover:text-gray-800" stroke-width="1.5" />
-			<template #content>
-				<p class="text-xs text-gray-600 py-1 px-2">Logout</p>
-			</template>
-		</Tooltip>
+		<TextTooltip
+			:delay="0"
+			@click="logout()"
+			content="Logout"
+			side="right"
+			align="center"
+			:sideOffset="8"
+			class="text-gray-600 hover:text-gray-800"
+		>
+			<LogOutIcon class="w-3.5 h-3.5" stroke-width="1.5" />
+		</TextTooltip>
 	</div>
 </template>
 <script setup lang="ts">
@@ -30,7 +35,7 @@ import { framework, get_user_info } from "@/client";
 import { toLogin } from "@/client/utils";
 import { LogOutIcon } from "lucide-vue-next";
 import TextLoadingIndicator from "../TextLoadingIndicator.vue";
-import Tooltip from "../tooltip/Tooltip.vue";
+import TextTooltip from "../tooltip/TextTooltip.vue";
 
 defineProps<{
 	isCollapsed: boolean;

@@ -1,5 +1,9 @@
 <template>
-	<TooltipProvider :delayDuration="delay">
+	<TooltipProvider
+		:delayDuration="delay"
+		:disabled="disabled"
+		:skipDelayDuration="skipDelay ? 0 : 300"
+	>
 		<TooltipBase>
 			<TooltipTrigger v-bind="$attrs">
 				<slot />
@@ -7,6 +11,8 @@
 			<TooltipContent
 				:side="side"
 				:align="align"
+				:alignOffset="alignOffset"
+				:sideOffset="sideOffset"
 				class="bg-white border border-gray-200 shadow-sm p-0"
 			>
 				<slot name="content" />
@@ -29,14 +35,20 @@ defineOptions({
 
 withDefaults(
 	defineProps<{
+		disabled?: boolean;
 		delay?: number;
 		side?: "top" | "bottom" | "left" | "right";
 		align?: "start" | "center" | "end";
+		skipDelay?: boolean;
+		alignOffset?: number;
+		sideOffset?: number;
 	}>(),
 	{
+		disabled: false,
 		delay: 200,
 		side: "top",
 		align: "center",
+		skipDelay: false,
 	}
 );
 </script>
