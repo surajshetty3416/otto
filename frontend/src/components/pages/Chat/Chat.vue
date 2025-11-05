@@ -18,9 +18,7 @@
 			</div>
 
 			<!-- New chat welcome message -->
-			<div v-if="showNew" class="mb-8" style="margin-top: 35vh">
-				<p class="text-gray-800 text-4xl font-medium">What can I help you with?</p>
-			</div>
+			<Welcome v-if="showNew" class="mb-8" style="margin-top: 35vh" />
 
 			<!-- Input -->
 			<div class="w-full container-ch chat-input" :class="{ 'fixed bottom-8': !showNew }">
@@ -90,6 +88,7 @@ import {
 	toolConfigKey,
 	updateStreamContext,
 } from "./utils";
+import Welcome from "./Welcome.vue";
 
 const assistant = ref<AssistantConfig>({ assistant: "5t44lus4lh" });
 const received = new Set<string>(); // sanity check to avoid duplicates
