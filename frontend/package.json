@@ -10,7 +10,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@headlessui/vue": "^1.7.23",
     "@vueuse/core": "^12.8.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

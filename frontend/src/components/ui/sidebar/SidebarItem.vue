@@ -17,7 +17,7 @@
 		>
 			<!-- Icon -->
 			<div class="shrink-0 text-gray-700">
-				<component :is="item.icon" class="w-4.5 h-4.5" strokeWidth="1.5" />
+				<component :is="item.icon" class="w-4.5 h-4.5" strokeWidth="2" />
 			</div>
 
 			<!--  Label -->

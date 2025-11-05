@@ -17,8 +17,8 @@
 
 		<!-- List -->
 		<Transition
-			enter-active-class="transition-all duration-150 ease-out"
-			leave-active-class="transition-all duration-150 ease-in"
+			enter-active-class="transition-all duration-100 ease-out"
+			leave-active-class="transition-all duration-100 ease-in"
 			enter-from-class="opacity-0 max-h-0"
 			enter-to-class="opacity-100 max-h-[1000px]"
 			leave-from-class="opacity-100 max-h-[1000px]"

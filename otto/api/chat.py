@@ -131,6 +131,21 @@ def list_assistants() -> list[Assistant]:
 	)
 
 
+@frappe.whitelist()
+def get_preferred_assistants() -> list[str]:
+	if assistants := frappe.get_all(
+		"Otto Chat",
+		filters={"owner": frappe.session.user},
+		pluck="assistant",
+		order_by="modified desc",
+		limit=2,
+		distinct=True,
+	):
+		return assistants
+
+	return frappe.get_all("Otto Assistant", pluck="name", limit=2)
+
+
 def _chat(chat_id: str, query: str | None = None) -> None:
 	from otto.otto.doctype.otto_chat.otto_chat import OttoChat
 

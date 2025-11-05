@@ -1,4 +1,5 @@
 import type {
+  Assistant,
   Content,
   ContentChunk,
   Meta,
@@ -12,6 +13,8 @@ import type {
 import { assert, isEqual } from "@/utils";
 import type { InjectionKey, Ref } from "vue";
 import type { ChunkContent, StreamContext } from "./types";
+import { Bot, Brain, Zap } from "lucide-vue-next";
+import { models } from "@/common";
 
 export const streamContextKey = Symbol(
   "streamContext"
@@ -319,4 +322,17 @@ function getItem(id: string, messages: SessionItem[]) {
   }
 
   return null;
+}
+
+export function getAssistantIcon(assistant: Assistant) {
+  if (assistant.reasoning_effort) {
+    return Brain;
+  }
+
+  const model = models.value[assistant.llm];
+  if (["Very Small", "Small"].includes(model?.size ?? "")) {
+    return Zap;
+  }
+
+  return Bot;
 }

@@ -34,9 +34,9 @@
 					:chatId="chatId ?? ''"
 					:loading="_loading"
 					@send="handleSend"
-					v-model="query"
-					v-model:assistant="assistant"
+					:model="query"
 				/>
+				<Selector class="mt-2" v-if="showNew" :model-value="assistant" />
 			</div>
 		</div>
 	</div>
@@ -89,6 +89,7 @@ import {
 	updateStreamContext,
 } from "./utils";
 import Welcome from "./Welcome.vue";
+import Selector from "./Selector.vue";
 
 const assistant = ref<AssistantConfig>({ assistant: "5t44lus4lh" });
 const received = new Set<string>(); // sanity check to avoid duplicates

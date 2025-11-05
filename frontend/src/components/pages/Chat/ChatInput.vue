@@ -11,7 +11,6 @@
 			@keyup.enter="emit('send')"
 			class="border-none outline-none rounded-full w-full active:outline-none focus:outline-none focus:ring-0 text-md bg-transparent"
 		/>
-		<ConfigDropdown v-model="assistant" :disabled="!!chatId" />
 
 		<button @click="emit('send')" class="bg-gray-900 rounded-full p-1.5 cursor-pointer">
 			<ChevronUp class="w-6 h-6 text-white" />
@@ -21,8 +20,6 @@
 
 <script setup lang="ts">
 import { ChevronUp } from "lucide-vue-next";
-import ConfigDropdown from "./ConfigDropdown.vue";
-import type { AssistantConfig } from "./types";
 
 defineProps({
 	loading: {
@@ -41,5 +38,4 @@ defineProps({
 
 const emit = defineEmits(["send"]);
 const query = defineModel({ type: String, required: true });
-const assistant = defineModel<AssistantConfig>("assistant", { required: true });
 </script>

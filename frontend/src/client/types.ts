@@ -29,7 +29,7 @@ export type ServerException = {
 export interface Config {
   cache?: boolean; // default false, if true then cache is used
   ttl?: number; // seconds, if not set cache invalidate only on api response
-  key?: string; // if not set, hash of url, method, body, params is used
+  key?: string; // if not set, hash(url, method, body, params) is used
   auto?: boolean; // default true, if false then call is not executed
   // signal?: AbortSignal; // if set, the call is aborted when the signal is aborted
 }
@@ -46,11 +46,11 @@ export type APIFunction<RF extends RawFunction> =
   Parameters<RF>[0] extends undefined
     ? (
         args?: null | undefined,
-        modifier?: Config
+        config?: Config
       ) => Call<undefined, ReturnType<RF>>
     : (
         args: Parameters<RF>[0],
-        modifier?: Config
+        config?: Config
       ) => Call<Parameters<RF>[0], ReturnType<RF>>;
 
 export type _API<Raw> = {
