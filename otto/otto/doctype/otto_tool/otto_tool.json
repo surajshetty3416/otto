@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "prompt",
  "creation": "2025-04-30 12:59:09.968373",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -190,10 +191,11 @@
    "link_fieldname": "tool"
   }
  ],
- "modified": "2025-11-06 17:09:36.554308",
+ "modified": "2025-11-06 17:41:29.368942",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Tool",
+ "naming_rule": "Set by user",
  "owner": "Administrator",
  "permissions": [
   {

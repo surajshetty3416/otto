@@ -62,7 +62,7 @@ class OttoAssistant(Document):
 		doc.title = title
 		doc.llm = llm or lib.get_model(size="Medium") or DEFAULT_MODEL
 		doc.instruction = instruction or DEFAULT_INSTRUCTION
-		doc.name = name or make_autoname("hash")
+		doc.name = name or f"assistant-{make_autoname('hash')}"
 		doc.is_app_defined = is_app_defined
 
 		if not reasoning_effort:

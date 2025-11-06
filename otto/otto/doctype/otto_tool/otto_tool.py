@@ -86,7 +86,7 @@ class OttoTool(Document):
 		tool_import_path: str | None = None,
 	):
 		doc = cast("OttoTool", frappe.new_doc("Otto Tool"))
-		doc.name = name or make_autoname("hash")
+		doc.name = name or f"tool-{make_autoname('hash')}"
 		doc.title = title
 		doc.slug = slug or to_slug(title or "")
 
