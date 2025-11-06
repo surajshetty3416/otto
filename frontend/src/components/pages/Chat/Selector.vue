@@ -5,7 +5,14 @@
 			text="Loading assistants"
 		/>
 		<TextLoadingIndicator v-else-if="list_models.loading" text="Loading models" />
-		<AssistantSelector v-else :model-value="selected" />
+		<AssistantSelector
+			v-else
+			v-model="assistant"
+			@more="openConfig = true"
+			@customize="openConfig = true"
+			@select="select"
+		/>
+		<AssistantConfigDialog v-model="openConfig" :selected="assistant" />
 	</div>
 </template>
 
@@ -14,9 +21,17 @@ import { api, list_assistants, list_models } from "@/client";
 import TextLoadingIndicator from "@/components/ui/TextLoadingIndicator.vue";
 import AssistantSelector from "./AssistantSelector.vue";
 import type { AssistantConfig } from "./types";
+import AssistantConfigDialog from "./AssistantConfig/AssistantConfigDialog.vue";
+import { ref } from "vue";
 
+const openConfig = ref(true);
 const preferred_assistants = api.chat.get_preferred_assistants();
-const selected = defineModel<AssistantConfig>({ required: true });
+const assistant = defineModel<AssistantConfig>({ required: true });
+
+function select(selected: AssistantConfig) {
+	assistant.value = selected;
+	openConfig.value = false;
+}
 
 /**
  * fetch user preferred assistant (select this)

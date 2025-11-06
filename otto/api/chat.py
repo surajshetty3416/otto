@@ -128,6 +128,7 @@ def list_assistants() -> list[Assistant]:
 	return frappe.get_all(
 		"Otto Assistant",
 		fields=["name", "title", "llm", "reasoning_effort"],
+		order_by="modified desc",
 	)
 
 

@@ -1,6 +1,6 @@
 <template>
 	<div
-		class="relative border-r border-gray-200 shrink-0 h-screen flex flex-col transition-all duration-300 ease-in-out"
+		class="relative border-r border-gray-200 shrink-0 h-screen flex flex-col transition-all duration-300 ease-in-out bg-gray-25"
 		:style="{ width: `${sidebarWidth}px` }"
 	>
 		<!-- Header with Logo and Collapse Toggle -->

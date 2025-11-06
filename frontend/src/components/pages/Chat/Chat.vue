@@ -34,9 +34,9 @@
 					:chatId="chatId ?? ''"
 					:loading="_loading"
 					@send="handleSend"
-					:model="query"
+					v-model="query"
 				/>
-				<Selector class="mt-2" v-if="showNew" :model-value="assistant" />
+				<Selector class="mt-2" v-if="showNew" v-model="assistant" />
 			</div>
 		</div>
 	</div>

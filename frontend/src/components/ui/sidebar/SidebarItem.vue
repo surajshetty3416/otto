@@ -43,7 +43,6 @@ const props = defineProps<{
 }>();
 
 const isActive = computed(() => {
-	console.log(props.item.route, router.currentRoute.value);
 	if (!props.item.route) return false;
 
 	return router.currentRoute.value.path.startsWith(props.item.route);

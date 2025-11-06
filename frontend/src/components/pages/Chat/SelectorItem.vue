@@ -1,5 +1,5 @@
 <template>
-	<button class="w-full p-1">
+	<button class="w-full p-1 hover:bg-gray-50 outline-none">
 		<div
 			class="px-1.5 py-1 w-full rounded-md flex items-start"
 			:class="[active ? 'bg-gray-100 ' : '']"
