@@ -17,7 +17,7 @@ import otto
 from otto.llm.utils import reset_user
 from otto.otto.doctype.otto_task.tools import is_meta_tool
 from otto.otto.doctype.otto_tool import lib
-from otto.utils import execute
+from otto.utils import execute, import_fn
 
 if TYPE_CHECKING:
 	from collections.abc import Callable
@@ -48,6 +48,7 @@ class OttoTool(Document):
 		args: DF.Table[OttoToolArgCT]
 		code: DF.Code | None
 		description: DF.LongText | None
+		is_app_defined: DF.Check
 		is_external: DF.Check
 		is_valid: DF.Check
 		mock_return_value: DF.Data | None
@@ -56,6 +57,7 @@ class OttoTool(Document):
 		requires_permission: DF.Check
 		slug: DF.Data
 		title: DF.Data | None
+		tool_import_path: DF.Data | None
 		use_explanation: DF.Check
 	# end: auto-generated types
 
@@ -67,6 +69,7 @@ class OttoTool(Document):
 		title: str | None = None,
 		# Flags
 		is_external: bool = False,
+		is_app_defined: bool = False,
 		use_explanation: bool = False,
 		requires_permission: bool = False,
 		# Mocks
@@ -79,6 +82,8 @@ class OttoTool(Document):
 		slug: str | None = None,
 		args: list[dict] | None = None,
 		description: str | None = None,
+		# External tools
+		tool_import_path: str | None = None,
 	):
 		doc = cast("OttoTool", frappe.new_doc("Otto Tool"))
 		doc.name = name or make_autoname("hash")
@@ -100,6 +105,8 @@ class OttoTool(Document):
 
 		doc.use_explanation = use_explanation
 		doc.requires_permission = requires_permission
+		doc.is_app_defined = is_app_defined
+		doc.tool_import_path = tool_import_path
 
 		assert doc.slug, "slug is required"
 		doc.save()
@@ -111,12 +118,12 @@ class OttoTool(Document):
 
 	def before_save(self):
 		self.set_title_or_slug()
-		if self.is_external:
+		if self.is_external or self.tool_import_path:
 			self.validate_external()
 			return None
 
 		if not self.code:
-			self.set_reason("Code is required")
+			self.set_reason("Code (or Tool Import Path) is required")
 			return None
 
 		reasons, args_def = execute.validate(self.code, self.slug)
@@ -134,8 +141,18 @@ class OttoTool(Document):
 	def validate_external(self):
 		self.is_valid = True
 		self.reason = None
+		if self.tool_import_path:
+			self.validate_import_path()
+
 		self.validate_arg_types()
 		self.validate_descriptions()
+
+	def validate_import_path(self):
+		assert self.tool_import_path is not None, "tool_import_path is required"
+		try:
+			import_fn(self.tool_import_path)
+		except Exception as e:
+			self.set_reason(f"Error importing function from import path: {e}")
 
 	def set_title_or_slug(self):
 		if self.title and not self.slug:
@@ -272,9 +289,12 @@ class OttoTool(Document):
 			return self.mock(args, task=task, session=session, chat=chat)
 
 		if not self.is_valid and not force:
-			raise ValidationError("tool is invalid: " + (self.reason or ""))
+			raise ValidationError("tool is invalid " + (self.reason or ""))
 
-		if self.is_external:
+		if self.tool_import_path and not fn:
+			fn = import_fn(self.tool_import_path)
+
+		if self.is_external or self.tool_import_path:
 			assert fn is not None, "type check"
 			return self._execute_external(args, fn)
 

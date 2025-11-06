@@ -6,6 +6,7 @@
  "engine": "InnoDB",
  "field_order": [
   "title",
+  "is_app_defined",
   "column_break_roim",
   "llm",
   "reasoning_effort",
@@ -13,7 +14,8 @@
   "instruction",
   "tools",
   "context_section",
-  "get_context"
+  "get_context",
+  "get_context_import_path"
  ],
  "fields": [
   {
@@ -21,6 +23,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Title",
+   "read_only_depends_on": "eval:doc.is_app_defined",
    "reqd": 1
   },
   {
@@ -34,6 +37,7 @@
    "in_standard_filter": 1,
    "label": "LLM",
    "options": "Otto LLM",
+   "read_only_depends_on": "eval:doc.is_app_defined",
    "reqd": 1
   },
   {
@@ -47,11 +51,13 @@
    "label": "Context"
   },
   {
+   "depends_on": "eval:!doc.is_app_defined",
    "description": "Function with signature: <code>def get_context() -&gt; dict[str, str]</code>\n<br>\nThe returned dict is used to render the instruction template.",
    "fieldname": "get_context",
    "fieldtype": "Code",
    "label": "Get Context",
-   "options": "Python"
+   "options": "Python",
+   "read_only_depends_on": "eval:doc.is_app_defined"
   },
   {
    "description": "Instruction instructs the assistant on how it should assist the user, use the tools it has, etc. Supports Jinja Template format to add in context.",
@@ -59,6 +65,7 @@
    "fieldtype": "Code",
    "in_list_view": 1,
    "label": "Instruction",
+   "read_only_depends_on": "eval:doc.is_app_defined",
    "reqd": 1
   },
   {
@@ -67,19 +74,36 @@
    "fieldname": "reasoning_effort",
    "fieldtype": "Select",
    "label": "Reasoning Effort",
-   "options": "None\nLow\nMedium\nHigh"
+   "options": "None\nLow\nMedium\nHigh",
+   "read_only_depends_on": "eval:doc.is_app_defined"
   },
   {
    "fieldname": "tools",
    "fieldtype": "Table",
    "label": "Tools",
-   "options": "Otto Assistant Tool CT"
+   "options": "Otto Assistant Tool CT",
+   "read_only_depends_on": "eval:doc.is_app_defined"
+  },
+  {
+   "default": "0",
+   "description": "An assistant is editable only if it is not app defined, else the user can duplicate the assistant and edit it.<br>\n<code>is_user_defined = not is_app_defined</code>",
+   "fieldname": "is_app_defined",
+   "fieldtype": "Check",
+   "label": "Is App Defined",
+   "read_only": 1
+  },
+  {
+   "description": "Import path of the get context function (<code>path.to.get_context</code>), used for internally defined Assistants.<br>If provided, the <i>Get Context</i> field is ignored.",
+   "fieldname": "get_context_import_path",
+   "fieldtype": "Data",
+   "label": "Get Context Import Path",
+   "read_only_depends_on": "eval:doc.is_app_defined"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-11-06 11:36:11.754866",
+ "modified": "2025-11-06 15:02:05.981484",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Assistant",

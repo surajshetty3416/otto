@@ -10,6 +10,12 @@ from frappe.tests import UnitTestCase
 from otto.otto.doctype.otto_tool.otto_tool import OttoTool
 
 
+# Helper function for testing tool_import_path
+def test_import_function(x: int, y: int) -> dict:
+	"""A simple function to test tool_import_path functionality."""
+	return {"sum": x + y, "product": x * y}
+
+
 class UnitTestOttoTool(UnitTestCase):
 	"""
 	Unit tests for OttoTool.
@@ -775,3 +781,39 @@ def other_function(a: int):
 		result3 = tool.execute({"user_id": "nonexistent"}, fn=fetch_user_data_fn)
 		self.assertIn("error", result3["result"])
 		self.assertEqual(result3["result"]["error"], "User not found")
+
+	def test_external_tool_with_import_path(self):
+		"""Test external tool that uses tool_import_path instead of passing fn parameter."""
+		# Create external tool with tool_import_path
+		tool = OttoTool.new(
+			title="Calculate With Import",
+			slug="calculate_with_import",
+			description="Calculates sum and product using imported function",
+			args=[
+				{
+					"arg_name": "x",
+					"type": "integer",
+					"description": "First number",
+					"is_required": True,
+				},
+				{
+					"arg_name": "y",
+					"type": "integer",
+					"description": "Second number",
+					"is_required": True,
+				},
+			],
+			is_app_defined=True,
+			tool_import_path="otto.otto.doctype.otto_tool.test_otto_tool.test_import_function",
+		)
+		self.created_tools.append(tool)
+
+		# Execute without passing fn - it should import the function automatically
+		result = tool.execute({"x": 6, "y": 7})
+
+		# Verify result from the imported function
+		self.assertIsInstance(result["result"], dict)
+		self.assertEqual(result["result"]["sum"], 13)
+		self.assertEqual(result["result"]["product"], 42)
+		self.assertEqual(result["stdout"], "")
+		self.assertEqual(result["stderr"], "")

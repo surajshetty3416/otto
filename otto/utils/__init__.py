@@ -11,7 +11,7 @@ from otto.utils.file import get_file
 __all__ = ["cache", "drain", "format_prompt", "get_file", "json_dumps"]
 
 if TYPE_CHECKING:
-	from collections.abc import Generator
+	from collections.abc import Callable, Generator
 
 
 def json_dumps(value: Any) -> tuple[str, bool]:
@@ -72,3 +72,17 @@ def to_html(content: str):
 def format_prompt(prompt: str) -> str:
 	"""Format prompt"""
 	return dedent(prompt).strip()
+
+
+def import_fn(path: str) -> Callable:
+	from importlib import import_module
+
+	parts = path.split(".")
+	module_name = ".".join(parts[:-1])
+	attribute_name = parts[-1]
+	module = import_module(module_name)
+	fn = getattr(module, attribute_name)
+	if not callable(fn):
+		raise ValueError(f"Imported attribute '{attribute_name}' from module '{module_name}' is not callable")
+
+	return fn

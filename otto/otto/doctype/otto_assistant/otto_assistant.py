@@ -3,7 +3,7 @@ from __future__ import annotations
 # Copyright (c) 2025, Alan Tom and contributors
 # For license information, please see license.txt
 # import frappe
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import frappe
 from frappe.model.document import Document
@@ -32,7 +32,9 @@ class OttoAssistant(Document):
 		from otto.otto.doctype.otto_assistant_tool_ct.otto_assistant_tool_ct import OttoAssistantToolCT
 
 		get_context: DF.Code | None
+		get_context_import_path: DF.Data | None
 		instruction: DF.Code
+		is_app_defined: DF.Check
 		llm: DF.Link
 		reasoning_effort: DF.Literal["None", "Low", "Medium", "High"]
 		title: DF.Data
@@ -109,12 +111,35 @@ class OttoAssistant(Document):
 
 	@frappe.whitelist()
 	def run_get_context(self):
-		if not self.get_context:
-			return {}
-
 		from datetime import datetime
 
-		from otto.utils import execute
+		user = frappe.session.user
+		if full_name := frappe.get_value("User", frappe.session.user, "full_name"):
+			user = full_name
+
+		now = datetime.now()
+		common = {
+			"user": user,
+			"date": now.date().isoformat(),
+			"time": now.time().isoformat(),
+			"datetime": now.isoformat(),
+		}
+
+		result = self._run_get_context()
+		if not isinstance(result, dict):
+			return common
+
+		return {**common, **result}
+
+	def _run_get_context(self) -> Any:
+		from otto.utils import execute, import_fn
+
+		if self.get_context_import_path:
+			fn = import_fn(self.get_context_import_path)
+			return fn()
+
+		if not self.get_context:
+			return None
 
 		context = execute.execute(
 			script=self.get_context,
@@ -124,20 +149,4 @@ class OttoAssistant(Document):
 			function_name="get_context",
 		)
 
-		user = frappe.session.user
-		if full_name := frappe.get_value("User", frappe.session.user, "full_name"):
-			user = full_name
-
-		result = context["result"]
-		now = datetime.now()
-		common = {
-			"user": user,
-			"date": now.date().isoformat(),
-			"time": now.time().isoformat(),
-			"datetime": now.isoformat(),
-		}
-
-		if not isinstance(result, dict):
-			return common
-
-		return {**common, **result}
+		return context["result"]
