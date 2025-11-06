@@ -68,7 +68,7 @@ class OttoAssistant(Document):
 			tool_rows = frappe.get_all(
 				"Otto Tool",
 				filters={"name": ["in", tools]},
-				fields=["name", "slug", "requires_permission", "is_enabled"],
+				fields=["name", "slug", "requires_permission"],
 			)
 			tool_map = {row["name"]: row for row in tool_rows}
 			for tool in tools:
@@ -81,7 +81,7 @@ class OttoAssistant(Document):
 					{
 						"tool": tool,
 						"slug": src.get("slug"),
-						"is_enabled": src.get("is_enabled", False),
+						"is_enabled": True,
 						"requires_permission": src.get("requires_permission", False),
 					},
 				)
