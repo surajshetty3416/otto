@@ -47,6 +47,7 @@ class AssistantTool(TypedDict):
 	uid: str
 	tool: Tool
 	requires_permission: bool
+	use_explanation: bool
 
 
 class ModelPreferenceConfig(TypedDict, total=False):

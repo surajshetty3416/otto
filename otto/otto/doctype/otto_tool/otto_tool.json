@@ -30,7 +30,7 @@
  ],
  "fields": [
   {
-   "depends_on": "eval:!(doc.is_external && !doc.tool_import_path)",
+   "depends_on": "eval:!doc.is_external && !doc.tool_import_path",
    "description": "Tool definition consists of a function <code>main</code>. Return value of this\n<code>main</code> function is passed to the LLM.\n\n<br><br>\n<b>Tool definition guidelines</b>\n<ul>\n    <li>Tool definition should have a valid Python function named <code>main</code>.</li>\n    <li>Use <code>from module import item</code> instead of <code>import module</code>.</li>\n    <li>Not all imports are allowed, test the function to find out if the import works.</li>\n    <li>Use simple type annotations to infer JSON schema type for the arguments.</li>\n    <li>Complex types like <code>str | int</code> cannot be inferred from.</li>\n</ul>",
    "fieldname": "code",
    "fieldtype": "Code",
@@ -190,7 +190,7 @@
    "link_fieldname": "tool"
   }
  ],
- "modified": "2025-11-06 15:59:27.170619",
+ "modified": "2025-11-06 17:09:36.554308",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Tool",

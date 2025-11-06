@@ -18,15 +18,20 @@ def get_tool(
 	title: str | None = None,
 	*,
 	requires_permission: bool = False,
+	use_explanation: bool = False,
 	options: ToolOptions | None = None,
 ) -> AssistantTool:
-	from otto.assistants.types import AssistantTool
+	from frappe_mcp.server.tools import ToolOptions
 
-	if options and title:
-		options["title"] = title
+	from otto.assistants.types import AssistantTool
+	from otto.utils import get_title_from_slug
+
+	options = options or ToolOptions()
+	options["title"] = title or get_title_from_slug(fn.__name__)
 
 	return AssistantTool(
 		uid=uid,
 		tool=tools.get_tool(fn, options),
 		requires_permission=requires_permission,
+		use_explanation=use_explanation,
 	)

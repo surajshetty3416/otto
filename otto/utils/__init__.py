@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 from otto.utils.cache import cache
 from otto.utils.file import get_file
 
-__all__ = ["cache", "drain", "format_prompt", "get_file", "json_dumps"]
+__all__ = ["cache", "drain", "format_prompt", "get_file", "get_title_from_slug", "json_dumps"]
 
 if TYPE_CHECKING:
 	from collections.abc import Callable, Generator
@@ -74,6 +74,10 @@ def format_prompt(prompt: str) -> str:
 	return dedent(prompt).strip()
 
 
+def get_import_path(fn: Callable) -> str:
+	return f"{fn.__module__}.{fn.__qualname__}"
+
+
 def import_fn(path: str) -> Callable:
 	from importlib import import_module
 
@@ -86,3 +90,8 @@ def import_fn(path: str) -> Callable:
 		raise ValueError(f"Imported attribute '{attribute_name}' from module '{module_name}' is not callable")
 
 	return fn
+
+
+def get_title_from_slug(slug: str) -> str:
+	parts = [w.capitalize() for w in slug.split("_") if w.isalnum()]
+	return " ".join(parts)

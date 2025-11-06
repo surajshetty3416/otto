@@ -112,6 +112,10 @@ def get(Doc: type[D], name: str, *, cached: bool = False) -> D:
 	return cast("D", frappe.get_doc(doctype, name))
 
 
+def exists(doctype: str, name: str, cache: bool = False) -> bool:
+	return bool(frappe.db.exists(doctype, name, cache=cache))
+
+
 def get_doctype_name(doc: type[D]) -> str:
 	classname = doc.__name__
 	if classname in classname_doctype_map:

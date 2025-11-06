@@ -17,7 +17,7 @@ import otto
 from otto.llm.utils import reset_user
 from otto.otto.doctype.otto_task.tools import is_meta_tool
 from otto.otto.doctype.otto_tool import lib
-from otto.utils import execute, import_fn
+from otto.utils import execute, get_title_from_slug, import_fn
 
 if TYPE_CHECKING:
 	from collections.abc import Callable
@@ -160,8 +160,7 @@ class OttoTool(Document):
 			self.slug = "_".join(parts)
 
 		if self.slug and not self.title:
-			parts = [w.capitalize() for w in self.slug.split("_")]
-			self.title = " ".join(parts)
+			self.title = get_title_from_slug(self.slug)
 
 	def set_args(self, args_def: list[execute.ArgDefinition]):
 		prev_meta = {a.arg_name: (a.type, a.description) for a in (self.args or [])}

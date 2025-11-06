@@ -11,8 +11,11 @@ from frappe.model.naming import make_autoname
 from jinja2 import Template
 
 from otto.llm.utils import DEFAULT_MODEL
+from otto.utils import get_import_path
 
 if TYPE_CHECKING:
+	from collections.abc import Callable
+
 	from otto.lib.types import ReasoningEffort
 
 DEFAULT_INSTRUCTION = (
@@ -50,6 +53,8 @@ class OttoAssistant(Document):
 		instruction: str | None = None,
 		tools: list[str] | None = None,
 		reasoning_effort: ReasoningEffort | None = None,
+		get_context: str | Callable | None = None,
+		is_app_defined: bool = False,
 	):
 		import otto.lib as lib
 
@@ -58,33 +63,16 @@ class OttoAssistant(Document):
 		doc.llm = llm or lib.get_model(size="Medium") or DEFAULT_MODEL
 		doc.instruction = instruction or DEFAULT_INSTRUCTION
 		doc.name = name or make_autoname("hash")
+		doc.is_app_defined = is_app_defined
 
 		if not reasoning_effort:
 			doc.reasoning_effort = "None"
 		else:
 			doc.reasoning_effort = reasoning_effort
 
+		doc.set_get_context(get_context)
 		if tools:
-			tool_rows = frappe.get_all(
-				"Otto Tool",
-				filters={"name": ["in", tools]},
-				fields=["name", "slug", "requires_permission"],
-			)
-			tool_map = {row["name"]: row for row in tool_rows}
-			for tool in tools:
-				src = tool_map.get(tool)
-				if not src:
-					continue
-
-				doc.append(
-					"tools",
-					{
-						"tool": tool,
-						"slug": src.get("slug"),
-						"is_enabled": True,
-						"requires_permission": src.get("requires_permission", False),
-					},
-				)
+			doc.set_tools(tools)
 
 		doc.save()
 		return doc
@@ -150,3 +138,35 @@ class OttoAssistant(Document):
 		)
 
 		return context["result"]
+
+	def set_get_context(self, get_context: str | Callable | None):
+		if callable(get_context):
+			self.get_context = None
+			self.get_context_import_path = get_import_path(get_context)
+
+		if isinstance(get_context, str):
+			self.get_context_import_path = None
+			self.get_context = get_context
+
+	def set_tools(self, tools: list[str]):
+		self.tools.clear()
+		tool_rows = frappe.get_all(
+			"Otto Tool",
+			filters={"name": ["in", tools]},
+			fields=["name", "slug", "requires_permission"],
+		)
+		tool_map = {row["name"]: row for row in tool_rows}
+		for tool in tools:
+			src = tool_map.get(tool)
+			if not src:
+				continue
+
+			self.append(
+				"tools",
+				{
+					"tool": tool,
+					"slug": src.get("slug"),
+					"is_enabled": True,
+					"requires_permission": src.get("requires_permission", False),
+				},
+			)
