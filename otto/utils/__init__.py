@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import datetime
 import json
+from textwrap import dedent
 from typing import TYPE_CHECKING, Any
 
 from otto.utils.cache import cache
 from otto.utils.file import get_file
 
-__all__ = ["cache", "drain", "get_file", "json_dumps"]
+__all__ = ["cache", "drain", "format_prompt", "get_file", "json_dumps"]
 
 if TYPE_CHECKING:
 	from collections.abc import Generator
@@ -66,3 +67,8 @@ def to_html(content: str):
 	}
 
 	return markdown(content, extras=extras)
+
+
+def format_prompt(prompt: str) -> str:
+	"""Format prompt"""
+	return dedent(prompt).strip()

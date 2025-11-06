@@ -77,6 +77,13 @@ class RealtimeRequestAcknowledge(TypedDict):
 	data: list[str]  # list of tool use ids that were acknowledged
 
 
+class RealtimeTitleUpdate(TypedDict):
+	id: str
+	chat_id: str
+	type: Literal["title-update"]
+	data: str
+
+
 # @export - used for listening to chat messages
 RealtimeChatMessage = (
 	RealtimeError
@@ -87,6 +94,7 @@ RealtimeChatMessage = (
 	| RealtimeToolExecutionUpdate
 	| RealtimeToolExecutionComplete
 	| RealtimeRequestAcknowledge
+	| RealtimeTitleUpdate
 )
 
 
@@ -95,6 +103,25 @@ class Assistant(TypedDict):
 	title: str
 	llm: str
 	reasoning_effort: ReasoningEffort
+
+
+class AssistantDetails(TypedDict):
+	name: str
+	title: str
+	llm: str
+	reasoning_effort: ReasoningEffort | None
+	instruction: str
+	tools: list[dict]
+
+
+class AssistantTool(TypedDict):
+	tool: str  # Otto Tool name
+	title: str
+	slug: str
+	description: str
+	is_valid: bool
+	is_enabled: bool
+	requires_permission: bool
 
 
 class ListChatItem(TypedDict):

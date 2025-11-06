@@ -1,8 +1,8 @@
-import { reactive, toRaw } from "vue";
-import type { CallArgs, CallAPIArgs, Config, ServerException } from "./types";
-import { hash } from "./utils";
-import { Store } from "./store";
+import { isProxy, reactive, toRaw } from "vue";
 import { logError } from "../utils";
+import { Store } from "./store";
+import type { CallAPIArgs, CallArgs, Config, ServerException } from "./types";
+import { hash } from "./utils";
 import { watcher } from "./watcher";
 
 const cachestore = new Store<unknown>("cache");
@@ -268,7 +268,8 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     const ttl_ms = (this._config?.ttl ?? 0) * 1000;
 
     try {
-      await cachestore.set(key, this.data, ttl_ms);
+      const data = isProxy(this.data) ? toRaw(this.data) : this.data;
+      await cachestore.set(key, data, ttl_ms);
     } catch (error) {
       return logError(error);
     }

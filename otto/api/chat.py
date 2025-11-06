@@ -9,6 +9,8 @@ import otto
 from otto import lib
 from otto.api.types import (
 	Assistant,
+	AssistantDetails,
+	AssistantTool,
 	ListChatItem,
 	PendingRequest,
 	RealtimeChatMessage,
@@ -18,6 +20,7 @@ from otto.api.types import (
 	RealtimePong,
 	RealtimeRequest,
 	RealtimeRequestAcknowledge,
+	RealtimeTitleUpdate,
 	RealtimeToolExecutionComplete,
 	RealtimeToolExecutionUpdate,
 )
@@ -68,6 +71,7 @@ def send_query(chat_id: str, query: str) -> None:
 		at_front=True,
 		chat_id=chat_id,
 		query=query,
+		queue="short",
 	)
 
 
@@ -80,6 +84,7 @@ def resume_chat(chat_id: str) -> None:
 		at_front=True,
 		chat_id=chat_id,
 		query=None,
+		queue="short",
 	)
 
 
@@ -147,6 +152,48 @@ def get_preferred_assistants() -> list[str]:
 	return frappe.get_all("Otto Assistant", pluck="name", limit=2)
 
 
+@frappe.whitelist()
+def get_assistant_details(name: str) -> AssistantDetails:
+	from otto.otto.doctype.otto_assistant.otto_assistant import OttoAssistant
+
+	assistant = otto.get(OttoAssistant, name)
+	assert assistant.name is not None, "sanity check"
+	tools = []
+	tool_names = set([tool.tool for tool in assistant.tools])
+	tool_list = frappe.get_all(
+		"Otto Tool",
+		filters={"name": ["in", tool_names]},
+		fields=["name", "title", "description", "is_valid", "slug", "description"],
+	)
+	tool_map = {tool.name: tool for tool in tool_list}
+
+	for tool in assistant.tools:
+		tool_data = tool_map.get(tool.tool)
+		if not tool_data:
+			continue
+
+		tools.append(
+			AssistantTool(
+				tool=tool.tool,
+				title=tool_data.title or tool_data.slug or "",
+				slug=tool.slug or tool_data.slug,
+				description=tool_data.description or "",
+				is_valid=bool(tool_data.is_valid),
+				is_enabled=bool(tool.is_enabled),
+				requires_permission=bool(tool.requires_permission),
+			)
+		)
+
+	return AssistantDetails(
+		name=assistant.name,
+		title=assistant.title,
+		llm=assistant.llm,
+		reasoning_effort=assistant.reasoning_effort if assistant.reasoning_effort != "None" else None,
+		instruction=assistant.instruction,
+		tools=tools,
+	)
+
+
 def _chat(chat_id: str, query: str | None = None) -> None:
 	from otto.otto.doctype.otto_chat.otto_chat import OttoChat
 
@@ -158,6 +205,28 @@ def _chat(chat_id: str, query: str | None = None) -> None:
 	_send_query(chat, chat_id, query)
 	_check_pending_requests(chat, chat_id)
 	_execute_tools(chat, chat_id)
+
+	if (not chat.title or chat.title.startswith("New Chat")) and len(chat.session_.get_items()) >= 3:
+		frappe.enqueue(
+			_autoset_title,
+			chat_id=chat_id,
+		)
+
+
+def _autoset_title(chat_id: str) -> None:
+	from otto.otto.doctype.otto_chat.otto_chat import OttoChat
+
+	chat = otto.get(OttoChat, chat_id)
+	if not chat.autoset_title() or not chat.title:
+		return
+
+	message = RealtimeTitleUpdate(
+		id=frappe.generate_hash(length=10),
+		chat_id=chat_id,
+		type="title-update",
+		data=chat.title,
+	)
+	_publish(message)
 
 
 def _send_query(chat: OttoChat, chat_id: str, query: str | None) -> None:

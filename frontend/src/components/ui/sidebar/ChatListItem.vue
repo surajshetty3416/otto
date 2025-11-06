@@ -6,7 +6,9 @@
 		side="right"
 		align="start"
 	>
-		{{ chat.title ?? "Untitled" }}
+		<span class="truncate">
+			{{ chat.title ?? "Untitled" }}
+		</span>
 
 		<!-- Tooltip content -->
 		<template #content>

@@ -148,14 +148,19 @@ class OttoChat(Document):
 		)
 		doc.session_ = session
 		doc._copy_tools(assistant_doc)
-		doc.title = "New Chat with " + (assistant_doc.title or "Assistant")
+		doc.title = "New Chat with " + assistant_doc.title
 
 		doc.save()
 		return doc
 
 	def autoset_title(self):
-		# TODO: use a small model to generate a title from the first 4 exchanges
-		...
+		title = generate_session_title(self.session_)
+		if not title:
+			return False
+
+		self.title = title
+		self.save(ignore_permissions=True)
+		return True
 
 	def chat(self, query: Query | None = None):
 		"""query can be None when resuming after a tool use request"""
@@ -317,3 +322,31 @@ class OttoChat(Document):
 			return True
 
 		return False
+
+
+def generate_session_title(session: lib.Session) -> str | None:
+	from otto.prompts.title import generate_chat_title
+
+	model = lib.get_model(preference="gpt-5-nano", size="Very Small") or lib.get_model(size="Small")
+	if not model:
+		return None
+
+	items = session.get_items()[:5]
+	query = ""
+	for item in items:
+		if item["meta"]["role"] != "user":
+			continue
+
+		for content in item["content"]:
+			if content["type"] != "text":
+				continue
+
+			query += f"User: {content['text']}\n"
+	if not query:
+		return None
+
+	res = lib.quick_query(query, model=model, instruction=generate_chat_title, stream=False)
+	if not res or res[0]["type"] != "text":
+		return None
+
+	return res[0]["text"].strip()

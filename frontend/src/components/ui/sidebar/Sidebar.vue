@@ -17,7 +17,7 @@
 				class="flex-shrink-0 bg-transparent z-0"
 				:title="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
 			>
-				<ChevronLeft
+				<ArrowLeftToLine
 					class="w-4 h-4 text-gray-600 transition-all duration-150"
 					:style="{ opacity: textOpacity }"
 					:class="{ 'rotate-180': isCollapsed }"
@@ -50,12 +50,18 @@
 
 <script setup lang="ts">
 import LogoThickLine from "@/components/svg/LogoThickLine.vue";
-import { Bot, ChevronLeft, ClipboardList, MessageSquare, Wrench } from "lucide-vue-next";
+import {
+  ArrowLeftToLine,
+  Bot,
+  ClipboardList,
+  MessageSquare,
+  Wrench
+} from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import ChatList from "./ChatList.vue";
+import SidebarFooter from "./SidebarFooter.vue";
 import SidebarItem from "./SidebarItem.vue";
 import type { SidebarItem as SidebarItemType } from "./types";
-import SidebarFooter from "./SidebarFooter.vue";
 import { sidebarState } from "./utils";
 
 // Sidebar width management

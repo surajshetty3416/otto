@@ -204,6 +204,7 @@ def get_tool_uses(
 			type="tool_use",
 			id=row["id"],
 			name=row["name"],
+			_args=None,
 			args=args,
 			override=override,
 			status=row["status"],

@@ -264,6 +264,9 @@ function handleRealtimeMessage(message: RealtimeChatMessage) {
 		case "request-acknowledge":
 			updatePendingRequestsAndResume(message.data);
 			return;
+		case "title-update":
+			list_chats.run(undefined, false);
+			return;
 		case "error":
 			toast.error("Error in chat", {
 				description: message.data,

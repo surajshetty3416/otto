@@ -10,6 +10,8 @@ from frappe.model.document import Document
 from frappe.model.naming import make_autoname
 from jinja2 import Template
 
+from otto.llm.utils import DEFAULT_MODEL
+
 if TYPE_CHECKING:
 	from otto.lib.types import ReasoningEffort
 
@@ -30,10 +32,10 @@ class OttoAssistant(Document):
 		from otto.otto.doctype.otto_assistant_tool_ct.otto_assistant_tool_ct import OttoAssistantToolCT
 
 		get_context: DF.Code | None
-		instruction: DF.Code | None
-		llm: DF.Link | None
+		instruction: DF.Code
+		llm: DF.Link
 		reasoning_effort: DF.Literal["None", "Low", "Medium", "High"]
-		title: DF.Data | None
+		title: DF.Data
 		tools: DF.Table[OttoAssistantToolCT]
 	# end: auto-generated types
 
@@ -51,7 +53,7 @@ class OttoAssistant(Document):
 
 		doc = cast("OttoAssistant", frappe.new_doc("Otto Assistant"))
 		doc.title = title
-		doc.llm = llm or lib.get_model(size="Medium")
+		doc.llm = llm or lib.get_model(size="Medium") or DEFAULT_MODEL
 		doc.instruction = instruction or DEFAULT_INSTRUCTION
 		doc.name = name or make_autoname("hash")
 
@@ -92,7 +94,7 @@ class OttoAssistant(Document):
 			self.instruction = DEFAULT_INSTRUCTION
 
 		if not self.llm:
-			self.llm = lib.get_model(size="Medium")
+			self.llm = lib.get_model(size="Medium") or DEFAULT_MODEL
 
 	@frappe.whitelist()
 	def get_instruction(self):
