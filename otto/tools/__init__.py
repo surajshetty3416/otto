@@ -48,7 +48,7 @@ def sync_tool(module: ModuleType | str) -> str | None:
 	if tool_definition["dev_mode_only"] and not frappe.conf.developer_mode:
 		return None
 
-	if tool_definition["name"] in installed_tools:
+	if tool_definition["name"] in installed_tools and not frappe.flags.in_test:
 		return tool_definition["name"]
 
 	return _ensure_tool(tool_definition)
@@ -69,30 +69,13 @@ def _get_tool_definition(module: ModuleType) -> ToolDefinition:
 	if not hasattr(module, "uid") or not isinstance(module.uid, str):
 		raise ValueError("Tool definition must have a string named `uid`")
 
-	# Extract required and optional attributes from the module
-	if not hasattr(module, "fn") and not hasattr(module, "name"):
-		raise ValueError("Tool definition must have a function named `fn` or a name named `name`")
-
-	name = getattr(module, "name", None)
-	if not name:
-		name = module.__name__.split(".")[-1]
-
-		if not name.endswith("_tool"):
-			raise ValueError(
-				f"Could not find tool name. Tool definition file name `{name}` should end with `_tool`"
-			)
-
-		name = name.split("_tool")[0]
-
-	fn = None
-	if hasattr(module, "fn"):
-		fn = module.fn
-
-	if hasattr(module, name):
-		fn = getattr(module, name, None)
+	name = _get_tool_name(module)
+	fn = getattr(module, name, None) or getattr(module, "fn", None)
+	if fn is None:
+		raise ValueError(f"Could not find tool function (with name `{name or 'fn'}`)")
 
 	if not callable(fn):
-		raise ValueError(f"Tool function `{getattr(module, 'name', 'fn')}` is not a callable")
+		raise ValueError(f"Tool function `{name or 'fn'}` is not a callable")
 
 	tool = tools.get_tool(fn)
 	return ToolDefinition(
@@ -164,3 +147,16 @@ def _get_tool_schema(tool: ToolDefinition) -> ToolSchema:
 			required=tool["required"],
 		),
 	)
+
+
+def _get_tool_name(module: ModuleType) -> str:
+	if name := getattr(module, "name", None):
+		return name
+	name = module.__name__.split(".")[-1]
+
+	if not name.endswith("_tool"):
+		raise ValueError(
+			f"Could not find tool name. Tool definition file name `{name}` should end with `_tool`"
+		)
+
+	return name.split("_tool")[0]
