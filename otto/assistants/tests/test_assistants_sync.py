@@ -47,7 +47,7 @@ class TestAssistantSync(UnitTestCase):
 		This test uses dummy_assistant which defines tools as ToolDefinition objects
 		created via get_tool() function.
 		"""
-		from otto.assistants.test import dummy_assistant
+		from otto.assistants.tests import dummy_assistant
 
 		# Sync the dummy assistant (uses ToolDefinition objects for tools)
 		sync_assistants([dummy_assistant])
@@ -95,7 +95,7 @@ class TestAssistantSync(UnitTestCase):
 
 	def test_sync_assistant_updates_existing_assistant(self):
 		"""Test that sync_assistants updates an existing assistant."""
-		from otto.assistants.test import dummy_assistant
+		from otto.assistants.tests import dummy_assistant
 
 		# First sync
 		sync_assistants([dummy_assistant])
@@ -117,7 +117,7 @@ class TestAssistantSync(UnitTestCase):
 
 	def test_sync_assistant_with_string_path(self):
 		"""Test that sync_assistants works with string module path."""
-		from otto.assistants.test import dummy_assistant
+		from otto.assistants.tests import dummy_assistant
 
 		# Sync using string path
 		sync_assistants(["otto.assistants.test.dummy_assistant"])
@@ -133,7 +133,7 @@ class TestAssistantSync(UnitTestCase):
 
 	def test_sync_assistant_tools_updated(self):
 		"""Test that tools are properly updated when syncing."""
-		from otto.assistants.test import dummy_assistant
+		from otto.assistants.tests import dummy_assistant
 
 		# First sync
 		sync_assistants([dummy_assistant])
@@ -155,7 +155,7 @@ class TestAssistantSync(UnitTestCase):
 
 	def test_sync_assistant_with_context_function(self):
 		"""Test that assistant with get_context function is properly synced."""
-		from otto.assistants.test import dummy_assistant
+		from otto.assistants.tests import dummy_assistant
 
 		# Sync the assistant
 		sync_assistants([dummy_assistant])
@@ -174,7 +174,7 @@ class TestAssistantSync(UnitTestCase):
 
 	def test_sync_multiple_assistants(self):
 		"""Test syncing multiple assistants at once."""
-		from otto.assistants.test import dummy_assistant
+		from otto.assistants.tests import dummy_assistant
 
 		# Create another simple assistant module programmatically for testing
 		# We'll just sync the same one twice to verify batch processing works
@@ -196,7 +196,7 @@ class TestAssistantSync(UnitTestCase):
 
 	def test_assistant_tool_import_paths(self):
 		"""Test that tool import paths are correctly set."""
-		from otto.assistants.test import dummy_assistant
+		from otto.assistants.tests import dummy_assistant
 
 		# Sync the assistant
 		sync_assistants([dummy_assistant])
@@ -216,7 +216,7 @@ class TestAssistantSync(UnitTestCase):
 
 	def test_tool_schemas_correctly_synced(self):
 		"""Test that tool schemas (args) are correctly synced."""
-		from otto.assistants.test import dummy_assistant
+		from otto.assistants.tests import dummy_assistant
 
 		# Sync the assistant
 		sync_assistants([dummy_assistant])
@@ -250,7 +250,7 @@ class TestAssistantSync(UnitTestCase):
 		This is the primary use case - tools are defined using get_tool() which
 		returns ToolDefinition objects. The dummy_assistant already uses this approach.
 		"""
-		from otto.assistants.test import dummy_assistant
+		from otto.assistants.tests import dummy_assistant
 
 		# The dummy_assistant uses get_tool() to create ToolDefinition objects
 		sync_assistants([dummy_assistant])
@@ -273,7 +273,7 @@ class TestAssistantSync(UnitTestCase):
 		"otto.assistants.test.simple_tool". The module must follow the
 		ToolDefinition format with uid, and a function matching the module name.
 		"""
-		from otto.assistants.test import string_tools_assistant
+		from otto.assistants.tests import string_tools_assistant
 
 		# Sync assistant with string path tools
 		sync_assistants([string_tools_assistant])
@@ -298,7 +298,7 @@ class TestAssistantSync(UnitTestCase):
 		Tools can be specified as module objects that are imported in the
 		assistant definition. The module must follow the ToolDefinition format.
 		"""
-		from otto.assistants.test import module_tools_assistant
+		from otto.assistants.tests import module_tools_assistant
 
 		# Sync assistant with module object tools
 		sync_assistants([module_tools_assistant])
@@ -325,7 +325,7 @@ class TestAssistantSync(UnitTestCase):
 		  2. Module objects
 		  3. String paths to modules
 		"""
-		from otto.assistants.test import mixed_tools_assistant
+		from otto.assistants.tests import mixed_tools_assistant
 
 		# Sync assistant with mixed tool types
 		sync_assistants([mixed_tools_assistant])
