@@ -86,7 +86,7 @@ def _get_tool_definition(module: ModuleType) -> ToolDefinition:
 		properties=getattr(module, "properties", tool["input_schema"]["properties"]),
 		required=getattr(module, "required", tool["input_schema"]["required"]),
 		use_explanation=getattr(module, "use_explanation", False),
-		requires_permission=getattr(module, "requires_permission", False),
+		requires_permission=getattr(module, "requires_permission", True),
 		dev_mode_only=getattr(module, "dev_mode_only", False),
 		output_properties=getattr(module, "output_properties", None),
 		output_required=getattr(module, "output_required", None),

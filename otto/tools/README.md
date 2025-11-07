@@ -14,13 +14,14 @@ Reference for the tool definition format can be found in the `ToolDefinition` ty
 
 ## Tool Tool Definition
 
-When defining a tool, the following variables can be defined:
+When defining a tool, the following variables may be defined:
 
 ```python
 # Unique identifier for the Otto Tool entry (used as the record key).  It's
 # recommended to follow the following format:
-#   `{app_name}-{tool_name}-{[version]}-tool` whenever a tool definition is
-# synced, the uid is used to check existing records.
+#   `{app_name}-{tool_name}[-{version}]-tool`
+# whenever a tool definition is synced, the uid is used to check existing
+# records.
 #
 uid: str                                    # Name of the Otto Tool entry
 
@@ -42,16 +43,16 @@ fn: Callable                                # The Python function implementing t
 
 # Flags that define how the tool is installed/used
 #
-dev_mode_only: bool                         # Will not be installed if not in developer mode
-requires_permission: bool                   # Will raise an Otto Permission Request before execution
-use_explanation: bool                       # Will prompt LLM for explanation for using the tool
+dev_mode_only: bool = False                 # Will not be installed if not in developer mode
+requires_permission: bool = False           # Will raise an Otto Permission Request before execution
+use_explanation: bool = False               # Will prompt LLM for explanation for using the tool
 
 
 # Optional definitions described by the MCP spec
 #
-output_properties: dict[str, Any] | None    # Optional output schema
-output_required: list[str] | None           # Optional required output fields
-annotations: ToolAnnotations | None         # Optional MCP metadata
+output_properties: dict[str, Any] | None = None # Optional output schema
+output_required: list[str] | None = None        # Optional required output fields
+annotations: ToolAnnotations | None = None      # Optional MCP metadata
 ```
 
 > [!NOTE]
@@ -104,12 +105,7 @@ Otto will automatically infer:
 
 ## Complex Tool Format
 
-Complex tools are defined as Python packages (directories) when the tool requires:
-
-- Multiple helper functions or modules
-- External dependencies
-- Complex logic split across files
-- Shared utilities
+Complex tools are defined as Python packages (directories).
 
 ### Structure
 
