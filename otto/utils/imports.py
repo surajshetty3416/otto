@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import inspect
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeGuard
 
@@ -10,6 +11,16 @@ from frappe.utils import get_bench_path
 if TYPE_CHECKING:
 	from collections.abc import Callable
 	from types import ModuleType
+
+
+__all__ = [
+	"get_import_path",
+	"import_fn",
+	"import_from_fs_path",
+	"import_module",
+	"is_dotted_path",
+	"is_fs_path",
+]
 
 
 def get_import_path(fn: Callable) -> str:
@@ -28,14 +39,15 @@ def get_import_path(fn: Callable) -> str:
 	Note: this function does not guarantee that the function will be imported
 	from the same location, it saves the path of where the function is defined.
 	"""
-	apps_path = Path(get_bench_path()) / "apps"
-	fn_path = Path(inspect.getfile(fn)).absolute()
-	fn_path = Path(fn_path)
+	fn_module = sys.modules.get(fn.__module__) or import_module(fn.__module__)
+	fn_module_path = Path(inspect.getfile(fn_module))
 
-	if fn_path.is_relative_to(apps_path):
+	apps_path = Path(get_bench_path()).absolute() / "apps"
+
+	if fn_module_path.is_relative_to(apps_path):
 		return f"{fn.__module__}.{fn.__qualname__}"
 
-	return f"{fn_path.as_posix()}:{fn.__qualname__}"
+	return f"{fn_module_path.as_posix()}:{fn.__qualname__}"
 
 
 def import_fn(path: str) -> Callable:
@@ -59,7 +71,7 @@ def import_fn(path: str) -> Callable:
 	if not name.isidentifier():
 		raise ValueError(f"Invalid function name found: {name} in path: {path}")
 
-	module = import_module(path)
+	module = import_module(module_path)
 	fn = getattr(module, name, None)
 
 	if fn is None:
@@ -97,33 +109,55 @@ def import_from_fs_path(path: str | Path) -> ModuleType:
 	If provided path is to a __init__.py file, then the module name will be then
 	name its parent directory.
 	"""
-	from importlib.util import module_from_spec, spec_from_file_location
 
 	if isinstance(path, str):
 		path = Path(path)
 
-	if path.is_dir():
-		path = path / "__init__.py"  # Assume package
-
 	if not path.exists():
 		raise FileNotFoundError(f"Incorrect path provided. File not found: {path}")
 
-	name = path.name
-	if name == "__init__.py":
+	#  Assume path is a directory to a package
+	if path.is_dir():
+		if not (path / "__init__.py").exists():
+			raise ValueError(f"Invalid package path provided (__init__.py not found): {path}")
+
+		parent = path.parent
+		name = path.name
+
+	# Assuming init file is from the package module root directory
+	elif path.is_file() and path.name == "__init__.py":
+		parent = path.parent.parent
 		name = path.parent.name
+
+	# Assuming file is a single file module
+	elif path.is_file and path.name.endswith(".py"):
+		parent = path.parent
+		name = path.name.removesuffix(".py")
+
 	else:
-		name = name.removesuffix(".py")
+		raise ValueError(f"Invalid path provided: {path}")
 
-	spec = spec_from_file_location(name, path)
-	if spec is None:
-		raise ImportError(f"Could not create module spec for {path}")
+	"""
+	One of the ways this can go wrong is if the imported module has conflicting
+	submodules. I.e. if the import writes to sys.modules such that some
+	previously defined module is overwritten.
 
-	module = module_from_spec(spec)
-	if spec.loader is None:
-		raise ImportError(f"Could not get loader for {path}")
+	This can't be prevented by using importlib.util.spec_from_file_location
+	because and then loading the module from spec and executing it. This is
+	cause even if the module is loaded in such a way, for complex_modules
+	(having submodules) the sys.modules will still have to be updated. Else the
+	module won't exec.
 
-	spec.loader.exec_module(module)
-	return module
+	So this brittleness feels a bit unavoidable, only way to alleviate this is
+	to make sure that external modules have unique names and to be circumspect
+	when importing external modules.
+	"""
+
+	sys.path.insert(0, parent.as_posix())
+	try:
+		return importlib.import_module(name)
+	finally:
+		sys.path.pop(0)
 
 
 def is_fs_path(path: Any) -> TypeGuard[str]:

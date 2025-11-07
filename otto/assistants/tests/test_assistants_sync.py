@@ -7,7 +7,7 @@ import frappe
 from frappe.tests import UnitTestCase
 
 import otto
-from otto.assistants import sync_assistants
+from otto.assistants import sync_assistant, sync_assistants
 from otto.otto.doctype.otto_assistant.otto_assistant import OttoAssistant
 from otto.otto.doctype.otto_tool.otto_tool import OttoTool
 
@@ -50,7 +50,7 @@ class TestAssistantSync(UnitTestCase):
 		from otto.assistants.tests import dummy_assistant
 
 		# Sync the dummy assistant (uses ToolDefinition objects for tools)
-		sync_assistants([dummy_assistant])
+		sync_assistant(dummy_assistant)
 
 		# Track for cleanup
 		self.created_assistants.append("test-dummy-assistant")
@@ -98,7 +98,7 @@ class TestAssistantSync(UnitTestCase):
 		from otto.assistants.tests import dummy_assistant
 
 		# First sync
-		sync_assistants([dummy_assistant])
+		sync_assistant(dummy_assistant)
 		self.created_assistants.append(dummy_assistant.uid)
 		self.created_tools.extend(["test-dummy-assistant-add", "test-dummy-assistant-echo"])
 
@@ -108,7 +108,7 @@ class TestAssistantSync(UnitTestCase):
 		assistant.save()
 
 		# Sync again
-		sync_assistants([dummy_assistant])
+		sync_assistant(dummy_assistant)
 
 		# Verify assistant was updated back to original
 		assistant.reload()
@@ -120,7 +120,7 @@ class TestAssistantSync(UnitTestCase):
 		from otto.assistants.tests import dummy_assistant
 
 		# Sync using string path
-		sync_assistants(["otto.assistants.test.dummy_assistant"])
+		sync_assistant("otto.assistants.tests.dummy_assistant")
 
 		# Track for cleanup
 		self.created_assistants.append(dummy_assistant.uid)
@@ -136,7 +136,7 @@ class TestAssistantSync(UnitTestCase):
 		from otto.assistants.tests import dummy_assistant
 
 		# First sync
-		sync_assistants([dummy_assistant])
+		sync_assistant(dummy_assistant)
 		self.created_assistants.append(dummy_assistant.uid)
 		self.created_tools.extend(["test-dummy-assistant-add", "test-dummy-assistant-echo"])
 
@@ -146,7 +146,7 @@ class TestAssistantSync(UnitTestCase):
 		add_tool.save()
 
 		# Sync again
-		sync_assistants([dummy_assistant])
+		sync_assistant(dummy_assistant)
 
 		# Verify tool was updated back
 		add_tool.reload()
@@ -158,7 +158,7 @@ class TestAssistantSync(UnitTestCase):
 		from otto.assistants.tests import dummy_assistant
 
 		# Sync the assistant
-		sync_assistants([dummy_assistant])
+		sync_assistant(dummy_assistant)
 		self.created_assistants.append(dummy_assistant.uid)
 		self.created_tools.extend(["test-dummy-assistant-add", "test-dummy-assistant-echo"])
 
@@ -178,7 +178,7 @@ class TestAssistantSync(UnitTestCase):
 
 		# Create another simple assistant module programmatically for testing
 		# We'll just sync the same one twice to verify batch processing works
-		sync_assistants([dummy_assistant, "otto.assistants.test.dummy_assistant"])
+		sync_assistants([dummy_assistant, "otto.assistants.tests.dummy_assistant"])
 
 		# Track for cleanup
 		self.created_assistants.append(dummy_assistant.uid)
@@ -190,16 +190,15 @@ class TestAssistantSync(UnitTestCase):
 	def test_sync_assistant_with_invalid_module_graceful_failure(self):
 		"""Test that sync_assistants handles invalid modules gracefully."""
 		# This should not raise an exception, just log an error
-		sync_assistants(["otto.assistants.test.nonexistent_module"])
-
-		# No cleanup needed since nothing was created
+		with self.assertRaises(ModuleNotFoundError):
+			sync_assistant("otto.assistants.tests.nonexistent_module")
 
 	def test_assistant_tool_import_paths(self):
 		"""Test that tool import paths are correctly set."""
 		from otto.assistants.tests import dummy_assistant
 
 		# Sync the assistant
-		sync_assistants([dummy_assistant])
+		sync_assistant(dummy_assistant)
 		self.created_assistants.append(dummy_assistant.uid)
 		self.created_tools.extend(["test-dummy-assistant-add", "test-dummy-assistant-echo"])
 
@@ -219,7 +218,7 @@ class TestAssistantSync(UnitTestCase):
 		from otto.assistants.tests import dummy_assistant
 
 		# Sync the assistant
-		sync_assistants([dummy_assistant])
+		sync_assistant(dummy_assistant)
 		self.created_assistants.append(dummy_assistant.uid)
 		self.created_tools.extend(["test-dummy-assistant-add", "test-dummy-assistant-echo"])
 
@@ -253,7 +252,7 @@ class TestAssistantSync(UnitTestCase):
 		from otto.assistants.tests import dummy_assistant
 
 		# The dummy_assistant uses get_tool() to create ToolDefinition objects
-		sync_assistants([dummy_assistant])
+		sync_assistant(dummy_assistant)
 		self.created_assistants.append(dummy_assistant.uid)
 		self.created_tools.extend(["test-dummy-assistant-add", "test-dummy-assistant-echo"])
 
@@ -270,13 +269,13 @@ class TestAssistantSync(UnitTestCase):
 		"""Test that assistants can specify tools as string paths to modules.
 
 		Tools can be specified as dot-separated module paths like
-		"otto.assistants.test.simple_tool". The module must follow the
+		"otto.assistants.tests.simple_tool". The module must follow the
 		ToolDefinition format with uid, and a function matching the module name.
 		"""
 		from otto.assistants.tests import string_tools_assistant
 
 		# Sync assistant with string path tools
-		sync_assistants([string_tools_assistant])
+		sync_assistant(string_tools_assistant)
 		self.created_assistants.append(string_tools_assistant.uid)
 		self.created_tools.append("test-simple-tool")
 
@@ -301,7 +300,7 @@ class TestAssistantSync(UnitTestCase):
 		from otto.assistants.tests import module_tools_assistant
 
 		# Sync assistant with module object tools
-		sync_assistants([module_tools_assistant])
+		sync_assistant(module_tools_assistant)
 		self.created_assistants.append(module_tools_assistant.uid)
 		self.created_tools.append("test-simple-tool")
 
@@ -328,7 +327,7 @@ class TestAssistantSync(UnitTestCase):
 		from otto.assistants.tests import mixed_tools_assistant
 
 		# Sync assistant with mixed tool types
-		sync_assistants([mixed_tools_assistant])
+		sync_assistant(mixed_tools_assistant)
 		self.created_assistants.append(mixed_tools_assistant.uid)
 		self.created_tools.extend(
 			[

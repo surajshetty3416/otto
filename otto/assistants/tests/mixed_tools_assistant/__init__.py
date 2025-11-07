@@ -1,6 +1,6 @@
 """Test assistant that uses mixed tool specification methods."""
 
-from otto.assistants.test import simple_tool
+from otto.assistants.tests import simple_tool
 from otto.assistants.utils import get_tool
 
 uid = "test-mixed-tools-assistant"
@@ -38,5 +38,5 @@ multiply_tool = get_tool(
 tools = [
 	multiply_tool,  # ToolDefinition
 	simple_tool,  # Module object
-	"otto.assistants.test.simple_tool",  # String path
+	"otto.assistants.tests.simple_tool",  # String path
 ]

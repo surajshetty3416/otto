@@ -7,4 +7,4 @@ dev_mode_only = False
 instruction = "Test assistant using string paths for tools."
 
 # Tools specified as string paths to modules
-tools = ["otto.assistants.test.simple_tool"]
+tools = ["otto.assistants.tests.simple_tool"]

@@ -1,6 +1,6 @@
 """Test assistant that uses module objects to specify tools."""
 
-from otto.assistants.test import simple_tool
+from otto.assistants.tests import simple_tool
 
 uid = "test-module-tools-assistant"
 name = "Module Tools Test Assistant"
