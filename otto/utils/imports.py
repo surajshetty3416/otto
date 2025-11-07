@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import importlib
 import inspect
+import os
 import sys
+from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeGuard
 
@@ -44,8 +46,13 @@ def get_import_path(fn: Callable) -> str:
 
 	apps_path = Path(get_bench_path()).absolute() / "apps"
 
-	if fn_module_path.is_relative_to(apps_path):
-		return f"{fn.__module__}.{fn.__qualname__}"
+	with suppress(ValueError):
+		if fn_module_path.is_relative_to(apps_path):
+			module_path = fn_module_path.as_posix().removeprefix(apps_path.as_posix())
+			module_path = module_path.replace(os.path.sep, ".")
+			module_path = module_path.split(".", maxsplit=2)[2]
+			module_path = module_path.removesuffix(".py").removesuffix("__init__").removesuffix(".")
+			return f"{module_path}.{fn.__qualname__}"
 
 	return f"{fn_module_path.as_posix()}:{fn.__qualname__}"
 

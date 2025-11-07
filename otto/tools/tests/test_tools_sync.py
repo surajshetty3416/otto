@@ -2,6 +2,7 @@
 # See license.txt
 
 import contextlib
+from textwrap import dedent
 
 import frappe
 from frappe.tests import UnitTestCase
@@ -364,3 +365,150 @@ class TestToolSync(UnitTestCase):
 		tool = otto.get(OttoTool, "test-tools-add")
 		self.assertTrue(tool.is_valid)
 		self.assertEqual(tool.title, "Add Numbers")
+
+	def test_sync_package_tool_with_fs_path(self):
+		"""Test syncing a package tool using filesystem path."""
+		from pathlib import Path
+
+		# Get the path to the calculator_tool package
+		calculator_tool_path = (Path(__file__).parent / "calculator_tool").as_posix()
+
+		# Sync the package tool using filesystem path
+		result = sync_tool(calculator_tool_path)
+
+		# Track for cleanup
+		self.created_tools.append("test-tools-calculator")
+
+		# Verify tool was created
+		self.assertIsNotNone(result)
+		self.assertTrue(frappe.db.exists("Otto Tool", "test-tools-calculator"))
+
+		# Load and verify tool
+		tool = otto.get(OttoTool, "test-tools-calculator")
+		self.assertEqual(tool.title, "Calculator Tool")
+		self.assertEqual(tool.slug, "calculator")
+		self.assertTrue(tool.is_app_defined)
+		self.assertFalse(tool.requires_permission)
+		self.assertFalse(tool.use_explanation)
+
+		# Verify tool has correct schema
+		self.assertEqual(len(tool.args), 3)
+		arg_names = {arg.arg_name for arg in tool.args}
+		self.assertIn("operation", arg_names)
+		self.assertIn("x", arg_names)
+		self.assertIn("y", arg_names)
+
+		# Load the tool
+		tool = otto.get(OttoTool, "test-tools-calculator")
+
+		# Verify import path is set
+		self.assertIsNotNone(tool.tool_import_path)
+		result = tool.execute(args={"operation": "add", "x": 5.0, "y": 3.0})
+		self.assertIsNotNone(result)
+		assert result is not None
+		self.assertEqual(result["result"], 8.0)
+
+	def test_sync_package_tool_updates_existing(self):
+		"""Test that syncing a package tool updates an existing tool."""
+		from pathlib import Path
+
+		# Get the path to the calculator_tool package
+		calculator_tool_path = (Path(__file__).parent / "calculator_tool").as_posix()
+
+		# First sync
+		sync_tool(calculator_tool_path)
+		self.created_tools.append("test-tools-calculator")
+
+		# Modify the tool
+		tool = otto.get(OttoTool, "test-tools-calculator")
+		tool.title = "Modified Calculator"
+		tool.description = "Modified Description"
+		tool.save()
+
+		# Sync again
+		sync_tool(calculator_tool_path)
+
+		# Verify tool was updated back to original
+		tool.reload()
+		self.assertEqual(tool.title, "Calculator Tool")
+		self.assertIn("calculation", tool.description.lower())
+		self.assertTrue(tool.is_app_defined)
+
+	def test_sync_package_tool_with_submodules(self):
+		"""Test that package tool with helper submodules works correctly."""
+		from otto.tools.tests.calculator_tool import calculator
+
+		# Sync the package tool using dotted path
+		sync_tool("otto.tools.tests.calculator_tool")
+		self.created_tools.append("test-tools-calculator")
+
+		# Load the tool
+		tool = otto.get(OttoTool, "test-tools-calculator")
+
+		# Verify import path is set
+		self.assertIsNotNone(tool.tool_import_path)
+
+		# The calculator function uses the helper module's functions (operations.py)
+		# This verifies that the package structure with submodules works correctly
+		result = calculator(operation="add", x=10.0, y=5.0)
+		self.assertEqual(result, 15.0)
+
+		result = calculator(operation="multiply", x=3.0, y=4.0)
+		self.assertEqual(result, 12.0)
+
+	def test_sync_package_tool_outside_apps_uses_fs_path(self):
+		"""Test that package tool outside apps directory uses filesystem path."""
+		import tempfile
+		from pathlib import Path
+
+		# Create a temporary directory outside the apps path
+		with tempfile.TemporaryDirectory() as tmpdir:
+			# Create the external_calc_tool package structure
+			tool_path = Path(tmpdir) / "external_calc_tool"
+			tool_path.mkdir()
+			# Create __init__.py
+			init_content = dedent('''
+				"""External calculator tool for testing."""
+				uid = "test-external-calc"
+				title = "External Calculator"
+
+				def external_calc(a: int, b: int) -> int:
+					"""
+					Add two integers.
+
+					Args:
+						a: First integer
+						b: Second integer
+
+					Returns:
+						Sum of the two integers
+					"""
+					return a + b
+				''')
+
+			(tool_path / "__init__.py").write_text(init_content)
+
+			# Sync the tool using filesystem path
+			result = sync_tool(tool_path.as_posix())
+			self.created_tools.append("test-external-calc")
+
+			# Verify tool was created
+			self.assertIsNotNone(result)
+			self.assertTrue(frappe.db.exists("Otto Tool", "test-external-calc"))
+
+			# Load and verify tool
+			tool = otto.get(OttoTool, "test-external-calc")
+			self.assertEqual(tool.title, "External Calculator")
+			self.assertEqual(tool.slug, "external_calc")
+			self.assertTrue(tool.is_app_defined)
+
+			# Verify import path is a filesystem path with colon
+			self.assertIsNotNone(tool.tool_import_path)
+			assert tool.tool_import_path is not None
+			self.assertIn(":", tool.tool_import_path)
+			self.assertIn("external_calc_tool", tool.tool_import_path)
+			self.assertIn("external_calc", tool.tool_import_path)
+
+			# Import and execute the function
+			result = tool.execute(args={"a": 5, "b": 3})
+			self.assertEqual(result["result"], 8)
