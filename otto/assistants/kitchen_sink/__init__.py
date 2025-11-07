@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from otto.assistants.kitchen_sink.tools import bash_tool
-from otto.assistants.types import AssistantTool, ModelPreferenceConfig
+from otto.assistants.types import ModelPreferenceConfig, ToolList
 from otto.utils import format_prompt as f
 
 uid = "otto-kitchen-sink"
@@ -28,4 +27,7 @@ def get_context():
 	return {}
 
 
-tools: list[AssistantTool] = [bash_tool]
+def get_tools() -> ToolList:
+	from otto.tools import bash_tool
+
+	return [bash_tool]

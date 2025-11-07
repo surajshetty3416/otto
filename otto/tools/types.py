@@ -28,10 +28,16 @@ class ToolDefinition(TypedDict):
 		fn: The Python callable implementing the tool logic.
 
 	Notes:
-	- The file name for a tool should be `{name}_tool.py`.
+	- The file name for a tool should be `{name}_tool.py` this is used to infer `name` if not provided.
 	- The function providing the tool implementation should match `name` or be referenced as `fn`.
-	- Properties and required can be inferred from type annotations if not provided.
+	- If `required` is not provided, it will be inferred from type annotations if given.
+	- If `properties` are not provided, it will be inferred from type annotations and the docstring if given.
+	- If `title` is not provided, capital-cased version of `name` is used.
+	- If `name` is not provided, it will be inferred from the file name.
+	- If `fn` is not provided, then tool function will be inferred from the value of `name`.
+	- If `description` is not provided, it will be inferred from the docstring of the tool function.
 	- Title and description can be inferred if omitted.
+	- In case of complex tool properties, it is recommended to explicitly define them.
 	"""
 
 	uid: str
@@ -43,10 +49,15 @@ class ToolDefinition(TypedDict):
 	use_explanation: bool
 	requires_permission: bool
 	dev_mode_only: bool
+	fn: Callable
+
+	"""
+	Additional attributes defined by the ModelContextProtocol Tool schema,
+	mentioned here for completeness. These aren't currently used by Otto but may
+	be in the future.
+	"""
 	# https://modelcontextprotocol.io/specification/2025-06-18/schema#tool
 	output_properties: dict[str, Any] | None
 	output_required: list[str] | None
 	# https://modelcontextprotocol.io/specification/2025-06-18/schema#toolannotations
 	annotations: ToolAnnotations | None
-
-	fn: Callable

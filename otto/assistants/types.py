@@ -9,6 +9,8 @@ if TYPE_CHECKING:
 	from otto.lib.types import ModelSize, ReasoningEffort
 	from otto.tools.types import ToolDefinition
 
+	ToolList = list[ToolDefinition | ModuleType | str]
+
 
 class AssistantDefinition(TypedDict):
 	"""
@@ -34,13 +36,16 @@ class AssistantDefinition(TypedDict):
 			- a dot separated module path to a tool module "path.to.tool.name_tool" (i.e. the module containing the tool)
 			- a tool module object, i.e. an imported tool module
 			in both of the above cases the tool should follow the ToolDefinition file format defined in `otto.tools.types.ToolDefinition`
+		get_tools: Function with signature: `def get_tools() -> ToolList` used to dynamically load tools. Default is None.
+			- if provided, it will be used along with the `tools` list to load tools.
 	"""
 
 	uid: str
 	name: str
 	dev_mode_only: bool
 	instruction: str
-	tools: list[ToolDefinition | ModuleType | str]
+	tools: ToolList
+	get_tools: Callable[[], ToolList] | None
 	preferred_model: str | None
 	preferred_config: ModelPreferenceConfig | None
 	reasoning_effort: ReasoningEffort | None

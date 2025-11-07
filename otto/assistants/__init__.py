@@ -46,8 +46,12 @@ def sync_assistant(module: ModuleType | str) -> None | str:
 	if assistant["dev_mode_only"] and not frappe.conf.developer_mode:
 		return None
 
-	tools = [_sync_tool(tool) for tool in assistant["tools"]]
-	tools = [tool for tool in tools if tool is not None]
+	tools_src = assistant["tools"]
+	if assistant["get_tools"]:
+		tools_src.extend(assistant["get_tools"]())
+
+	tools_ = [_sync_tool(tool) for tool in tools_src]
+	tools = [tool for tool in tools_ if tool is not None]
 	if not otto.exists("Otto Assistant", assistant["uid"]):
 		doc = OttoAssistant.new(
 			name=assistant["uid"],
@@ -94,6 +98,7 @@ def _get_assistant_definition(module: ModuleType) -> AssistantDefinition:
 		dev_mode_only=getattr(module, "dev_mode_only", False),
 		instruction=getattr(module, "instruction", DEFAULT_INSTRUCTION),
 		tools=getattr(module, "tools", []),
+		get_tools=getattr(module, "get_tools", None),
 		preferred_model=getattr(module, "preferred_model", DEFAULT_MODEL),
 		preferred_config=getattr(module, "preferred_config", None),
 		reasoning_effort=getattr(module, "reasoning_effort", None),

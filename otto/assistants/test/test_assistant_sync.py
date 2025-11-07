@@ -16,6 +16,11 @@ class TestAssistantSync(UnitTestCase):
 	"""
 	Tests for assistant synchronization via sync_assistants function.
 	Tests that assistants and their tools are correctly created/updated.
+
+	Note: Tools in an assistant can be specified in three ways:
+	  1. ToolDefinition objects (created via get_tool from otto.assistants.utils)
+	  2. Module objects (imported tool modules following ToolDefinition format)
+	  3. String paths to tool modules (e.g., "otto.tools.bash_tool")
 	"""
 
 	def setUp(self):
@@ -37,10 +42,14 @@ class TestAssistantSync(UnitTestCase):
 					frappe.delete_doc("Otto Tool", tool_name, force=True)
 
 	def test_sync_assistant_creates_new_assistant(self):
-		"""Test that sync_assistants creates a new assistant with tools."""
+		"""Test that sync_assistants creates a new assistant with tools.
+
+		This test uses dummy_assistant which defines tools as ToolDefinition objects
+		created via get_tool() function.
+		"""
 		from otto.assistants.test import dummy_assistant
 
-		# Sync the dummy assistant
+		# Sync the dummy assistant (uses ToolDefinition objects for tools)
 		sync_assistants([dummy_assistant])
 
 		# Track for cleanup
@@ -234,3 +243,120 @@ class TestAssistantSync(UnitTestCase):
 		self.assertEqual(message_arg.arg_name, "message")
 		self.assertEqual(message_arg.type, "string")
 		self.assertTrue(message_arg.is_required)
+
+	def test_sync_assistant_with_tool_definition_objects(self):
+		"""Test that assistants can use ToolDefinition objects from get_tool.
+
+		This is the primary use case - tools are defined using get_tool() which
+		returns ToolDefinition objects. The dummy_assistant already uses this approach.
+		"""
+		from otto.assistants.test import dummy_assistant
+
+		# The dummy_assistant uses get_tool() to create ToolDefinition objects
+		sync_assistants([dummy_assistant])
+		self.created_assistants.append(dummy_assistant.uid)
+		self.created_tools.extend(["test-dummy-assistant-add", "test-dummy-assistant-echo"])
+
+		# Verify assistant and tools were created
+		self.assertTrue(frappe.db.exists("Otto Assistant", dummy_assistant.uid))
+		assistant = otto.get(OttoAssistant, dummy_assistant.uid)
+		self.assertEqual(len(assistant.tools), 2)
+
+		# Verify both tools exist
+		self.assertTrue(frappe.db.exists("Otto Tool", "test-dummy-assistant-add"))
+		self.assertTrue(frappe.db.exists("Otto Tool", "test-dummy-assistant-echo"))
+
+	def test_sync_assistant_with_string_tool_paths(self):
+		"""Test that assistants can specify tools as string paths to modules.
+
+		Tools can be specified as dot-separated module paths like
+		"otto.assistants.test.simple_tool". The module must follow the
+		ToolDefinition format with uid, and a function matching the module name.
+		"""
+		from otto.assistants.test import string_tools_assistant
+
+		# Sync assistant with string path tools
+		sync_assistants([string_tools_assistant])
+		self.created_assistants.append(string_tools_assistant.uid)
+		self.created_tools.append("test-simple-tool")
+
+		# Verify assistant was created
+		self.assertTrue(frappe.db.exists("Otto Assistant", string_tools_assistant.uid))
+		assistant = otto.get(OttoAssistant, string_tools_assistant.uid)
+		self.assertEqual(assistant.title, "String Tools Test Assistant")
+
+		# Verify tool was created from string path
+		self.assertTrue(frappe.db.exists("Otto Tool", "test-simple-tool"))
+		tool = otto.get(OttoTool, "test-simple-tool")
+		self.assertEqual(tool.slug, "simple_operation")
+		self.assertTrue(tool.is_valid)
+		self.assertTrue(tool.is_app_defined)
+
+	def test_sync_assistant_with_module_tool_objects(self):
+		"""Test that assistants can specify tools as imported module objects.
+
+		Tools can be specified as module objects that are imported in the
+		assistant definition. The module must follow the ToolDefinition format.
+		"""
+		from otto.assistants.test import module_tools_assistant
+
+		# Sync assistant with module object tools
+		sync_assistants([module_tools_assistant])
+		self.created_assistants.append(module_tools_assistant.uid)
+		self.created_tools.append("test-simple-tool")
+
+		# Verify assistant was created
+		self.assertTrue(frappe.db.exists("Otto Assistant", module_tools_assistant.uid))
+		assistant = otto.get(OttoAssistant, module_tools_assistant.uid)
+		self.assertEqual(assistant.title, "Module Tools Test Assistant")
+
+		# Verify tool was created from module object
+		self.assertTrue(frappe.db.exists("Otto Tool", "test-simple-tool"))
+		tool = otto.get(OttoTool, "test-simple-tool")
+		self.assertEqual(tool.slug, "simple_operation")
+		self.assertTrue(tool.is_valid)
+
+	def test_sync_assistant_with_mixed_tool_types(self):
+		"""Test that assistants can use a mix of all three tool specification methods.
+
+		This tests the most flexible scenario where an assistant's tools list
+		contains:
+		  1. ToolDefinition objects (via get_tool)
+		  2. Module objects
+		  3. String paths to modules
+		"""
+		from otto.assistants.test import mixed_tools_assistant
+
+		# Sync assistant with mixed tool types
+		sync_assistants([mixed_tools_assistant])
+		self.created_assistants.append(mixed_tools_assistant.uid)
+		self.created_tools.extend(
+			[
+				"test-mixed-tools-multiply",  # ToolDefinition
+				"test-simple-tool",  # Module object
+				"test-simple-tool",  # String path
+			]
+		)
+
+		# Verify assistant was created
+		self.assertTrue(frappe.db.exists("Otto Assistant", mixed_tools_assistant.uid))
+		assistant = otto.get(OttoAssistant, mixed_tools_assistant.uid)
+		self.assertEqual(assistant.title, "Mixed Tools Test Assistant")
+		self.assertEqual(len(assistant.tools), 3)
+
+		# Verify ToolDefinition tool
+		self.assertTrue(frappe.db.exists("Otto Tool", "test-mixed-tools-multiply"))
+		multiply_tool = otto.get(OttoTool, "test-mixed-tools-multiply")
+		self.assertEqual(multiply_tool.slug, "multiply")
+		self.assertEqual(multiply_tool.title, "Multiply Numbers")
+
+		# Verify module object tool
+		self.assertTrue(frappe.db.exists("Otto Tool", "test-simple-tool"))
+		simple_tool = otto.get(OttoTool, "test-simple-tool")
+		self.assertEqual(simple_tool.slug, "simple_operation")
+
+		# Verify string path tool (simple_tool)
+		self.assertTrue(frappe.db.exists("Otto Tool", "test-simple-tool"))
+		simple_tool = otto.get(OttoTool, "test-simple-tool")
+		self.assertEqual(simple_tool.slug, "simple_operation")
+		self.assertEqual(simple_tool.title, "Simple Operation")
