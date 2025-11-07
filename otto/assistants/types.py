@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING, TypedDict
 
 if TYPE_CHECKING:
 	from collections.abc import Callable
-
-	from frappe_mcp import Tool
+	from types import ModuleType
 
 	from otto.lib.types import ModelSize, ReasoningEffort
+	from otto.tools.types import ToolDefinition
 
 
 class AssistantDefinition(TypedDict):
@@ -28,26 +28,23 @@ class AssistantDefinition(TypedDict):
 		preferred_config: Preferred model configuration, see ModelPreferenceConfig. Default is DEFAULT_MODEL.
 		reasoning_effort: Default level of reasoning effort (see ReasoningEffort). Default is "None".
 		instruction: System prompt or instruction to guide the assistant, supports Jinja template for adding context. Default is DEFAULT_INSTRUCTION.
-		tools: List of Tool objects the assistant can use use (frappe_mcp.get_tool for convenience). Default is empty list.
 		get_context: Function with signature: <code>def get_context() -> dict[str, str]</code> used to template the instruction.
+		tools: List of ToolDefinition objects. Default is empty list.
+			items in the tool list can also be
+			- a dot separated module path to a tool module "path.to.tool.name_tool" (i.e. the module containing the tool)
+			- a tool module object, i.e. an imported tool module
+			in both of the above cases the tool should follow the ToolDefinition file format defined in `otto.tools.types.ToolDefinition`
 	"""
 
 	uid: str
 	name: str
 	dev_mode_only: bool
 	instruction: str
-	tools: list[AssistantTool]
+	tools: list[ToolDefinition | ModuleType | str]
 	preferred_model: str | None
 	preferred_config: ModelPreferenceConfig | None
 	reasoning_effort: ReasoningEffort | None
 	get_context: Callable[[], dict[str, str]] | None
-
-
-class AssistantTool(TypedDict):
-	uid: str
-	tool: Tool
-	requires_permission: bool
-	use_explanation: bool
 
 
 class ModelPreferenceConfig(TypedDict, total=False):

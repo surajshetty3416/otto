@@ -1,0 +1,166 @@
+from __future__ import annotations
+
+from importlib import import_module
+from typing import TYPE_CHECKING
+
+import frappe
+from frappe_mcp.server import tools
+
+import otto
+from otto.lib.types import ToolSchema, ToolSchemaParameters
+from otto.tools.types import ToolDefinition
+from otto.utils import get_import_path, get_title_from_slug
+
+"""
+The same tool may be installed through sync_tool and sync_assistant if the assistant
+makes use of the tool. The `installed_tools` list is used to track the tools that have
+been installed to prevent wasted effort in reinstalling.
+
+sync_tool is idempotent so multiple calls should not be an issue
+"""
+installed_tools: list[str] = []
+
+if TYPE_CHECKING:
+	from types import ModuleType
+
+
+def sync_tools(modules: list[ModuleType | str]) -> None:
+	for module in modules:
+		try:
+			sync_tool(module)
+		except Exception:
+			otto.log_error(
+				title="Error syncing tool",
+				assistant_module=str(module),
+			)
+
+
+def sync_otto_tools() -> None:
+	return None
+
+
+def sync_tool(module: ModuleType | str) -> str | None:
+	# Import module if a string path is provided
+	if isinstance(module, str):
+		module = import_module(module)
+
+	tool_definition = _get_tool_definition(module)
+	if tool_definition["dev_mode_only"] and not frappe.conf.developer_mode:
+		return None
+
+	if tool_definition["name"] in installed_tools:
+		return tool_definition["name"]
+
+	return _ensure_tool(tool_definition)
+
+
+def _get_tool_definition(module: ModuleType) -> ToolDefinition:
+	"""
+	Extract tool definition from a module.
+
+	Args:
+		module: Either a Module object or a string path that can be imported
+			   (e.g., "otto.tools.kitchen_sink")
+
+	Returns:
+		ToolDefinition with extracted attributes from the module
+	"""
+
+	if not hasattr(module, "uid") or not isinstance(module.uid, str):
+		raise ValueError("Tool definition must have a string named `uid`")
+
+	# Extract required and optional attributes from the module
+	if not hasattr(module, "fn") and not hasattr(module, "name"):
+		raise ValueError("Tool definition must have a function named `fn` or a name named `name`")
+
+	name = getattr(module, "name", None)
+	if not name:
+		name = module.__name__.split(".")[-1]
+
+		if not name.endswith("_tool"):
+			raise ValueError(
+				f"Could not find tool name. Tool definition file name `{name}` should end with `_tool`"
+			)
+
+		name = name.split("_tool")[0]
+
+	fn = None
+	if hasattr(module, "fn"):
+		fn = module.fn
+
+	if hasattr(module, name):
+		fn = getattr(module, name, None)
+
+	if not callable(fn):
+		raise ValueError(f"Tool function `{getattr(module, 'name', 'fn')}` is not a callable")
+
+	tool = tools.get_tool(fn)
+	return ToolDefinition(
+		uid=module.uid,
+		name=name,
+		title=getattr(module, "title", get_title_from_slug(name)),
+		description=getattr(module, "description", tool["description"]),
+		properties=getattr(module, "properties", tool["input_schema"]["properties"]),
+		required=getattr(module, "required", tool["input_schema"]["required"]),
+		use_explanation=getattr(module, "use_explanation", False),
+		requires_permission=getattr(module, "requires_permission", False),
+		dev_mode_only=getattr(module, "dev_mode_only", False),
+		output_properties=getattr(module, "output_properties", None),
+		output_required=getattr(module, "output_required", None),
+		annotations=getattr(module, "annotations", None),
+		fn=fn,
+	)
+
+
+def _ensure_tool(tool: ToolDefinition) -> str:
+	"""Ensure tool is installed and returns its name"""
+	from otto.otto.doctype.otto_tool.otto_tool import OttoTool
+
+	doc: OttoTool
+	if not otto.exists("Otto Tool", tool["uid"]):
+		doc = OttoTool.new(
+			name=tool["uid"],
+			title=tool["title"],
+			slug=tool["name"],
+			description=tool["description"],
+			requires_permission=tool["requires_permission"],
+			use_explanation=tool["use_explanation"],
+			is_app_defined=True,
+			tool_import_path=get_import_path(tool["fn"]),
+			schema=_get_tool_schema(tool),
+		)
+
+		assert doc.name is not None, "sanity check"
+		return doc.name
+
+	doc = otto.get(OttoTool, tool["uid"])
+	doc.title = tool["title"]
+	doc.slug = tool["name"]
+	doc.description = tool["description"]
+	doc.requires_permission = tool["requires_permission"]
+	doc.tool_import_path = get_import_path(tool["fn"])
+	doc.is_app_defined = True
+	doc.is_external = False
+	doc.is_valid = True
+	doc.reason = None
+	doc.code = None
+	doc.mock_tool = False
+	doc.mock_return_value = None
+	doc.use_explanation = tool["use_explanation"]
+	doc.set_from_schema(_get_tool_schema(tool))
+	doc.save(ignore_permissions=True)
+
+	assert doc.name is not None, "sanity check"
+	return doc.name
+
+
+def _get_tool_schema(tool: ToolDefinition) -> ToolSchema:
+	return ToolSchema(
+		name=tool["name"],
+		description=tool["description"],
+		parameters=ToolSchemaParameters(
+			type="object",
+			properties=tool["properties"],
+			required=tool["required"],
+		),
+	)

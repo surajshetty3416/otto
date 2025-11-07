@@ -1,21 +1,31 @@
 from __future__ import annotations
 
 from importlib import import_module
+from types import ModuleType
 from typing import TYPE_CHECKING
 
 import frappe
 
 import otto
 import otto.lib as lib
-from otto.assistants.types import AssistantDefinition, AssistantTool
-from otto.lib.types import ToolSchema, ToolSchemaParameters
+from otto.assistants.types import AssistantDefinition
 from otto.llm.utils import DEFAULT_INSTRUCTION, DEFAULT_MODEL
-from otto.utils import get_import_path
 
 if TYPE_CHECKING:
-	from types import ModuleType
+	from otto.tools.types import ToolDefinition
 
 __all__ = ["sync_assistants", "sync_otto_assistants"]
+
+
+def sync_assistants(modules: list[ModuleType | str]) -> None:
+	for module in modules:
+		try:
+			sync_assistant(module)
+		except Exception:
+			otto.log_error(
+				title="Error syncing assistant",
+				assistant_module=str(module),
+			)
 
 
 def sync_otto_assistants() -> None:
@@ -24,19 +34,48 @@ def sync_otto_assistants() -> None:
 	sync_assistants([kitchen_sink])
 
 
-def sync_assistants(modules: list[ModuleType | str]) -> None:
-	for module in modules:
-		try:
-			assistant = _get_assistant_definition(module)
-			_sync_assistant(assistant)
-		except Exception:
-			otto.log_error(
-				title="Error syncing assistant",
-				assistant_module=str(module),
-			)
+def sync_assistant(module: ModuleType | str) -> None | str:
+	from otto.otto.doctype.otto_assistant.otto_assistant import OttoAssistant
+
+	# Import module if a string path is provided
+	if isinstance(module, str):
+		module = import_module(module)
+
+	assistant = _get_assistant_definition(module)
+
+	if assistant["dev_mode_only"] and not frappe.conf.developer_mode:
+		return None
+
+	tools = [_sync_tool(tool) for tool in assistant["tools"]]
+	tools = [tool for tool in tools if tool is not None]
+	if not otto.exists("Otto Assistant", assistant["uid"]):
+		doc = OttoAssistant.new(
+			name=assistant["uid"],
+			title=assistant["name"],
+			instruction=assistant["instruction"],
+			tools=tools,
+			llm=_get_model(assistant),
+			reasoning_effort=assistant["reasoning_effort"],
+			get_context=assistant["get_context"] or None,
+			is_app_defined=True,
+		)
+		return doc.name
+
+	doc = otto.get(OttoAssistant, assistant["uid"])
+	doc.title = assistant["name"]
+	doc.instruction = assistant["instruction"]
+	doc.llm = _get_model(assistant)
+	doc.reasoning_effort = assistant["reasoning_effort"] or "None"
+	doc.is_app_defined = True
+	doc.set_get_context(assistant["get_context"])
+	doc.set_tools(tools)
+	doc.save(ignore_permissions=True)
+
+	assert doc.name is not None, "sanity check"
+	return doc.name
 
 
-def _get_assistant_definition(module: ModuleType | str) -> AssistantDefinition:
+def _get_assistant_definition(module: ModuleType) -> AssistantDefinition:
 	"""
 	Extract assistant definition from a module.
 
@@ -47,9 +86,6 @@ def _get_assistant_definition(module: ModuleType | str) -> AssistantDefinition:
 	Returns:
 	    AssistantDefinition with extracted attributes from the module
 	"""
-	# Import module if a string path is provided
-	if isinstance(module, str):
-		module = import_module(module)
 
 	# Extract required and optional attributes from the module
 	return AssistantDefinition(
@@ -65,37 +101,6 @@ def _get_assistant_definition(module: ModuleType | str) -> AssistantDefinition:
 	)
 
 
-def _sync_assistant(assistant: AssistantDefinition) -> None:
-	from otto.otto.doctype.otto_assistant.otto_assistant import OttoAssistant
-
-	if assistant["dev_mode_only"] and not frappe.conf.developer_mode:
-		return
-
-	tools = [_ensure_tools(tool) for tool in assistant["tools"]]
-	if not otto.exists("Otto Assistant", assistant["uid"]):
-		OttoAssistant.new(
-			name=assistant["uid"],
-			title=assistant["name"],
-			instruction=assistant["instruction"],
-			tools=tools,
-			llm=_get_model(assistant),
-			reasoning_effort=assistant["reasoning_effort"],
-			get_context=assistant["get_context"] or None,
-			is_app_defined=True,
-		)
-		return
-
-	doc = otto.get(OttoAssistant, assistant["uid"])
-	doc.title = assistant["name"]
-	doc.instruction = assistant["instruction"]
-	doc.llm = _get_model(assistant)
-	doc.reasoning_effort = assistant["reasoning_effort"] or "None"
-	doc.is_app_defined = True
-	doc.set_get_context(assistant["get_context"])
-	doc.set_tools(tools)
-	doc.save(ignore_permissions=True)
-
-
 def _get_model(assistant: AssistantDefinition) -> str:
 	config = assistant["preferred_config"] or {}
 	return (
@@ -109,55 +114,16 @@ def _get_model(assistant: AssistantDefinition) -> str:
 	)
 
 
-def _ensure_tools(tool: AssistantTool) -> str:
+def _sync_tool(tool: ToolDefinition | ModuleType | str) -> str | None:
 	"""Ensure tool is installed and returns its name"""
-	from otto.otto.doctype.otto_tool.otto_tool import OttoTool
 
-	doc: OttoTool
-	if not otto.exists("Otto Tool", tool["uid"]):
-		doc = OttoTool.new(
-			name=tool["uid"],
-			title=tool["tool"]["title"],
-			slug=tool["tool"]["name"],
-			description=tool["tool"]["description"],
-			requires_permission=tool["requires_permission"],
-			use_explanation=tool["use_explanation"],
-			is_app_defined=True,
-			tool_import_path=get_import_path(tool["tool"]["fn"]),
-			schema=_get_tool_schema(tool),
-		)
+	if isinstance(tool, (str | ModuleType)):
+		from otto.tools import sync_tool
 
-		assert doc.name is not None, "sanity check"
-		return doc.name
+		return sync_tool(tool)
+	from otto.tools import _ensure_tool
 
-	doc = otto.get(OttoTool, tool["uid"])
-	doc.title = tool["tool"]["title"]
-	doc.slug = tool["tool"]["name"]
-	doc.description = tool["tool"]["description"]
-	doc.requires_permission = tool["requires_permission"]
-	doc.tool_import_path = get_import_path(tool["tool"]["fn"])
-	doc.is_app_defined = True
-	doc.is_external = False
-	doc.is_valid = True
-	doc.reason = None
-	doc.code = None
-	doc.mock_tool = False
-	doc.mock_return_value = None
-	doc.use_explanation = tool["use_explanation"]
-	doc.set_from_schema(_get_tool_schema(tool))
-	doc.save(ignore_permissions=True)
+	if tool["dev_mode_only"] and not frappe.conf.developer_mode:
+		return None
 
-	assert doc.name is not None, "sanity check"
-	return doc.name
-
-
-def _get_tool_schema(tool: AssistantTool) -> ToolSchema:
-	return ToolSchema(
-		name=tool["tool"]["name"],
-		description=tool["tool"]["description"],
-		parameters=ToolSchemaParameters(
-			type="object",
-			properties=tool["tool"]["input_schema"].get("properties", {}),
-			required=tool["tool"]["input_schema"].get("required", []),
-		),
-	)
+	return _ensure_tool(tool)
