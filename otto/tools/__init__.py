@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from importlib import import_module
 from typing import TYPE_CHECKING
 
 import frappe
@@ -9,7 +8,8 @@ from frappe_mcp.server import tools
 import otto
 from otto.lib.types import ToolSchema, ToolSchemaParameters
 from otto.tools.types import ToolDefinition
-from otto.utils import get_import_path, get_title_from_slug
+from otto.utils import get_title_from_slug
+from otto.utils.imports import get_import_path, import_module
 
 """
 The same tool may be installed through sync_tool and sync_assistant if the assistant

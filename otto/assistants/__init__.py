@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from importlib import import_module
 from types import ModuleType
 from typing import TYPE_CHECKING
 
@@ -10,6 +9,7 @@ import otto
 import otto.lib as lib
 from otto.assistants.types import AssistantDefinition
 from otto.llm.utils import DEFAULT_INSTRUCTION, DEFAULT_MODEL
+from otto.utils.imports import import_module
 
 if TYPE_CHECKING:
 	from otto.tools.types import ToolDefinition

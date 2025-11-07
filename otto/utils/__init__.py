@@ -7,11 +7,21 @@ from typing import TYPE_CHECKING, Any
 
 from otto.utils.cache import cache
 from otto.utils.file import get_file
+from otto.utils.imports import get_import_path, import_fn
 
-__all__ = ["cache", "drain", "format_prompt", "get_file", "get_title_from_slug", "json_dumps"]
+__all__ = [
+	"cache",
+	"drain",
+	"format_prompt",
+	"get_file",
+	"get_import_path",
+	"get_title_from_slug",
+	"import_fn",
+	"json_dumps",
+]
 
 if TYPE_CHECKING:
-	from collections.abc import Callable, Generator
+	from collections.abc import Generator
 
 
 def json_dumps(value: Any) -> tuple[str, bool]:
@@ -72,24 +82,6 @@ def to_html(content: str):
 def format_prompt(prompt: str) -> str:
 	"""Format prompt"""
 	return dedent(prompt).strip()
-
-
-def get_import_path(fn: Callable) -> str:
-	return f"{fn.__module__}.{fn.__qualname__}"
-
-
-def import_fn(path: str) -> Callable:
-	from importlib import import_module
-
-	parts = path.split(".")
-	module_name = ".".join(parts[:-1])
-	attribute_name = parts[-1]
-	module = import_module(module_name)
-	fn = getattr(module, attribute_name)
-	if not callable(fn):
-		raise ValueError(f"Imported attribute '{attribute_name}' from module '{module_name}' is not callable")
-
-	return fn
 
 
 def get_title_from_slug(slug: str) -> str:
