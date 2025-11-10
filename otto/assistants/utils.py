@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from frappe_mcp.server import tools
 
@@ -9,42 +9,58 @@ from otto.tools.types import ToolDefinition
 if TYPE_CHECKING:
 	from collections.abc import Callable
 
-	from frappe_mcp.server.tools import ToolOptions
-
 
 def get_tool(
 	fn: Callable,
 	uid: str,
 	title: str | None = None,
 	*,
-	requires_permission: bool = False,
+	# Flags
+	requires_permission: bool = True,
 	use_explanation: bool = False,
-	options: ToolOptions | None = None,
 	dev_mode_only: bool = False,
+	use_entire_docstring: bool = False,
+	# Metadata
+	name: str | None = None,
+	description: str | None = None,
+	properties: dict[str, Any] | None = None,
+	required: list[str] | None = None,
+	# Annotations Flags
+	is_readonly: bool = False,
+	is_destructive: bool = True,
+	is_idempotent: bool = False,
+	is_open_world: bool = True,
+	# Output
+	output_properties: dict[str, Any] | None = None,
+	output_required: list[str] | None = None,
 ) -> ToolDefinition:
 	from frappe_mcp.server.tools import ToolOptions
 
 	from otto.utils import get_title_from_slug
 
-	options = options or ToolOptions()
-	options["title"] = title or get_title_from_slug(fn.__name__)
-	tool = tools.get_tool(fn, options)
-	title = title or tool["title"] or get_title_from_slug(tool["name"])
+	tool = tools.get_tool(fn, ToolOptions(use_entire_docstring=use_entire_docstring))
+	name = name or tool["name"]
 	output_schema = tool.get("output_schema", {}) or {}
-	annotations = options.get("annotations") or None
 
 	return ToolDefinition(
 		uid=uid,
-		name=tool["name"],
-		title=title,
-		description=tool["description"],
-		properties=tool["input_schema"].get("properties", {}),
-		required=tool["input_schema"].get("required", []),
+		name=name,
+		# Metadata
+		title=title or get_title_from_slug(name),
+		description=description or tool["description"],
+		properties=properties or tool["input_schema"].get("properties", {}),
+		required=required or tool["input_schema"].get("required", []),
+		# Flags
 		requires_permission=requires_permission,
 		use_explanation=use_explanation,
 		dev_mode_only=dev_mode_only,
-		output_properties=output_schema.get("properties", None),
-		output_required=output_schema.get("required", None),
-		annotations=annotations,
+		# Output
+		output_properties=output_properties or output_schema.get("properties", None),
+		output_required=output_required or output_schema.get("required", None),
+		# Annotation flags
+		is_readonly=is_readonly,
+		is_destructive=is_destructive,
+		is_idempotent=is_idempotent,
+		is_open_world=is_open_world,
 		fn=fn,
 	)

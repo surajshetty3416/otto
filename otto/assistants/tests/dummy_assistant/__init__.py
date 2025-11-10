@@ -46,7 +46,7 @@ echo_tool = get_tool(
 	echo_message,
 	uid="test-dummy-assistant-echo",
 	title="Echo Message",
-	requires_permission=True,
+	requires_permission=False,
 )
 
 tools = [add_tool, echo_tool]

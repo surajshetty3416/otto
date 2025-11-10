@@ -86,6 +86,21 @@ def _get_tool_definition(module: ModuleType) -> ToolDefinition:
 		raise ValueError(f"Tool function `{name or 'fn'}` is not a callable")
 
 	tool = tools.get_tool(fn)
+	annotations = tool["annotations"] or {}
+	is_readonly = (
+		module.is_readonly if hasattr(module, "is_readonly") else annotations.get("readOnlyHint", False)
+	)
+	is_destructive = (
+		module.is_destructive
+		if hasattr(module, "is_destructive")
+		else annotations.get("destructiveHint", True)
+	)
+	is_idempotent = (
+		module.is_idempotent if hasattr(module, "is_idempotent") else annotations.get("idempotentHint", False)
+	)
+	is_open_world = (
+		module.is_open_world if hasattr(module, "is_open_world") else annotations.get("openWorldHint", True)
+	)
 	return ToolDefinition(
 		uid=module.uid,
 		name=name,
@@ -98,10 +113,10 @@ def _get_tool_definition(module: ModuleType) -> ToolDefinition:
 		dev_mode_only=getattr(module, "dev_mode_only", False),
 		output_properties=getattr(module, "output_properties", None),
 		output_required=getattr(module, "output_required", None),
-		is_readonly=getattr(module, "is_readonly", False),
-		is_destructive=getattr(module, "is_destructive", True),
-		is_idempotent=getattr(module, "is_idempotent", False),
-		is_open_world=getattr(module, "is_open_world", True),
+		is_readonly=is_readonly,
+		is_destructive=is_destructive,
+		is_idempotent=is_idempotent,
+		is_open_world=is_open_world,
 		fn=fn,
 	)
 

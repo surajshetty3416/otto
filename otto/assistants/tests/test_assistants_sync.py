@@ -81,7 +81,7 @@ class TestAssistantSync(UnitTestCase):
 		self.assertEqual(add_tool.slug, "add_numbers")
 		self.assertTrue(add_tool.is_valid)
 		self.assertTrue(add_tool.is_app_defined)
-		self.assertFalse(add_tool.requires_permission)
+		self.assertTrue(add_tool.requires_permission)
 		self.assertEqual(len(add_tool.args), 2)
 
 		# Verify echo tool
@@ -90,7 +90,7 @@ class TestAssistantSync(UnitTestCase):
 		self.assertEqual(echo_tool.slug, "echo_message")
 		self.assertTrue(echo_tool.is_valid)
 		self.assertTrue(echo_tool.is_app_defined)
-		self.assertTrue(echo_tool.requires_permission)
+		self.assertFalse(echo_tool.requires_permission)
 		self.assertEqual(len(echo_tool.args), 1)
 
 	def test_sync_assistant_updates_existing_assistant(self):
