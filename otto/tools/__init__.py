@@ -28,15 +28,19 @@ def sync_tools(modules: list[ModuleType | str]) -> None:
 	for module in modules:
 		try:
 			sync_tool(module)
-		except Exception:
+		except Exception as e:
 			otto.log_error(
 				title="Error syncing tool",
 				assistant_module=str(module),
 			)
+			if frappe.conf.developer_mode:
+				print(e)
 
 
 def sync_otto_tools() -> None:
-	return None
+	from otto.tools import bash_tool
+
+	sync_tools([bash_tool])
 
 
 def sync_tool(module: ModuleType | str) -> str | None:

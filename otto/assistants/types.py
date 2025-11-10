@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+from types import ModuleType
 from typing import TYPE_CHECKING, TypedDict
+
+from otto.tools.types import ToolDefinition
 
 if TYPE_CHECKING:
 	from collections.abc import Callable
-	from types import ModuleType
 
 	from otto.lib.types import ModelSize, ReasoningEffort
-	from otto.tools.types import ToolDefinition
 
-	ToolList = list[ToolDefinition | ModuleType | str]
+
+ToolList = list[ToolDefinition | ModuleType | str]
 
 
 class AssistantDefinition(TypedDict):

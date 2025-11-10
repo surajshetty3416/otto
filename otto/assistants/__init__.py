@@ -21,11 +21,13 @@ def sync_assistants(modules: list[ModuleType | str]) -> None:
 	for module in modules:
 		try:
 			sync_assistant(module)
-		except Exception:
+		except Exception as e:
 			otto.log_error(
 				title="Error syncing assistant",
 				assistant_module=str(module),
 			)
+			if frappe.conf.developer_mode:
+				print(e)
 
 
 def sync_otto_assistants() -> None:

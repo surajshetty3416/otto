@@ -1,7 +1,12 @@
 from __future__ import annotations
 
-from otto.assistants.types import ModelPreferenceConfig, ToolList
+from typing import TYPE_CHECKING
+
+from otto.assistants.types import ModelPreferenceConfig
 from otto.utils import format_prompt as f
+
+if TYPE_CHECKING:
+	from otto.assistants.types import ToolList
 
 uid = "otto-kitchen-sink"
 name = "Kitchen Sink"

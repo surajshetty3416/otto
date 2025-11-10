@@ -36,5 +36,6 @@ fixtures = ["Otto LLM"]
 email_css = ["/assets/otto/css/email.css"]
 
 after_migrate = [
+	"otto.tools.sync_otto_tools",
 	"otto.assistants.sync_otto_assistants",
 ]
