@@ -63,13 +63,6 @@ class RealtimeToolExecutionUpdate(TypedDict):
 	data: ToolUseUpdate
 
 
-class RealtimeToolExecutionComplete(TypedDict):
-	id: str
-	chat_id: str
-	type: Literal["tool-execution-complete"]
-	data: int
-
-
 class RealtimeRequestAcknowledge(TypedDict):
 	id: str
 	chat_id: str
@@ -92,7 +85,6 @@ RealtimeChatMessage = (
 	| RealtimeItem
 	| RealtimeRequest
 	| RealtimeToolExecutionUpdate
-	| RealtimeToolExecutionComplete
 	| RealtimeRequestAcknowledge
 	| RealtimeTitleUpdate
 )

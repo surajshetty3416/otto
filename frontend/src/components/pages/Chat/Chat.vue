@@ -110,16 +110,10 @@ const pendingRequests = reactive<Record<string, PendingRequest>>({});
 // API calls
 const list_tools = api.chat.list_tools({ chat_id: "" }, { auto: false });
 const get_pending_requests = api.chat.get_pending_requests({ chat_id: "" }, { auto: false });
-const resume_chat = api.chat.resume_chat({ chat_id: "" }, { auto: false });
 const load_chat = api.chat.load_chat({ chat_id: "" }, { auto: false });
 
 const isLoading = computed(
-	() =>
-		resume_chat.loading ||
-		list_tools.loading ||
-		load_chat.loading ||
-		get_pending_requests.loading ||
-		_loading.value
+	() => list_tools.loading || load_chat.loading || get_pending_requests.loading || _loading.value
 );
 const toolConfigs = computed(() => {
 	const configs: Record<string, ToolConfig> = {};
@@ -178,13 +172,6 @@ async function handleSend() {
 }
 
 function canSend(query: string) {
-	if (resume_chat.loading) {
-		toast.info("Resuming chat", {
-			description: "Please wait a response is in progress",
-		});
-		return false;
-	}
-
 	if (isStreaming.value) {
 		toast.info("Model is responding", {
 			description: "Please wait for the current response to complete",
@@ -223,17 +210,12 @@ function canSend(query: string) {
 	return true;
 }
 
-async function handleResume() {
-	if (resume_chat.loading) return; // prevent double resume
-	await resume_chat.run({ chat_id: props.chatId! }, false);
-	isWaitingForStream.value = true;
-}
-
 function appendUserMessage(query: string) {
 	messages.push(getUserSessionItem(query));
 }
 
 function handleRealtimeMessage(message: RealtimeChatMessage) {
+	console.log("message received", message.type, Date.now());
 	if (window.is_dev_mode) console.log(message);
 
 	isWaitingForStream.value = false;
@@ -258,19 +240,14 @@ function handleRealtimeMessage(message: RealtimeChatMessage) {
 		case "tool-execution-update":
 			handleToolUseUpdate(message.data, messages);
 			return;
-		case "tool-execution-complete":
-			updatePendingRequestsAndResume();
-			return;
 		case "request-acknowledge":
-			updatePendingRequestsAndResume(message.data);
+			message.data.forEach((toolUseId) => delete pendingRequests[toolUseId]);
 			return;
 		case "title-update":
 			list_chats.run(undefined, false);
 			return;
 		case "error":
-			toast.error("Error in chat", {
-				description: message.data,
-			});
+			toast.error("Error in chat", { description: message.data });
 			return;
 	}
 }
@@ -293,19 +270,6 @@ function scrollToBottom(behavior: "smooth" | "instant") {
 	});
 }
 
-async function updatePendingRequestsAndResume(toolUseIds?: string[]) {
-	if (toolUseIds) {
-		toolUseIds.forEach((toolUseId) => delete pendingRequests[toolUseId]);
-		await nextTick(); // indicator update before refetch
-	}
-
-	await get_pending_requests.run({ chat_id: props.chatId! }, false);
-	assert(get_pending_requests.data, "sanity check");
-
-	if (get_pending_requests.data.length > 0) return;
-	await handleResume();
-}
-
 function clear() {
 	// Since the component is reused, local state should be reset
 	_loading.value = false;
@@ -319,7 +283,6 @@ function clear() {
 
 	list_tools.reset();
 	get_pending_requests.reset();
-	resume_chat.reset();
 	load_chat.reset();
 }
 

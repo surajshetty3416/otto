@@ -33,7 +33,7 @@
 			@click.stop="isOpen = false"
 			:title="`Tool used: ${title}, Status: ${titlecase(content.status)}`"
 		>
-			<h3 class="text-gray-800 text-xs font-semibold flex items-baseline gap-2">
+			<h3 class="text-gray-800 text-xs font-semibold flex items-center gap-2">
 				<Wrench class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
 				<span title="Tool label">
 					{{ title }}
@@ -156,7 +156,6 @@ const props = defineProps<{
 
 const toolConfigs = inject(toolConfigKey);
 const pendingRequests = inject(pendingRequestsKey);
-const isOpen = ref(false);
 
 const slug = computed(() => props.content.name);
 const config = computed(() => toolConfigs?.value[slug.value]);
@@ -170,6 +169,7 @@ const args = computed(() => {
 	return args;
 });
 const request = computed(() => pendingRequests?.[props.content.id]);
+const isOpen = ref(!!request.value);
 
 const acknowledge_request = api.chat.acknowledge_request(
 	{ request_id: "", status: "Granted" },

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypedDict, cast
+from typing import TYPE_CHECKING, Literal, TypedDict, cast, overload
 
 # Copyright (c) 2025, Alan Tom and contributors
 # For license information, please see license.txt
@@ -175,7 +175,32 @@ class OttoChat(Document):
 		rm = self._get_requests_map()
 		return any(status == "Pending" for status in rm.values())
 
-	def get_pending_requests(self) -> list[OttoPermissionRequest]:
+	def can_resume(self):
+		"""
+		A chat can be resumed only if all pending requests have been resolved,
+		all pending tools have been executed and the reason an LLM stopped
+		generation was for tool execution.
+		"""
+
+		if self.has_pending_requests():
+			return False
+
+		if self.get_pending_tools():
+			return False
+
+		last_item = self.session_.get_last_item()
+		if not last_item:
+			return False
+
+		return last_item["meta"]["role"] == "agent" and last_item["meta"]["end_reason"] == "tool_use"
+
+	@overload
+	def get_pending_requests(self, name_only: Literal[False] = False) -> list[OttoPermissionRequest]: ...
+
+	@overload
+	def get_pending_requests(self, name_only: Literal[True]) -> list[str]: ...
+
+	def get_pending_requests(self, name_only: bool = False) -> list[OttoPermissionRequest] | list[str]:
 		new_requests = self._raise_permissions_requests()
 		new_requests_names = [req.name for req in new_requests]
 		old_requests_names = frappe.get_all(
@@ -187,6 +212,10 @@ class OttoChat(Document):
 			},
 			pluck="name",
 		)
+
+		if name_only:
+			return [req.name for req in new_requests if req.name] + old_requests_names
+
 		old_requests = [otto.get(OttoPermissionRequest, req) for req in old_requests_names]
 		return new_requests + old_requests
 
