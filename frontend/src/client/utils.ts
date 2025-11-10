@@ -1,4 +1,5 @@
 import router from "../router";
+import type { RealtimeChatMessage } from "./generated.types";
 
 export function toLogin(useRedirect: boolean = true) {
   /**
@@ -37,4 +38,26 @@ export function hash(value: string, seed: number = 0): number {
   h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
 
   return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+}
+
+export function logRealtime(message: RealtimeChatMessage) {
+  let m = `%cRealtime [${message.type}]`;
+  if (message.type === "chunk") {
+    m += `[${message.data.type} ${message.data.message}]`;
+  }
+
+  let style = "color: lightyellow";
+  if (message.type === "error") style = "color: red";
+  if (message.type === "request") style = "color: orange";
+  if (message.type === "request-acknowledge") style = "color: lightpink";
+  if (message.type === "tool-execution-update") style = "color: lightpink";
+  if (message.type === "item") style = "color: lightpink";
+  if (message.type === "pong") style = "color: gray";
+  if (message.type === "chunk") style = "color: gray";
+
+  console.groupCollapsed(m, style);
+  console.log(message.data);
+  console.log("chat_id:", message.chat_id);
+  console.log("id:", message.id);
+  console.groupEnd();
 }

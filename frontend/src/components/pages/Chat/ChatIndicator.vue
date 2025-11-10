@@ -48,15 +48,18 @@
 			<div class="ml-2 flex items-center gap-1">
 				<SmallButton
 					:loading="acknowledge_request.loading"
-					@click="acknowledge_request.run({ chat_id: props.chatId, status: 'Denied' })"
-					>No</SmallButton
+					:isPrimary="false"
+					@click="denyAll()"
 				>
+					No
+				</SmallButton>
 				<SmallButton
 					:loading="acknowledge_request.loading"
 					:isPrimary="true"
-					@click="acknowledge_request.run({ chat_id: props.chatId, status: 'Granted' })"
-					>Yes</SmallButton
+					@click="grantAll()"
 				>
+					Yes
+				</SmallButton>
 			</div>
 		</div>
 	</div>
@@ -90,20 +93,20 @@ const acknowledge_request = api.chat.acknowledge_all_requests(
 	{ auto: false }
 );
 
-const first = computed(() => {
-	const first = streamContext?.messages.at(0);
-	if (!first) return;
-	if (first.type !== "chunk" || first.data.type === "system") return;
-	return first.data;
+const first = computed(() => streamContext?.messages.at(0));
+const firstContent = computed(() => {
+	if (!first.value) return;
+	if (first.value?.type !== "chunk" || first.value?.data.type === "system") return;
+	return first.value?.data;
 });
 
-const isThinking = computed(() => first.value?.type === "thinking");
-const isUsingTool = computed(() => first.value?.type === "tool_use");
+const isThinking = computed(() => firstContent.value?.type === "thinking");
+const isUsingTool = computed(() => firstContent.value?.type === "tool_use");
 
 const toolBeingUsed = computed(() => {
 	if (!isUsingTool.value) return;
-	assert(first.value?.type === "tool_use", "type check");
-	const slug = first.value?.content.name;
+	assert(firstContent.value?.type === "tool_use", "type check");
+	const slug = firstContent.value?.content.name;
 	if (!slug) return;
 	return toolConfigs?.value[slug]?.title ?? slug;
 });
@@ -114,6 +117,16 @@ const indicatorText = computed(() => {
 	if (isUsingTool.value && !toolBeingUsed.value) return "Using a tool";
 	if (props.isWaitingForStream) return "Waiting for response";
 	if (props.isStreaming) return "Responding";
+	if (first.value?.type === "request-acknowledge") return "Executing tool";
+	if (first.value?.type === "tool-execution-update") return "Processing tool result";
 	return;
 });
+
+async function grantAll() {
+	await acknowledge_request.run({ chat_id: props.chatId, status: "Granted" });
+}
+
+async function denyAll() {
+	await acknowledge_request.run({ chat_id: props.chatId, status: "Denied" });
+}
 </script>

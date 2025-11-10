@@ -17,7 +17,7 @@ let timeout: NodeJS.Timeout | null = null;
 onMounted(() => {
 	timeout = setInterval(() => {
 		dots.value = ".".repeat((dots.value.length + 1) % 4);
-	}, 500);
+	}, 300);
 });
 
 onBeforeUnmount(() => timeout && clearInterval(timeout));

@@ -161,4 +161,15 @@ const renderedContent = computed(() => {
 	background-color: var(--md-color-code-bg);
 	border: 1px solid theme("colors.gray.200");
 }
+
+.markdown-content :deep(pre:has(code)),
+.markdown-content :deep(pre > code) {
+	background-color: theme("colors.gray.50");
+	color: theme("colors.gray.900");
+}
+
+.markdown-content :deep(pre:has(code)) {
+	border: 1px solid theme("colors.gray.200");
+	border-radius: theme("borderRadius.lg");
+}
 </style>

@@ -90,6 +90,7 @@ import {
 	updateStreamContext,
 } from "./utils";
 import Welcome from "./Welcome.vue";
+import { logRealtime } from "@/client/utils";
 
 const assistant = ref<AssistantConfig>({ assistant: "5t44lus4lh" });
 const received = new Set<string>(); // sanity check to avoid duplicates
@@ -215,8 +216,7 @@ function appendUserMessage(query: string) {
 }
 
 function handleRealtimeMessage(message: RealtimeChatMessage) {
-	console.log("message received", message.type, Date.now());
-	if (window.is_dev_mode) console.log(message);
+	if (window.is_dev_mode) logRealtime(message);
 
 	isWaitingForStream.value = false;
 	updateStreamContext(message, streamContext);
