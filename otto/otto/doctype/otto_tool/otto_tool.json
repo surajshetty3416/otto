@@ -23,6 +23,12 @@
   "section_break_lafy",
   "description",
   "args",
+  "annotations_section",
+  "is_readonly",
+  "is_idempotent",
+  "column_break_iliz",
+  "is_destructive",
+  "is_open_world",
   "validation_section",
   "column_break_dyev",
   "is_valid",
@@ -182,6 +188,40 @@
    "fieldname": "column_break_dyev",
    "fieldtype": "Column Break",
    "read_only": 1
+  },
+  {
+   "description": "From: https://modelcontextprotocol.io/specification/2025-06-18/schema#toolannotations",
+   "fieldname": "annotations_section",
+   "fieldtype": "Section Break",
+   "label": "Annotations"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_readonly",
+   "fieldtype": "Check",
+   "label": "Is Readonly"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_destructive",
+   "fieldtype": "Check",
+   "label": "Is Destructive"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_idempotent",
+   "fieldtype": "Check",
+   "label": "Is Idempotent"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_open_world",
+   "fieldtype": "Check",
+   "label": "Is Open World"
+  },
+  {
+   "fieldname": "column_break_iliz",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -191,7 +231,7 @@
    "link_fieldname": "tool"
   }
  ],
- "modified": "2025-11-06 17:41:29.368942",
+ "modified": "2025-11-10 13:10:32.417423",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Tool",

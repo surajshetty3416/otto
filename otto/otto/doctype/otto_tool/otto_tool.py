@@ -49,7 +49,11 @@ class OttoTool(Document):
 		code: DF.Code | None
 		description: DF.LongText | None
 		is_app_defined: DF.Check
+		is_destructive: DF.Check
 		is_external: DF.Check
+		is_idempotent: DF.Check
+		is_open_world: DF.Check
+		is_readonly: DF.Check
 		is_valid: DF.Check
 		mock_return_value: DF.Data | None
 		mock_tool: DF.Check
@@ -84,6 +88,11 @@ class OttoTool(Document):
 		description: str | None = None,
 		# External tools
 		tool_import_path: str | None = None,
+		# Annotation flags
+		is_readonly: bool = False,
+		is_destructive: bool = True,
+		is_idempotent: bool = False,
+		is_open_world: bool = True,
 	):
 		doc = cast("OttoTool", frappe.new_doc("Otto Tool"))
 		doc.name = name or f"tool-{make_autoname('hash')}"
@@ -107,7 +116,10 @@ class OttoTool(Document):
 		doc.requires_permission = requires_permission
 		doc.is_app_defined = is_app_defined
 		doc.tool_import_path = tool_import_path
-
+		doc.is_readonly = is_readonly
+		doc.is_destructive = is_destructive
+		doc.is_idempotent = is_idempotent
+		doc.is_open_world = is_open_world
 		assert doc.slug, "slug is required"
 		doc.save()
 		return doc

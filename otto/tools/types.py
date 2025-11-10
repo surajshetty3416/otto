@@ -5,8 +5,6 @@ from typing import TYPE_CHECKING, Any, TypedDict
 if TYPE_CHECKING:
 	from collections.abc import Callable
 
-	from frappe_mcp.server import ToolAnnotations
-
 
 class ToolDefinition(TypedDict):
 	"""
@@ -24,7 +22,10 @@ class ToolDefinition(TypedDict):
 		dev_mode_only: If True, tool is only available in developer mode.
 		output_properties: Optional schema describing the output structure of the tool.
 		output_required: Optional list describing required fields in the output.
-		annotations: Optional tool metadata following ModelContextProtocol ToolAnnotations for hints and extra metadata.
+		is_readonly: If True, the tool does not modify its environment (default is False).
+		is_destructive: If True, the tool may perform destructive updates to its environment (default is True).
+		is_idempotent: If True, calling the tool repeatedly with the same arguments will have no additional effect on the its environment (default is False).
+		is_open_world: If True, the tool may interact with an "open world" of external entities (default is True).
 		fn: The Python callable implementing the tool logic.
 
 	Notes:
@@ -56,8 +57,13 @@ class ToolDefinition(TypedDict):
 	mentioned here for completeness. These aren't currently used by Otto but may
 	be in the future.
 	"""
-	# https://modelcontextprotocol.io/specification/2025-06-18/schema#tool
+	# ref: https://modelcontextprotocol.io/specification/2025-06-18/schema#tool
 	output_properties: dict[str, Any] | None
 	output_required: list[str] | None
-	# https://modelcontextprotocol.io/specification/2025-06-18/schema#toolannotations
-	annotations: ToolAnnotations | None
+
+	# Annotation flags from ModelContextProtocol ToolAnnotations
+	# ref: https://modelcontextprotocol.io/specification/2025-06-18/schema#toolannotations
+	is_readonly: bool = False
+	is_destructive: bool = True
+	is_idempotent: bool = False
+	is_open_world: bool = True

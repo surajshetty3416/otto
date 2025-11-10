@@ -98,7 +98,10 @@ def _get_tool_definition(module: ModuleType) -> ToolDefinition:
 		dev_mode_only=getattr(module, "dev_mode_only", False),
 		output_properties=getattr(module, "output_properties", None),
 		output_required=getattr(module, "output_required", None),
-		annotations=getattr(module, "annotations", None),
+		is_readonly=getattr(module, "is_readonly", False),
+		is_destructive=getattr(module, "is_destructive", True),
+		is_idempotent=getattr(module, "is_idempotent", False),
+		is_open_world=getattr(module, "is_open_world", True),
 		fn=fn,
 	)
 
@@ -119,6 +122,10 @@ def _ensure_tool(tool: ToolDefinition) -> str:
 			is_app_defined=True,
 			tool_import_path=get_import_path(tool["fn"]),
 			schema=_get_tool_schema(tool),
+			is_readonly=tool["is_readonly"],
+			is_destructive=tool["is_destructive"],
+			is_idempotent=tool["is_idempotent"],
+			is_open_world=tool["is_open_world"],
 		)
 
 		assert doc.name is not None, "sanity check"
@@ -138,6 +145,10 @@ def _ensure_tool(tool: ToolDefinition) -> str:
 	doc.mock_tool = False
 	doc.mock_return_value = None
 	doc.use_explanation = tool["use_explanation"]
+	doc.is_readonly = tool["is_readonly"]
+	doc.is_destructive = tool["is_destructive"]
+	doc.is_idempotent = tool["is_idempotent"]
+	doc.is_open_world = tool["is_open_world"]
 	doc.set_from_schema(_get_tool_schema(tool))
 	doc.save(ignore_permissions=True)
 
