@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import json
+import re
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any
 
@@ -79,9 +80,54 @@ def to_html(content: str):
 	return markdown(content, extras=extras)
 
 
-def format_prompt(prompt: str) -> str:
-	"""Format prompt"""
-	return dedent(prompt).strip()
+def format_prompt(prompt: str, compact: bool = False) -> str:
+	"""
+	Format a `prompt` string by dedenting and trimming whitespace.
+
+	If `compact` is True, condenses the formatted prompt by joining consecutive
+	lines. Headers, code blocks and list items are kept on separate lines.
+	Multiple blank lines are compacted to a single blank line.
+	"""
+	base = dedent(prompt).strip()
+	if not compact:
+		return base
+
+	def is_list_item(line: str) -> bool:
+		# Matches lines starting with - , * , or 1-99 followed by . or ), then space
+		return bool(re.match(r"^([-\*]|[1-9][0-9]?[\.\)])\s", line))
+
+	lines: list[str] = []
+	in_code_block = False
+	for line_ in base.splitlines():
+		line = line_.strip()
+		prev: str | None = lines[-1] if lines else None
+
+		if not line:
+			# Multiple blank lines compacted to a single blank line
+			if prev != "":
+				lines.append("")
+			continue
+
+		if is_list_item(line):
+			line = line_  # preserve list indentation
+
+		if line.startswith("```"):
+			in_code_block = not in_code_block
+
+		if (
+			not lines
+			or prev is None
+			or in_code_block
+			or prev.startswith("#")  # Header start indicator
+			or prev.endswith(":")  # List start indicator
+			or prev.endswith(">")  # XML tag closing
+			or is_list_item(prev)
+		):
+			lines.append(line)
+			continue
+
+		lines[-1] = prev + " " + line if prev != "" else line
+	return "\n".join(lines)
 
 
 def get_title_from_slug(slug: str) -> str:
