@@ -6,6 +6,7 @@ import router from "./router";
 import "./style.css";
 import { watcher } from "./client/watcher";
 import { toLogin } from "./client/utils";
+import shortcuts from "./shortcuts";
 
 setIsDevMode();
 function initApp() {
@@ -19,6 +20,7 @@ function initApp() {
 }
 
 const app = initApp();
+shortcuts.register();
 
 window.LOG_ERRORS = true;
 if (window.is_dev_mode) {

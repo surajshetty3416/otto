@@ -1,7 +1,3 @@
-<script setup lang="ts">
-import Sidebar from "../ui/sidebar/Sidebar.vue";
-</script>
-
 <template>
 	<main class="flex">
 		<Sidebar />
@@ -11,3 +7,27 @@ import Sidebar from "../ui/sidebar/Sidebar.vue";
 		<router-view class="w-full"></router-view>
 	</main>
 </template>
+
+<script setup lang="ts">
+import shortcuts from "@/shortcuts";
+import { onMounted, onUnmounted } from "vue";
+import Sidebar from "../ui/sidebar/Sidebar.vue";
+import router from "@/router";
+
+onMounted(() => {
+	shortcuts.on("new-chat", newChat);
+});
+
+onUnmounted(() => {
+	shortcuts.off("new-chat", newChat);
+});
+
+function newChat(e: KeyboardEvent) {
+	const currentRoute = router.currentRoute.value;
+	if (currentRoute.name === "Chat" && !currentRoute.params.chatId) return;
+
+	e.preventDefault();
+	e.stopPropagation();
+	router.push({ name: "Chat" });
+}
+</script>

@@ -77,6 +77,7 @@ import ChatHeader from "./ChatHeader.vue";
 import ChatIndicator from "./ChatIndicator.vue";
 import ChatInput from "./ChatInput.vue";
 import ChatMessages from "./ChatMessages.vue";
+import Selector from "./Selector.vue";
 import type { AssistantConfig, StreamContext } from "./types";
 import {
 	getUserSessionItem,
@@ -89,7 +90,6 @@ import {
 	updateStreamContext,
 } from "./utils";
 import Welcome from "./Welcome.vue";
-import Selector from "./Selector.vue";
 
 const assistant = ref<AssistantConfig>({ assistant: "5t44lus4lh" });
 const received = new Set<string>(); // sanity check to avoid duplicates
