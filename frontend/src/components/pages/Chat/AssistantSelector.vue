@@ -12,7 +12,7 @@
 		</PopoverTrigger>
 
 		<PopoverContent class="p-0 rounded-lg border border-gray-200 shadow-sm w-60 min-w-fit">
-			<template v-for="assistant in preferred_assistants.data ?? []" :key="assistant.name">
+			<template v-for="assistant in assistants_list" :key="assistant.name">
 				<SelectorAssistantItem
 					@click="select(assistant)"
 					:assistant="assistant"
@@ -69,6 +69,13 @@ function customize() {
 }
 
 const preferred_assistants = api.chat.get_preferred_assistants();
+
+const assistants_list = computed(() => {
+	const preferred = preferred_assistants.data ?? [];
+	if (preferred.includes(selected.value.assistant)) return preferred;
+
+	return [selected.value.assistant, ...preferred];
+});
 
 const icon = computed(() => getAssistantIcon(assistants.value[selected.value.assistant]));
 // @ts-ignore

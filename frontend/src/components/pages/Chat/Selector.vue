@@ -12,7 +12,7 @@
 			@customize="openConfig = true"
 			@select="select"
 		/>
-		<AssistantConfigDialog v-model="openConfig" :selected="assistant" />
+		<AssistantConfigDialog v-model="openConfig" :selected="assistant" @select="select" />
 	</div>
 </template>
 

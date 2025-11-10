@@ -8,12 +8,20 @@
 
 			<div class="flex h-[600px]" v-if="!list_assistants.loading">
 				<!-- Sidebar -->
-				<AssistantConfigSidebar v-model="view" />
+				<AssistantConfigSidebar v-model="view" :selected="selected" />
 
 				<!-- Main Content -->
 				<div v-if="assistant" class="flex-1 flex flex-col">
 					<AssistantConfigHeader v-model="open" :assistant="assistant" />
 					<AssistantConfigContent :assistant="assistant" />
+					<Button
+						class="w-fit min-w-18 fixed bottom-4 right-4"
+						variant="solid"
+						size="md"
+						@click="select"
+					>
+						Use {{ assistant?.title }}
+					</Button>
 				</div>
 
 				<div v-else class="w-full h-full flex flex-col gap-1 items-center justify-center">
@@ -38,6 +46,7 @@ import type { AssistantConfig } from "../types";
 import AssistantConfigContent from "./AssistantConfigContent.vue";
 import AssistantConfigHeader from "./AssistantConfigHeader.vue";
 import AssistantConfigSidebar from "./AssistantConfigSidebar.vue";
+import Button from "@/components/fui/Button/Button.vue";
 
 const props = defineProps<{ selected: AssistantConfig }>();
 const emit = defineEmits(["select"]);
@@ -45,7 +54,11 @@ const open = defineModel<boolean>({ required: true });
 const view = ref<string | null>(null);
 
 function select() {
-	console.log("selected");
+	if (!view.value) return;
+	const config: AssistantConfig = {
+		assistant: view.value,
+	};
+	emit("select", config);
 }
 
 function setview() {
