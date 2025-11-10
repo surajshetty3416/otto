@@ -55,7 +55,11 @@ def sync_tool(module: ModuleType | str) -> str | None:
 	if tool_definition["name"] in installed_tools and not frappe.flags.in_test:
 		return tool_definition["name"]
 
-	return _ensure_tool(tool_definition)
+	tool_name = _ensure_tool(tool_definition)
+	if frappe.flags.in_migrate:
+		installed_tools.append(tool_name)
+
+	return tool_name
 
 
 def _get_tool_definition(module: ModuleType) -> ToolDefinition:
