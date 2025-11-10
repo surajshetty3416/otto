@@ -22,7 +22,7 @@ import TextLoadingIndicator from "@/components/ui/TextLoadingIndicator.vue";
 import AssistantSelector from "./AssistantSelector.vue";
 import type { AssistantConfig } from "./types";
 import AssistantConfigDialog from "./AssistantConfig/AssistantConfigDialog.vue";
-import { ref } from "vue";
+import { ref, watch } from "vue";
 
 const openConfig = ref(false);
 const preferred_assistants = api.chat.get_preferred_assistants();
@@ -32,4 +32,12 @@ function select(selected: AssistantConfig) {
 	assistant.value = selected;
 	openConfig.value = false;
 }
+
+watch(
+	() => preferred_assistants.data,
+	(newval) => {
+		if (!newval || !newval.length || assistant.value?.assistant === newval[0]) return;
+		assistant.value = { assistant: newval[0] };
+	}
+);
 </script>

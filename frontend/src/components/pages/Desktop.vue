@@ -23,11 +23,12 @@ onUnmounted(() => {
 });
 
 function newChat(e: KeyboardEvent) {
+	e.preventDefault();
+	e.stopPropagation();
+
 	const currentRoute = router.currentRoute.value;
 	if (currentRoute.name === "Chat" && !currentRoute.params.chatId) return;
 
-	e.preventDefault();
-	e.stopPropagation();
 	router.push({ name: "Chat" });
 }
 </script>

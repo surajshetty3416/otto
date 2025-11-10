@@ -29,18 +29,18 @@
 	</ContentContainer>
 </template>
 <script setup lang="ts">
-import type { ThinkingContent } from "@/client/generated.types";
+import type { SessionItem, ThinkingContent } from "@/client/generated.types";
 import { Brain, X } from "lucide-vue-next";
 import { computed, inject, ref } from "vue";
-import Markdown from "./Markdown.vue";
-import { sessionItemKey, streamContextKey } from "./utils";
 import CollapsedContentToggle from "./CollapsedContentToggle.vue";
 import ContentContainer from "./ContentContainer.vue";
+import Markdown from "./Markdown.vue";
+import { streamContextKey } from "./utils";
 
 const streamContext = inject(streamContextKey);
-const sessionItem = inject(sessionItemKey);
 
-defineProps<{
+const props = defineProps<{
+	item: SessionItem;
 	content: ThinkingContent;
 }>();
 
@@ -51,6 +51,6 @@ const isStreaming = computed(() => {
 	if (message?.type !== "chunk") return false;
 
 	const chunk = message?.data;
-	return chunk?.type === "thinking" && chunk?.item_id === sessionItem?.id;
+	return chunk?.type === "thinking" && chunk?.item_id === props.item.id;
 });
 </script>

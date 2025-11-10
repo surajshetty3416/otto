@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import frappe
-from frappe_mcp.server import tools
 
 import otto
 from otto.lib.types import ToolSchema, ToolSchemaParameters
@@ -73,6 +72,7 @@ def _get_tool_definition(module: ModuleType) -> ToolDefinition:
 	Returns:
 		ToolDefinition with extracted attributes from the module
 	"""
+	from frappe_mcp.server import tools
 
 	if not hasattr(module, "uid") or not isinstance(module.uid, str):
 		raise ValueError("Tool definition must have a string named `uid`")

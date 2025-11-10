@@ -95,7 +95,9 @@
 				title="Result of the tool use"
 			>
 				<p class="text-xs italic font-medium text-gray-600">Result</p>
-				<pre class="text-sm text-gray-800 pt-0.5">{{ content.result }}</pre>
+				<pre class="text-sm text-gray-800 pt-0.5 overflow-x-auto">{{
+					content.result
+				}}</pre>
 			</div>
 
 			<!-- Permission container -->
@@ -124,16 +126,16 @@
 	</ContentContainer>
 </template>
 <script setup lang="ts">
-import type { ToolUseContent } from "@/client/generated.types";
-import { Check, Wrench, X } from "lucide-vue-next";
-import { computed, inject, ref } from "vue";
-import { pendingRequestsKey, toolConfigKey } from "./utils";
-import IndicatorDot from "@/components/ui/IndicatorDot.vue";
-import SmallButton from "./SmallButton.vue";
 import { api } from "@/client";
+import type { SessionItem, ToolUseContent } from "@/client/generated.types";
+import { titlecase } from "@/components/format";
+import IndicatorDot from "@/components/ui/IndicatorDot.vue";
+import { Check, Wrench, X } from "lucide-vue-next";
+import { computed, inject, ref, watch } from "vue";
 import CollapsedContentToggle from "./CollapsedContentToggle.vue";
 import ContentContainer from "./ContentContainer.vue";
-import { titlecase } from "@/components/format";
+import SmallButton from "./SmallButton.vue";
+import { pendingRequestsKey, toolConfigKey } from "./utils";
 
 /**
  * show a semi-collapsed div (hide args) when permission request is required
@@ -148,6 +150,7 @@ import { titlecase } from "@/components/format";
  */
 
 const props = defineProps<{
+	item: SessionItem;
 	content: ToolUseContent;
 }>();
 
@@ -189,4 +192,11 @@ const statusColor = computed(() => {
 	if (props.content.status === "success") return "green";
 	return "gray";
 });
+
+watch(
+	() => request.value,
+	(newval) => {
+		isOpen.value = !!newval;
+	}
+);
 </script>

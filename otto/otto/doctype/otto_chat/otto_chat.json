@@ -28,7 +28,8 @@
    "in_standard_filter": 1,
    "label": "Assistant",
    "options": "Otto Assistant",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "fieldname": "session",
@@ -58,7 +59,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-31 13:45:21.450029",
+ "modified": "2025-11-10 18:48:48.328598",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Chat",

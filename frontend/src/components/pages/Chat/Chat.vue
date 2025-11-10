@@ -199,13 +199,6 @@ function canSend(query: string) {
 		return false;
 	}
 
-	if (!query) {
-		toast.warning("Empty message", {
-			description: "Please enter a message before sending",
-		});
-		return false;
-	}
-
 	if (Object.keys(pendingRequests).length > 0) {
 		toast.warning("Request pending", {
 			description: "Please acknowledge all pending requests",
@@ -217,6 +210,13 @@ function canSend(query: string) {
 	if (hasPendingToolExecutions.value) {
 		toast.warning("Tool execution pending", {
 			description: "Please wait until pending tools have completed running",
+		});
+		return false;
+	}
+
+	if (!query) {
+		toast.warning("Empty message", {
+			description: "Please enter a message before sending",
 		});
 		return false;
 	}
@@ -324,10 +324,17 @@ function clear() {
 }
 
 async function set() {
+	setTimeout(focus, 100);
 	if (!props.chatId) return;
 	await list_tools.run({ chat_id: props.chatId }, false);
 	await get_pending_requests.run({ chat_id: props.chatId }, false);
 	await loadChat();
+}
+
+function focus() {
+	const input = document.getElementById(`chat-input`);
+	if (!input || !(input instanceof HTMLInputElement) || input.disabled || input.readOnly) return;
+	input.focus();
 }
 
 async function loadChat() {

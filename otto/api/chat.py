@@ -139,17 +139,32 @@ def list_assistants() -> list[Assistant]:
 
 @frappe.whitelist()
 def get_preferred_assistants() -> list[str]:
-	if assistants := frappe.get_all(
+	assistants = frappe.get_all(
 		"Otto Chat",
 		filters={"owner": frappe.session.user},
 		pluck="assistant",
 		order_by="modified desc",
-		limit=2,
-		distinct=True,
-	):
-		return assistants
+		limit=10,
+	)
 
-	return frappe.get_all("Otto Assistant", pluck="name", limit=2)
+	if not assistants or len(assistants) <= 2:
+		return frappe.get_all(
+			"Otto Assistant",
+			pluck="name",
+			limit=3,
+			order_by="modified desc",
+		)
+
+	count: dict[str, int] = {}
+	for assistant in assistants:
+		count[assistant] = count.get(assistant, 0) + 1
+
+	asst = [(a, c) for (a, c) in count.items() if a != assistants[0]]
+	asst.sort(key=lambda x: x[1], reverse=True)
+	sorted = [a for a, _ in asst[:2]]
+
+	# prepend the last used assistant in addition to most used
+	return [assistants[0], *sorted]
 
 
 @frappe.whitelist()
@@ -258,7 +273,8 @@ def _send_query(chat: OttoChat, chat_id: str, query: str | None) -> None:
 			data=response.item,
 			chat_id=chat_id,
 			type="item",
-		)
+		),
+		after_commit=True,
 	)
 
 
@@ -290,7 +306,7 @@ def acknowledge_request(
 		type="request-acknowledge",
 		data=[opr.tool_use_id],
 	)
-	_publish(message)
+	_publish(message, after_commit=True)
 
 
 @frappe.whitelist()
@@ -313,7 +329,7 @@ def acknowledge_all_requests(
 		type="request-acknowledge",
 		data=tool_use_ids,
 	)
-	_publish(message)
+	_publish(message, after_commit=True)
 
 
 @frappe.whitelist()
@@ -335,7 +351,7 @@ def _check_pending_requests(chat: OttoChat, chat_id: str) -> None:
 			chat_id=chat_id,
 			type="request",
 		)
-		_publish(message)
+		_publish(message, after_commit=True)
 
 
 def _get_req_from_opr(opr: OttoPermissionRequest) -> PendingRequest:
@@ -371,14 +387,15 @@ def _execute_tools(chat: OttoChat, chat_id: str) -> None:
 		type="tool-execution-complete",
 		data=count,
 	)
-	_publish(message)
+	_publish(message, after_commit=True)
 
 
-def _publish(message: RealtimeChatMessage) -> None:
+def _publish(message: RealtimeChatMessage, after_commit: bool = False) -> None:
 	frappe.publish_realtime(
 		"otto.api.chat",
 		user=frappe.session.user,
 		message=dict(message),
+		after_commit=after_commit,
 	)
 	logger.debug(
 		{

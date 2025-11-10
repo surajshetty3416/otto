@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from frappe_mcp.server import tools
-
 from otto.tools.types import ToolDefinition
 
 if TYPE_CHECKING:
@@ -34,11 +32,11 @@ def get_tool(
 	output_properties: dict[str, Any] | None = None,
 	output_required: list[str] | None = None,
 ) -> ToolDefinition:
-	from frappe_mcp.server.tools import ToolOptions
+	from frappe_mcp.server import tools
 
 	from otto.utils import get_title_from_slug
 
-	tool = tools.get_tool(fn, ToolOptions(use_entire_docstring=use_entire_docstring))
+	tool = tools.get_tool(fn, tools.ToolOptions(use_entire_docstring=use_entire_docstring))
 	name = name or tool["name"]
 	output_schema = tool.get("output_schema", {}) or {}
 

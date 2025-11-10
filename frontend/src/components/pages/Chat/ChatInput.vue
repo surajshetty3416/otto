@@ -4,6 +4,7 @@
 		style="box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.06), 0px 1px 2px rgba(0, 0, 0, 0.08)"
 	>
 		<input
+			:id="`chat-input`"
 			v-model="query"
 			type="text"
 			placeholder="Ask..."

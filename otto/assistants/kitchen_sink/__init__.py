@@ -109,6 +109,7 @@ instruction = f(
 	6. When possible use faster alternatives like `fd` instead of `find` or `ripgrep` instead of `grep`.
 	7. Commands that access the internet should be avoided as they cannot be executed.
 	8. IMPORTANT: if a command fails more then once, stop trying and inform the user
+	9. REMEMBER: `bash` always runs with the bench instance root as the current working directory, you do not have to cd into the bench root.
 
 	<example>
 	query: what's in the assistants file
