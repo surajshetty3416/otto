@@ -46,20 +46,27 @@
 			</div>
 
 			<div class="ml-2 flex items-center gap-1">
-				<SmallButton
-					:loading="acknowledge_request.loading"
-					:isPrimary="false"
-					@click="denyAll()"
+				<TextTooltip content="Deny all requests" :keybinds="keybinds['deny-all-requests']">
+					<SmallButton
+						:loading="acknowledge_request.loading"
+						:isPrimary="false"
+						@click="denyAll()"
+					>
+						No
+					</SmallButton>
+				</TextTooltip>
+				<TextTooltip
+					content="Grant all requests"
+					:keybinds="keybinds['accept-all-requests']"
 				>
-					No
-				</SmallButton>
-				<SmallButton
-					:loading="acknowledge_request.loading"
-					:isPrimary="true"
-					@click="grantAll()"
-				>
-					Yes
-				</SmallButton>
+					<SmallButton
+						:loading="acknowledge_request.loading"
+						:isPrimary="true"
+						@click="grantAll()"
+					>
+						Yes
+					</SmallButton>
+				</TextTooltip>
 			</div>
 		</div>
 	</div>
@@ -71,11 +78,13 @@ import type { PendingRequest } from "@/client/generated.types";
 import IndicatorDot from "@/components/ui/IndicatorDot.vue";
 import { assert } from "@/utils";
 import { Brain, Wrench } from "lucide-vue-next";
-import { computed, inject } from "vue";
+import { computed, inject, onMounted, onUnmounted } from "vue";
 import Ellipsis from "@/components/ui/Ellipsis.vue";
 import SmallButton from "./SmallButton.vue";
 import { streamContextKey, toolConfigKey } from "./utils";
 import LoadingIndicator from "@/components/fui/LoadingIndicator.vue";
+import shortcuts, { keybinds } from "@/shortcuts";
+import TextTooltip from "@/components/ui/tooltip/TextTooltip.vue";
 
 const props = defineProps<{
 	chatId: string;
@@ -123,10 +132,21 @@ const indicatorText = computed(() => {
 });
 
 async function grantAll() {
+	if (!props.chatId || pendingRequestsCount.value === 0) return;
 	await acknowledge_request.run({ chat_id: props.chatId, status: "Granted" });
 }
 
 async function denyAll() {
+	if (!props.chatId || pendingRequestsCount.value === 0) return;
 	await acknowledge_request.run({ chat_id: props.chatId, status: "Denied" });
 }
+
+onMounted(() => {
+	shortcuts.on("accept-all-requests", grantAll);
+	shortcuts.on("deny-all-requests", denyAll);
+});
+onUnmounted(() => {
+	shortcuts.off("accept-all-requests", grantAll);
+	shortcuts.off("deny-all-requests", denyAll);
+});
 </script>
