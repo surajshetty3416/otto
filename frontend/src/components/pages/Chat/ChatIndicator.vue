@@ -133,12 +133,12 @@ const indicatorText = computed(() => {
 
 async function grantAll() {
 	if (!props.chatId || pendingRequestsCount.value === 0) return;
-	await acknowledge_request.run({ chat_id: props.chatId, status: "Granted" });
+	await acknowledge_request.run({ chat_id: props.chatId, status: "Granted" }, false);
 }
 
 async function denyAll() {
 	if (!props.chatId || pendingRequestsCount.value === 0) return;
-	await acknowledge_request.run({ chat_id: props.chatId, status: "Denied" });
+	await acknowledge_request.run({ chat_id: props.chatId, status: "Denied" }, false);
 }
 
 onMounted(() => {

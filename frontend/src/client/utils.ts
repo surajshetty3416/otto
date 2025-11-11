@@ -43,7 +43,7 @@ export function hash(value: string, seed: number = 0): number {
 export function logRealtime(message: RealtimeChatMessage) {
   let m = `%cRealtime [${message.type}]`;
   if (message.type === "chunk") {
-    m += `[${message.data.type} ${message.data.message}]`;
+    m += ` [${message.data.type} ${message.data.message}]`;
   }
 
   let style = "color: lightyellow";
@@ -53,7 +53,8 @@ export function logRealtime(message: RealtimeChatMessage) {
   if (message.type === "tool-execution-update") style = "color: lightpink";
   if (message.type === "item") style = "color: lightpink";
   if (message.type === "pong") style = "color: gray";
-  if (message.type === "chunk") style = "color: gray";
+  if (message.type === "chunk" && message.data.type !== "system") style = "color: gray";
+
 
   console.groupCollapsed(m, style);
   console.log(message.data);
