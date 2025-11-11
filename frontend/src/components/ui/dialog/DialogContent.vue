@@ -15,18 +15,12 @@
 			<!-- Header -->
 			<div class="flex items-center justify-between" v-if="!noHeader">
 				<slot name="header" />
-				<TextTooltip
-					content="Close dialog"
-					:keybinds="keybinds['close-dialog']"
-					:delay="250"
+				<DialogClose
+					class="outline-none focus:ring-2 ring-gray-300 rounded-md p-1 opacity-70 hover:opacity-100 transition-opacity"
 				>
-					<DialogClose
-						class="outline-none focus:ring-2 ring-gray-300 rounded-md p-1 opacity-70 hover:opacity-100 transition-opacity"
-					>
-						<X class="w-4 h-4" stroke-width="1.5" />
-						<span class="sr-only">Close</span>
-					</DialogClose>
-				</TextTooltip>
+					<X class="w-4 h-4" stroke-width="1.5" />
+					<span class="sr-only">Close</span>
+				</DialogClose>
 			</div>
 
 			<slot />
@@ -39,7 +33,6 @@
 
 <script setup lang="ts">
 import { cn } from "@/lib/utils";
-import { keybinds } from "@/shortcuts";
 import { reactiveOmit } from "@vueuse/core";
 import { X } from "lucide-vue-next";
 import type { DialogContentEmits, DialogContentProps } from "reka-ui";
@@ -51,7 +44,6 @@ import {
 	useForwardPropsEmits,
 } from "reka-ui";
 import { type HTMLAttributes } from "vue";
-import TextTooltip from "../tooltip/TextTooltip.vue";
 
 const props = withDefaults(
 	defineProps<DialogContentProps & { class?: HTMLAttributes["class"]; noHeader?: boolean }>(),

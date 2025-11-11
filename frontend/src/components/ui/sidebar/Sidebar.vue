@@ -12,18 +12,22 @@
 				<LogoThickLine class="flex-shrink-0 w-4.5 h-4.5" />
 			</div>
 
-			<button
-				@click="toggleCollapse"
-				class="flex-shrink-0 bg-transparent z-0"
-				:title="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+			<TextTooltip
+				content="Toggle sidebar"
+				:keybinds="keybinds['toggle-sidebar']"
+				:delay="300"
 			>
-				<ArrowLeftToLine
-					class="w-4 h-4 text-gray-600 transition-all duration-150"
-					:style="{ opacity: textOpacity }"
-					:class="{ 'rotate-180': isCollapsed }"
-					stroke-width="1.5"
-				/>
-			</button>
+				<button
+					@click="toggleCollapse"
+					class="flex-shrink-0 bg-transparent z-0"
+				>
+					<ArrowLeftToLine
+						class="w-4 h-4 text-gray-600 transition-all duration-150"
+						:style="{ opacity: textOpacity }"
+						:class="{ 'rotate-180': isCollapsed }"
+						stroke-width="1.5"
+					/></button
+			></TextTooltip>
 		</div>
 
 		<!-- Navigation Items -->
@@ -50,19 +54,15 @@
 
 <script setup lang="ts">
 import LogoThickLine from "@/components/svg/LogoThickLine.vue";
-import {
-  ArrowLeftToLine,
-  Bot,
-  ClipboardList,
-  MessageSquare,
-  Wrench
-} from "lucide-vue-next";
-import { computed, ref, watch } from "vue";
+import { ArrowLeftToLine, Bot, ClipboardList, MessageSquare, Wrench } from "lucide-vue-next";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import ChatList from "./ChatList.vue";
 import SidebarFooter from "./SidebarFooter.vue";
 import SidebarItem from "./SidebarItem.vue";
 import type { SidebarItem as SidebarItemType } from "./types";
 import { sidebarState } from "./utils";
+import shortcuts, { keybinds } from "@/shortcuts";
+import TextTooltip from "../tooltip/TextTooltip.vue";
 
 // Sidebar width management
 const DEFAULT_WIDTH = 256;
@@ -102,9 +102,19 @@ const navigationItems: SidebarItemType[] = [
 	},
 ];
 
-// Toggle collapse
-const toggleCollapse = () => {
+function toggleCollapse(e?: KeyboardEvent | MouseEvent) {
+	e?.preventDefault();
+	e?.stopPropagation();
+
 	isCollapsed.value = !isCollapsed.value;
 	sidebarWidth.value = isCollapsed.value ? COLLAPSED_WIDTH : DEFAULT_WIDTH;
-};
+}
+
+onMounted(() => {
+	shortcuts.on("toggle-sidebar", toggleCollapse);
+});
+
+onUnmounted(() => {
+	shortcuts.off("toggle-sidebar", toggleCollapse);
+});
 </script>

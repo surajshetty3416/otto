@@ -34,9 +34,11 @@
 					:chatId="chatId ?? ''"
 					:loading="_loading"
 					@send="handleSend"
+					@settings="openSettings = true"
 					v-model="query"
 				/>
 				<Selector class="mt-2" v-if="showNew" v-model="assistant" />
+				<ChatSettingsDialog v-model="openSettings" :chatId="chatId" :isNew="showNew" />
 			</div>
 		</div>
 	</div>
@@ -53,8 +55,6 @@
  * - check if any of the api calls are erroring out, and show an appropriate toast
  * - set a time out on isWaitingForStream, and show a toast if it times out
  *
- * - [ ] titling
- * - [ ] header new chat button
  * - [ ] sidebar (select chat, nav to assistants, tools, etc)
  * - [ ] allow assistant config llm, tools, etc (default?)
  * - [ ] images and pdfs
@@ -68,6 +68,7 @@ import type {
 	TextContentChunk,
 	ToolConfig,
 } from "@/client/generated.types";
+import { logRealtime } from "@/client/utils";
 import router from "@/router";
 import socket from "@/socket";
 import { assert } from "@/utils";
@@ -77,8 +78,9 @@ import ChatHeader from "./ChatHeader.vue";
 import ChatIndicator from "./ChatIndicator.vue";
 import ChatInput from "./ChatInput.vue";
 import ChatMessages from "./ChatMessages.vue";
+import ChatSettingsDialog from "./ChatSettings/ChatSettingsDialog.vue";
 import Selector from "./Selector.vue";
-import type { AssistantConfig, StreamContext } from "./types";
+import type { StreamContext } from "./types";
 import {
 	getUserSessionItem,
 	handleContentChunk,
@@ -90,9 +92,9 @@ import {
 	updateStreamContext,
 } from "./utils";
 import Welcome from "./Welcome.vue";
-import { logRealtime } from "@/client/utils";
 
-const assistant = ref<AssistantConfig>({ assistant: "5t44lus4lh" });
+const openSettings = ref(true);
+const assistant = ref<string>("5t44lus4lh");
 const received = new Set<string>(); // sanity check to avoid duplicates
 const props = defineProps<{
 	chatId?: string;
@@ -156,7 +158,7 @@ async function handleSend() {
 	await nextTick(); // ensure loading is shown
 
 	if (!props.chatId) {
-		const chatId = await api.chat.new_chat({ assistant: assistant.value.assistant });
+		const chatId = await api.chat.new_chat({ assistant: assistant.value });
 		await router.replace({ name: "Chat", params: { chatId } });
 		await nextTick(); // ensure chatId updates post routing
 		list_chats.run(undefined, false);

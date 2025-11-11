@@ -38,31 +38,27 @@
 <script setup lang="ts">
 import { list_assistants } from "@/client";
 import { assistants } from "@/common";
+import Button from "@/components/fui/Button/Button.vue";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import DialogDescription from "@/components/ui/dialog/DialogDescription.vue";
 import DialogTitle from "@/components/ui/dialog/DialogTitle.vue";
 import { computed, onActivated, onMounted, ref, watch } from "vue";
-import type { AssistantConfig } from "../types";
 import AssistantConfigContent from "./AssistantConfigContent.vue";
 import AssistantConfigHeader from "./AssistantConfigHeader.vue";
 import AssistantConfigSidebar from "./AssistantConfigSidebar.vue";
-import Button from "@/components/fui/Button/Button.vue";
 
-const props = defineProps<{ selected: AssistantConfig }>();
+const props = defineProps<{ selected: string }>();
 const emit = defineEmits(["select"]);
 const open = defineModel<boolean>({ required: true });
 const view = ref<string | null>(null);
 
 function select() {
 	if (!view.value) return;
-	const config: AssistantConfig = {
-		assistant: view.value,
-	};
-	emit("select", config);
+	emit("select", view.value);
 }
 
 function setview() {
-	view.value = props.selected.assistant;
+	view.value = props.selected;
 }
 watch(
 	() => props.selected,

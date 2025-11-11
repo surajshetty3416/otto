@@ -6,11 +6,12 @@ type Callback = (e: KeyboardEvent) => void;
 type Shortcuts = Record<Action, string[]>;
 
 const DEFAULT_KEYBINDS = {
-  "new-chat": [isMacOS() ? "meta+shift+o" : "ctrl+shift+o"],
-  "delete-chat": [isMacOS() ? "meta+backspace" : "ctrl+backspace"],
+  "new-chat": [isMacOS ? "meta+shift+o" : "ctrl+shift+o"],
+  "delete-chat": [isMacOS ? "meta+backspace" : "ctrl+backspace"],
   "close-dialog": ["escape"],
   "accept-all-requests": ["alt+enter"],
   "deny-all-requests": ["alt+backspace"],
+  "toggle-sidebar": [isMacOS ? "meta+b" : "ctrl+b"],
 };
 
 function getKeybinds(): Shortcuts {
@@ -46,6 +47,7 @@ class Manager {
   }
 
   private keydown(e: KeyboardEvent) {
+    console.log("keydown", e.key);
     this.current.add(e.key.toLowerCase());
     const key = getBind(this.current);
     for (const action of this.actions.get(key) ?? []) {

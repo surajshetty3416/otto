@@ -62,7 +62,7 @@ const keybind = computed(() => {
 	const list = [];
 	for (const key of keys) {
 		if (key.length === 1) list.push(key.toUpperCase());
-		else if (isMacOS())
+		else if (isMacOS)
 			list.push(
 				key
 					.replace("meta", "⌘")

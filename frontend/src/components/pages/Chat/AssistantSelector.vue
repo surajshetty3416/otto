@@ -7,7 +7,7 @@
 		>
 			<component :is="icon" class="w-3.5 h-3.5 shrink-0 text-gray-700" stroke-width="1.5" />
 			<span class="text-nowrap text-sm text-gray-800">
-				{{ assistants[selected.assistant]?.title }}
+				{{ assistants[selected]?.title }}
 			</span>
 		</PopoverTrigger>
 
@@ -29,6 +29,7 @@
 				description="View all assistants"
 			/>
 			<SelectorItem
+				v-if="showCustomize"
 				@click="customize"
 				title="Customize"
 				:icon="Bolt"
@@ -46,15 +47,15 @@ import { Bolt, List } from "lucide-vue-next";
 import { computed, ref } from "vue";
 import SelectorAssistantItem from "./SelectorAssistantItem.vue";
 import SelectorItem from "./SelectorItem.vue";
-import type { AssistantConfig } from "./types";
 import { getAssistantIcon } from "./utils";
 
 const isOpen = ref(false);
-const selected = defineModel<AssistantConfig>({ required: true });
+const showCustomize = ref(false);
+const selected = defineModel<string>({ required: true });
 const emit = defineEmits(["more", "customize"]);
 
 function select(assistant: string) {
-	selected.value = { assistant };
+	selected.value = assistant;
 	isOpen.value = false;
 }
 
@@ -72,16 +73,10 @@ const preferred_assistants = api.chat.get_preferred_assistants();
 
 const assistants_list = computed(() => {
 	const preferred = preferred_assistants.data ?? [];
-	if (preferred.includes(selected.value.assistant)) return preferred;
+	if (preferred.includes(selected.value)) return preferred;
 
-	return [selected.value.assistant, ...preferred];
+	return [selected.value, ...preferred];
 });
 
-const icon = computed(() => getAssistantIcon(assistants.value[selected.value.assistant]));
-// @ts-ignore
-const isCustomized = computed(
-	() =>
-		typeof selected.value.llm !== "undefined" &&
-		typeof selected.value.reasoningEffort !== "undefined"
-);
+const icon = computed(() => getAssistantIcon(assistants.value[selected.value]));
 </script>

@@ -22,13 +22,15 @@
 		<Dialog :open="openDelete" @update:open="openDelete = $event">
 			<DialogContent>
 				<template #header>
-					<DialogTitle
-						>Delete Chat
-						<span class="text-gray-600 text-sm ml-2 font-mono font-medium"
-							>[{{ currentChatId }}]</span
-						>
-					</DialogTitle>
+					<DialogTitle class="flex items-center gap-2">
+						<TriangleAlert class="w-4 h-4 text-red-500" stroke-width="1.5" />
+						Delete Chat</DialogTitle
+					>
 				</template>
+
+				<p class="text-base text-gray-900">
+					This will delete <span class="font-semibold">"{{ title }}"</span>
+				</p>
 
 				<p class="text-base text-gray-900">
 					Are you sure you want to delete this chat? This action cannot be undone.
@@ -36,7 +38,7 @@
 
 				<template #buttons>
 					<Button variant="outline" size="md" @click="openDelete = false">Cancel</Button>
-					<Button variant="solid" size="md" @click="deleteChat">Delete</Button>
+					<Button variant="solid" size="md" @click="deleteChat" autofocus>Delete</Button>
 				</template>
 			</DialogContent>
 		</Dialog>
@@ -52,7 +54,7 @@ import Header from "@/components/ui/Header.vue";
 import TextTooltip from "@/components/ui/tooltip/TextTooltip.vue";
 import router from "@/router";
 import shortcuts, { keybinds } from "@/shortcuts";
-import { Plus, Trash } from "lucide-vue-next";
+import { Plus, Trash, TriangleAlert } from "lucide-vue-next";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 
 const delete_chat = api.chat.delete_chat({ chat_id: "" }, { auto: false });
@@ -82,6 +84,11 @@ function newChat() {
 }
 
 const names = computed(() => list_chats.data?.map((c) => String(c.name)) ?? []);
+const title = computed(() => {
+	if (!props.currentChatId) return "";
+	const chat = list_chats.data?.find((c) => c.name === props.currentChatId);
+	return chat?.title ?? chat?.name ?? "";
+});
 
 watch(
 	() => props.currentChatId,

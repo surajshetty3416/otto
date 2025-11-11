@@ -10,9 +10,3 @@ export interface StreamContext {
   messages: RealtimeChatMessage[];
   isStreamingResponse: boolean;
 }
-
-export interface AssistantConfig {
-  assistant: string;
-  llm?: string;
-  reasoningEffort?: "Low" | "Medium" | "High";
-}

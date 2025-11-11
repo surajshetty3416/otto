@@ -10,6 +10,16 @@ import {
   type Ref,
 } from "vue";
 
+function _isMacOS(): boolean {
+  // Deprecated, but fallback for compatibility
+  if (navigator.platform) {
+    return navigator.platform.toLowerCase().includes("mac");
+  }
+
+  return navigator.userAgent.toLowerCase().includes("macintosh");
+}
+export const isMacOS = _isMacOS();
+
 /**
  * Compares two objects for deep equality with configurable depth.
  *
@@ -240,15 +250,6 @@ export function logError(error: unknown) {
 
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-export function isMacOS(): boolean {
-  // Deprecated, but fallback for compatibility
-  if (navigator.platform) {
-    return navigator.platform.toLowerCase().includes("mac");
-  }
-  // As a last resort, inspect userAgent
-  return navigator.userAgent.toLowerCase().includes("macintosh");
 }
 
 /**

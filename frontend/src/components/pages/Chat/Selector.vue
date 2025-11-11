@@ -19,16 +19,15 @@
 <script setup lang="ts">
 import { api, list_assistants, list_models } from "@/client";
 import TextLoadingIndicator from "@/components/ui/TextLoadingIndicator.vue";
-import AssistantSelector from "./AssistantSelector.vue";
-import type { AssistantConfig } from "./types";
-import AssistantConfigDialog from "./AssistantConfig/AssistantConfigDialog.vue";
 import { ref, watch } from "vue";
+import AssistantConfigDialog from "./AssistantConfig/AssistantConfigDialog.vue";
+import AssistantSelector from "./AssistantSelector.vue";
 
 const openConfig = ref(false);
 const preferred_assistants = api.chat.get_preferred_assistants();
-const assistant = defineModel<AssistantConfig>({ required: true });
+const assistant = defineModel<string>({ required: true });
 
-function select(selected: AssistantConfig) {
+function select(selected: string) {
 	assistant.value = selected;
 	openConfig.value = false;
 }
@@ -36,8 +35,8 @@ function select(selected: AssistantConfig) {
 watch(
 	() => preferred_assistants.data,
 	(newval) => {
-		if (!newval || !newval.length || assistant.value?.assistant === newval[0]) return;
-		assistant.value = { assistant: newval[0] };
+		if (!newval || !newval.length || assistant.value === newval[0]) return;
+		assistant.value = newval[0];
 	}
 );
 </script>

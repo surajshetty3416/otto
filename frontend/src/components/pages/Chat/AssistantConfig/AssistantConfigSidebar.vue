@@ -28,7 +28,7 @@
 					</div>
 				</div>
 				<Check
-					v-if="selected.assistant === assistant.name"
+					v-if="selected === assistant.name"
 					class="w-3.5 h-3.5 shrink-0 text-gray-700 ml-auto my-auto"
 					stroke-width="1.5"
 				/>
@@ -39,10 +39,9 @@
 <script lang="ts" setup>
 import { list_assistants } from "@/client";
 import { modelName } from "@/components/utils";
-import { getAssistantIcon } from "../utils";
-import type { AssistantConfig } from "../types";
 import { Check } from "lucide-vue-next";
+import { getAssistantIcon } from "../utils";
 
 const view = defineModel<string | null>({ required: true });
-defineProps<{ selected: AssistantConfig }>();
+defineProps<{ selected: string }>();
 </script>
