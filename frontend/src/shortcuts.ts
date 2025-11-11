@@ -1,17 +1,21 @@
-import { markRaw, onUnmounted, reactive, type Reactive } from "vue";
+import { computed, markRaw, onUnmounted, reactive, type Reactive } from "vue";
 import { assert, isMacOS } from "./utils";
 
-type Action = keyof typeof DEFAULT_SHORTCUTS;
+type Action = keyof typeof DEFAULT_KEYBINDS;
 type Callback = (e: KeyboardEvent) => void;
 type Shortcuts = Record<Action, string[]>;
 
-const DEFAULT_SHORTCUTS = {
+const DEFAULT_KEYBINDS = {
   "new-chat": [isMacOS() ? "meta+shift+o" : "ctrl+shift+o"],
+  "delete-chat": [isMacOS() ? "meta+backspace" : "ctrl+backspace"],
+  "close-dialog": ["escape"],
 };
 
-function getShorcuts(): Shortcuts {
-  return DEFAULT_SHORTCUTS;
+function getKeybinds(): Shortcuts {
+  return DEFAULT_KEYBINDS;
 }
+
+export const keybinds = computed(() => getKeybinds());
 
 class Manager {
   current: Reactive<Set<string>>;
@@ -30,7 +34,6 @@ class Manager {
   }
 
   private addlisteners() {
-    console.log("addlisteners");
     window.addEventListener("keydown", this.keydown.bind(this));
     window.addEventListener("keyup", this.keyup.bind(this));
   }
@@ -68,7 +71,7 @@ class Manager {
   }
 
   register() {
-    for (const [action, shortcuts] of Object.entries(getShorcuts())) {
+    for (const [action, shortcuts] of Object.entries(getKeybinds())) {
       for (const s of shortcuts) {
         const bind = s.split("+").sort().join("+");
         if (!this.actions.has(bind)) this.actions.set(bind, []);
@@ -80,7 +83,9 @@ class Manager {
 
   on(action: Action, callback: Callback) {
     if (!this.callbacks.has(action)) this.callbacks.set(action, []);
-    this.callbacks.get(action)?.push(callback);
+    const callbacks = this.callbacks.get(action);
+    if (callbacks?.includes(callback)) return;
+    callbacks?.push(callback);
   }
 
   off(action: Action, callback: Callback) {
@@ -95,7 +100,7 @@ export function getBind(current: Set<string>) {
 }
 
 export function isAction(key: string): key is Action {
-  return key in DEFAULT_SHORTCUTS;
+  return key in DEFAULT_KEYBINDS;
 }
 
 export default new Manager();
