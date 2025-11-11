@@ -1,13 +1,15 @@
 <template>
-	<div class="markdown-content prose prose-sm max-w-none" v-html="renderedContent"></div>
+	<div class="markdown-content prose prose-sm max-w-none" v-html="content"></div>
 </template>
 
 <script setup lang="ts">
+import { escapeHtml } from "@/utils";
 import hljs from "highlight.js";
 import "highlight.js/styles/github.css";
-import { marked } from "marked";
+import { Marked } from "marked";
 import { markedHighlight } from "marked-highlight";
 import { computed, type VNode } from "vue";
+import DOMPurify from "dompurify";
 
 const slots = defineSlots<{
 	default: () => VNode[];
@@ -16,8 +18,8 @@ const props = defineProps<{
 	isStreaming?: boolean;
 }>();
 
-// Configure marked with syntax highlighting
-marked.use(
+// Create a new marked instance with proper configuration
+const markedInstance = new Marked(
 	markedHighlight({
 		langPrefix: "hljs language-",
 		highlight(code, lang) {
@@ -27,24 +29,40 @@ marked.use(
 	})
 );
 
+// Configure marked to handle HTML properly
+markedInstance.setOptions({
+	gfm: true, // GitHub Flavored Markdown
+	breaks: true, // Convert \n to <br>
+});
+
+const content = computed(() => {
+	const rendered = renderedContent.value;
+	return DOMPurify.sanitize(rendered, { USE_PROFILES: { html: true } });
+});
+
 const renderedContent = computed(() => {
 	const slotContent = slots.default?.();
 	const content = slotContent?.[0]?.children?.toString() || "";
 	try {
 		// Get the text content from the default slot
 
-		if (!props.isStreaming) return marked.parse(content);
+		if (!props.isStreaming) {
+			return markedInstance.parse(content) as string;
+		}
 
-		// If streaming prase only lines that have reached the end
+		// If streaming, parse only lines that have reached the end
 		// this to some extent ensures that elements with matching tags
-		// aren't rendered weirdly. (don't work for multiline elements)
+		// aren't rendered weirdly. (doesn't work for multiline elements)
 		const lines = content.split("\n");
 		const toParse = lines.slice(0, -1).join("\n");
 
-		return [marked.parse(toParse), lines.at(-1)].join("\n");
+		// Escape the last line to prevent XSS while streaming
+		const lastLine = escapeHtml(lines.at(-1) || "");
+		return [markedInstance.parse(toParse), lastLine].join("\n");
 	} catch (error) {
 		console.error("Error parsing markdown:", error);
-		return content;
+		// Escape content on error to prevent XSS
+		return escapeHtml(content);
 	}
 });
 </script>

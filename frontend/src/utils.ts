@@ -250,3 +250,30 @@ export function isMacOS(): boolean {
   // As a last resort, inspect userAgent
   return navigator.userAgent.toLowerCase().includes("macintosh");
 }
+
+/**
+ * Escapes HTML special characters in a string to prevent XSS attacks or accidental rendering.
+ *
+ * @param str - The input string to escape
+ * @returns The escaped HTML string
+ */
+export function escapeHtml(str: string): string {
+  return str.replace(/[&<>"'`]/g, (char) => {
+    switch (char) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      // case '"':
+      //   return "&quot;";
+      // case "'":
+      //   return "&#39;";
+      // case "`":
+      //   return "&#96;";
+      default:
+        return char;
+    }
+  });
+}
