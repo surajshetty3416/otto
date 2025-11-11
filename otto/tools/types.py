@@ -63,7 +63,7 @@ class ToolDefinition(TypedDict):
 
 	# Annotation flags from ModelContextProtocol ToolAnnotations
 	# ref: https://modelcontextprotocol.io/specification/2025-06-18/schema#toolannotations
-	is_readonly: bool = False
-	is_destructive: bool = True
-	is_idempotent: bool = False
-	is_open_world: bool = True
+	is_readonly: bool
+	is_destructive: bool
+	is_idempotent: bool
+	is_open_world: bool

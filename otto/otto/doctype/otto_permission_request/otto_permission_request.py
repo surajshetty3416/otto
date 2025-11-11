@@ -26,6 +26,7 @@ class OttoPermissionRequest(Document):
 
 		args_updated: DF.Check
 		denied_reason: DF.Data | None
+		is_autoset: DF.Check
 		session: DF.Link
 		status: DF.Literal["Pending", "Granted", "Denied"]
 		tool_use_id: DF.Data
@@ -184,12 +185,12 @@ class OttoPermissionRequest(Document):
 		return doc
 
 	@frappe.whitelist()
-	def grant(self, override_args: dict | None = None):
-		return self.acknowledge(status="Granted", override_args=override_args)
+	def grant(self, override_args: dict | None = None, is_autoset: bool = False):
+		return self.acknowledge(status="Granted", override_args=override_args, is_autoset=is_autoset)
 
 	@frappe.whitelist()
-	def deny(self, denied_reason: str | None = None):
-		return self.acknowledge(status="Denied", denied_reason=denied_reason)
+	def deny(self, denied_reason: str | None = None, is_autoset: bool = False):
+		return self.acknowledge(status="Denied", denied_reason=denied_reason, is_autoset=is_autoset)
 
 	def acknowledge(
 		self,
@@ -197,10 +198,12 @@ class OttoPermissionRequest(Document):
 		status: Literal["Granted", "Denied"],
 		denied_reason: str | None = None,
 		override_args: dict | None = None,
+		is_autoset: bool = False,
 	):
 		if self.status != "Pending":
 			return {"message": "Request already acknowledged"}
 
+		self.is_autoset = is_autoset
 		if override_args and status == "Granted":
 			set_override(self.session, self.tool_use_id, override_args)
 			self.args_updated = True

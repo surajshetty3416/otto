@@ -10,8 +10,14 @@
   "column_break_xksj",
   "assistant",
   "session",
-  "section_break_ggvx",
-  "tools"
+  "section_break_ldan",
+  "tools",
+  "user_directives",
+  "section_break_sxgy",
+  "llm",
+  "tool_permissions",
+  "column_break_wrcb",
+  "reasoning_effort"
  ],
  "fields": [
   {
@@ -45,21 +51,57 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "section_break_ggvx",
-   "fieldtype": "Section Break"
-  },
-  {
    "description": "The tools are copied over from the Assistant definition, it can be edited during the chat.\n\nAdditional tools can be added, but not removed (they can still be disabled).",
    "fieldname": "tools",
    "fieldtype": "Table",
    "label": "Tools",
    "options": "Otto Chat Tool CT"
+  },
+  {
+   "fieldname": "section_break_ldan",
+   "fieldtype": "Section Break",
+   "label": "Chat Settings"
+  },
+  {
+   "description": "Any value set here will override the defaults set from the Assistant definition",
+   "fieldname": "section_break_sxgy",
+   "fieldtype": "Section Break",
+   "label": "Chat Settings"
+  },
+  {
+   "fieldname": "llm",
+   "fieldtype": "Link",
+   "label": "LLM",
+   "options": "Otto LLM"
+  },
+  {
+   "fieldname": "column_break_wrcb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reasoning_effort",
+   "fieldtype": "Select",
+   "label": "Reasoning Effort",
+   "options": "None\nLow\nMedium\nHigh"
+  },
+  {
+   "fieldname": "user_directives",
+   "fieldtype": "Code",
+   "label": "User Directives"
+  },
+  {
+   "default": "Default",
+   "description": "Will grant permission to the selected group:\n<ul>\n<li><b>Default</b>: tools requiring permission will raise request, rest all will run</li>\n<li><b>Allow All</b>: all tools will run</li>\n<li><b>Allow Readonly</b>: all readonly tools will run</li>\n<li><b>Ask For All</b>: all tools will raise requests</li>\n<li><b>Ask For Non Readonly</b>: non readonly tools will raise requests</li>\n</ul>",
+   "fieldname": "tool_permissions",
+   "fieldtype": "Select",
+   "label": "Tool Permissions",
+   "options": "Default\nAllow All\nAllow Readonly\nAsk For All\nAsk For Non Readonly"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-11-10 18:48:48.328598",
+ "modified": "2025-11-11 14:35:59.774083",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Chat",
@@ -84,5 +126,6 @@
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
- "title_field": "title"
+ "title_field": "title",
+ "track_changes": 1
 }

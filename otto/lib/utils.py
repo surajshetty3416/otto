@@ -288,7 +288,7 @@ def interpolate_imgs(html: str, skip_errors: bool = False):
 
 def is_reasoning_effort(value: Any) -> TypeGuard[ReasoningEffort]:
 	"""Type guard to check if a value is a valid ReasoningEffort."""
-	return value in ["Low", "Medium", "High"]
+	return value in ["Low", "Medium", "High", "None"]
 
 
 def is_model_size(value: Any) -> TypeGuard[ModelSize]:

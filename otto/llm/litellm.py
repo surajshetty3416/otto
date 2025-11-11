@@ -186,10 +186,14 @@ def interact(
 	)
 
 	think = {}
-	if reasoning_effort:
+	if reasoning_effort and reasoning_effort != "None":
 		think["reasoning_effort"] = reasoning_effort.lower()  # litellm expects "low", "medium", "high"
 
-	if reasoning_effort and (model.startswith("anthropic") or model.startswith("gemini")):
+	if (
+		reasoning_effort
+		and reasoning_effort != "None"
+		and (model.startswith("anthropic") or model.startswith("gemini"))
+	):
 		think["thinking"] = _get_thinking(reasoning_effort)
 
 	logger.debug({"message": "calling litellm.completion", "id": item["id"]})

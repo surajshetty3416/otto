@@ -87,13 +87,16 @@ class OttoAssistant(Document):
 			self.llm = lib.get_model(size="Medium") or DEFAULT_MODEL
 
 	@frappe.whitelist()
-	def get_instruction(self):
-		context = self.run_get_context()
+	def get_instruction(self, context: dict | None = None):
+		_context = self.run_get_context()
 		if not self.instruction:
 			return DEFAULT_INSTRUCTION
 
 		template = Template(self.instruction)
-		instruction = template.render(context)
+		if context:
+			_context = {**_context, **context}
+
+		instruction = template.render(_context)
 		assert isinstance(instruction, str), "type check"
 		return instruction
 

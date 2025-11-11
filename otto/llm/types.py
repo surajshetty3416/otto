@@ -20,7 +20,7 @@ class ModelDetails(TypedDict):
 ID = str
 SessionRole = Literal["user", "agent"]
 EndReason = Literal["turn_end", "tool_use"]
-ReasoningEffort = Literal["Low", "Medium", "High"]
+ReasoningEffort = Literal["Low", "Medium", "High", "None"]
 
 
 class ThinkingContent(TypedDict):

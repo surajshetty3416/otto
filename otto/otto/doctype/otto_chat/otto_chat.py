@@ -15,7 +15,7 @@ from otto.otto.doctype.otto_permission_request.otto_permission_request import Ot
 if TYPE_CHECKING:
 	from collections.abc import Callable
 
-	from otto.lib.types import PendingToolUse, Query, ToolUseUpdate
+	from otto.lib.types import PendingToolUse, Query, ReasoningEffort, ToolUseUpdate
 	from otto.otto.doctype.otto_assistant.otto_assistant import OttoAssistant
 
 
@@ -28,6 +28,7 @@ class ToolConfig(TypedDict):
 	is_valid: bool
 	reason: str | None
 	use_explanation: bool
+	is_readonly: bool
 
 
 class OttoChat(Document):
@@ -42,9 +43,15 @@ class OttoChat(Document):
 		from otto.otto.doctype.otto_chat_tool_ct.otto_chat_tool_ct import OttoChatToolCT
 
 		assistant: DF.Link
+		llm: DF.Link | None
+		reasoning_effort: DF.Literal["None", "Low", "Medium", "High"]
 		session: DF.Link
 		title: DF.Data | None
+		tool_permissions: DF.Literal[
+			"Default", "Allow All", "Allow Readonly", "Ask For All", "Ask For Non Readonly"
+		]
 		tools: DF.Table[OttoChatToolCT]
+		user_directives: DF.Code | None
 	# end: auto-generated types
 
 	_session: lib.Session | None = None
@@ -74,6 +81,7 @@ class OttoChat(Document):
 					"use_explanation",
 					"is_valid",
 					"reason",
+					"is_readonly",
 				],
 			)
 		}
@@ -93,6 +101,7 @@ class OttoChat(Document):
 				is_valid=bool(td.is_valid),
 				reason=td.reason or None,
 				use_explanation=bool(td.use_explanation),
+				is_readonly=bool(td.is_readonly),
 			)
 			configs.append(config)
 		self._tool_configs = configs
@@ -224,7 +233,16 @@ class OttoChat(Document):
 		pending_tool_use = self.get_pending_tools()
 		for ptu in pending_tool_use:
 			config = self.tool_config_map.get(ptu.name)
-			if not config or not config["requires_permission"]:
+			if not config:
+				raise ValueError(f"Tool config not found for {ptu.name}")
+
+			should_raise = (
+				config["requires_permission"]
+				or self.tool_permissions == "Ask For All"
+				or (not config["is_readonly"] and self.tool_permissions == "Ask For Non Readonly")
+			)
+
+			if not should_raise:
 				continue
 
 			if bool(
@@ -236,7 +254,12 @@ class OttoChat(Document):
 				continue
 
 			req = OttoPermissionRequest.new(session=self.session, tool_use_id=ptu.id)
-			requests.append(req)
+			if self.tool_permissions == "Allow All" or (
+				config["is_readonly"] and self.tool_permissions == "Allow Readonly"
+			):
+				req.grant(is_autoset=True)
+			else:
+				requests.append(req)
 		return requests
 
 	def execute_tools(self, fn_map: dict[str, Callable] | None = None):
@@ -351,6 +374,41 @@ class OttoChat(Document):
 			return True
 
 		return False
+
+	def update_settings(
+		self,
+		llm: str | None = None,
+		reasoning_effort: ReasoningEffort | None = None,
+		tool_permissions: Literal[
+			"Default",
+			"Allow All",
+			"Allow Readonly",
+			"Ask For All",
+			"Ask For Non Readonly",
+		]
+		| None = None,
+		user_directives: str | None = None,
+	):
+		from otto.otto.doctype.otto_assistant.otto_assistant import OttoAssistant
+
+		if llm:
+			self.llm = llm
+			self.session_.set_model(llm)
+
+		if reasoning_effort:
+			self.reasoning_effort = reasoning_effort
+			self.session_.set_reasoning_effort(reasoning_effort)
+
+		if user_directives:
+			self.user_directives = user_directives
+			context = {"user_directives": user_directives}
+			instruction = otto.get(OttoAssistant, self.assistant).get_instruction(context)
+			self.session_.set_instruction(instruction)
+
+		if tool_permissions:
+			self.tool_permissions = tool_permissions
+
+		self.save()
 
 
 def generate_session_title(session: lib.Session) -> str | None:

@@ -113,10 +113,10 @@ def _get_tool_definition(module: ModuleType) -> ToolDefinition:
 		dev_mode_only=getattr(module, "dev_mode_only", False),
 		output_properties=getattr(module, "output_properties", None),
 		output_required=getattr(module, "output_required", None),
-		is_readonly=is_readonly,
-		is_destructive=is_destructive,
-		is_idempotent=is_idempotent,
-		is_open_world=is_open_world,
+		is_readonly=is_readonly if isinstance(is_readonly, bool) else False,
+		is_destructive=is_destructive if isinstance(is_destructive, bool) else True,
+		is_idempotent=is_idempotent if isinstance(is_idempotent, bool) else False,
+		is_open_world=is_open_world if isinstance(is_open_world, bool) else True,
 		fn=fn,
 	)
 

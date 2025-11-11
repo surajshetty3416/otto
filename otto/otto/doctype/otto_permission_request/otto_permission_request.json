@@ -13,6 +13,7 @@
   "status",
   "tool_name",
   "args_updated",
+  "is_autoset",
   "section_break_dkux",
   "tool_use_args",
   "descriptions",
@@ -190,13 +191,20 @@
    "fieldtype": "Data",
    "label": "Denied Reason",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "Should be checked if request was auto granted or denied.",
+   "fieldname": "is_autoset",
+   "fieldtype": "Check",
+   "label": "Is Autoset"
   }
  ],
  "grid_page_length": 50,
  "in_create": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-29 17:58:15.205912",
+ "modified": "2025-11-11 14:42:26.014993",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Permission Request",
