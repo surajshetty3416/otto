@@ -1,41 +1,47 @@
 <template>
-	<div class="relative flex items-center">
-		<div
-			:class="['absolute inset-y-0 left-0 flex items-center', textColor, prefixClasses]"
-			v-if="$slots.prefix"
-		>
-			<slot name="prefix"> </slot>
-		</div>
-		<div
-			v-if="placeholder"
-			v-show="!modelValue"
-			class="pointer-events-none absolute text-ink-gray-4 truncate w-full"
-			:class="[fontSizeClasses, paddingClasses]"
-		>
-			{{ placeholder }}
-		</div>
-		<select
-			:class="selectClasses"
-			:disabled="disabled"
-			:id="id"
-			:value="modelValue"
-			@change="handleChange"
-			v-bind="attrs"
-		>
-			<option
-				v-for="option in selectOptions"
-				:key="option.value"
-				:value="option.value"
-				:disabled="option.disabled || false"
-				:selected="modelValue === option.value"
+	<div class="flex flex-col gap-1.5">
+		<div v-if="label" class="text-sm font-medium text-gray-700">{{ label }}</div>
+		<div class="relative flex items-center">
+			<div
+				:class="['absolute inset-y-0 left-0 flex items-center', textColor, prefixClasses]"
+				v-if="$slots.prefix"
 			>
-				{{ option.label }}
-			</option>
-		</select>
+				<slot name="prefix"> </slot>
+			</div>
+			<div
+				v-if="placeholder"
+				v-show="!modelValue"
+				class="pointer-events-none absolute text-ink-gray-4 truncate w-full"
+				:class="[fontSizeClasses, paddingClasses, $slots.prefix ? 'pl-8' : '']"
+			>
+				{{ placeholder }}
+			</div>
+			<select
+				:class="[selectClasses, $slots.prefix ? 'pl-8' : '']"
+				:disabled="disabled"
+				:id="id"
+				v-model="modelValue"
+				v-bind="attrs"
+			>
+				<option
+					v-for="option in selectOptions"
+					:key="option.value"
+					:value="option.value"
+					:disabled="option.disabled || false"
+					:selected="modelValue === option.value"
+				>
+					{{ option.label }}
+				</option>
+			</select>
+		</div>
+		<div v-if="description" class="text-sm text-ink-gray-4">
+			<p v-html="description"></p>
+		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
+import { useMeta } from "@/components/utils";
 import { computed, useAttrs } from "vue";
 import type { SelectProps } from "./types";
 
@@ -47,15 +53,22 @@ const props = withDefaults(defineProps<SelectProps>(), {
 	size: "sm",
 	variant: "subtle",
 });
+const meta = useMeta(props.doctype, props.fieldname);
 
-const emit = defineEmits(["update:modelValue"]);
 const attrs = useAttrs();
-
-function handleChange(e: Event) {
-	emit("update:modelValue", (e.target as HTMLInputElement).value);
-}
+const modelValue = defineModel<string | null>({ required: true });
 
 const selectOptions = computed(() => {
+	if (meta.value?.options) {
+		return meta.value.options.split("\n").map((option) => {
+			return {
+				label: option,
+				value: option,
+				disabled: false,
+			};
+		});
+	}
+
 	return (
 		props.options
 			?.map((option) => {
@@ -69,6 +82,18 @@ const selectOptions = computed(() => {
 			})
 			.filter(Boolean) || []
 	);
+});
+
+const label = computed(() => {
+	if (props.label) return props.label;
+	if (props.showLabel) return meta.value?.label;
+	return null;
+});
+
+const description = computed(() => {
+	if (props.description) return props.description;
+	if (props.showDescription) return meta.value?.description;
+	return null;
 });
 
 const textColor = computed(() => {

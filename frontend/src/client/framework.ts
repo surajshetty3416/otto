@@ -10,6 +10,7 @@
  */
 import { Call, callV1, callV2 } from "./call";
 import type { OttoDocTypes } from "./generated.types";
+import type { DocTypeMeta } from "./meta.types";
 import type { Config, GetListReturn } from "./types";
 
 function login(username: string, password: string): Call<undefined, undefined> {
@@ -102,10 +103,22 @@ function delete_doc<Name extends keyof OttoDocTypes>(
   });
 }
 
+function get_meta<Name extends keyof OttoDocTypes>(
+  doctype: Name,
+  config?: Config
+): Call<undefined, DocTypeMeta> {
+  return callV2({
+    method: "GET",
+    path: `doctype/${doctype}/meta`,
+    config,
+  });
+}
+
 export const handlers = {
   login,
   logout,
   get_list,
+  get_meta,
   // CRUD calls
   new_doc,
   get_doc,
