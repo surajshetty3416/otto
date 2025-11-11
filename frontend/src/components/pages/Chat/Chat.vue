@@ -38,7 +38,14 @@
 					v-model="query"
 				/>
 				<Selector class="mt-2" v-if="showNew" v-model="assistant" />
-				<ChatSettingsDialog v-model="openSettings" :chatId="chatId" :isNew="showNew" />
+				<ChatSettingsDialog
+					v-model="openSettings"
+					:chatId="chatId"
+					:isNew="showNew"
+					:settings="settings"
+					:assistant="assistant"
+					@save="updateSettings"
+				/>
 			</div>
 		</div>
 	</div>
@@ -55,18 +62,18 @@
  * - check if any of the api calls are erroring out, and show an appropriate toast
  * - set a time out on isWaitingForStream, and show a toast if it times out
  *
- * - [ ] sidebar (select chat, nav to assistants, tools, etc)
  * - [ ] allow assistant config llm, tools, etc (default?)
  * - [ ] images and pdfs
  * - [ ] input commands etc `/` and `@` for doctype refs
  */
 import { api, list_chats } from "@/client";
-import type {
-	PendingRequest,
-	RealtimeChatMessage,
-	SessionItem,
-	TextContentChunk,
-	ToolConfig,
+import {
+	type ChatSettings,
+	type PendingRequest,
+	type RealtimeChatMessage,
+	type SessionItem,
+	type TextContentChunk,
+	type ToolConfig,
 } from "@/client/generated.types";
 import { logRealtime } from "@/client/utils";
 import router from "@/router";
@@ -87,20 +94,28 @@ import {
 	handleItem,
 	handleToolUseUpdate,
 	pendingRequestsKey,
+	save_settings,
 	streamContextKey,
 	toolConfigKey,
 	updateStreamContext,
 } from "./utils";
 import Welcome from "./Welcome.vue";
 
-const openSettings = ref(true);
 const assistant = ref<string>("5t44lus4lh");
 const received = new Set<string>(); // sanity check to avoid duplicates
 const props = defineProps<{
 	chatId?: string;
 }>();
 
+const settings = reactive<ChatSettings>({
+	llm: null,
+	reasoning_effort: null,
+	tool_permissions: null,
+	user_directives: null,
+});
+
 // Refs and reactives
+const openSettings = ref(false);
 const _loading = ref(false); // true if request is being sent
 const query = ref("");
 const isStreaming = ref(false); // true if chat is streaming
@@ -113,10 +128,14 @@ const pendingRequests = reactive<Record<string, PendingRequest>>({});
 // API calls
 const list_tools = api.chat.list_tools({ chat_id: "" }, { auto: false });
 const get_pending_requests = api.chat.get_pending_requests({ chat_id: "" }, { auto: false });
-const load_chat = api.chat.load_chat({ chat_id: "" }, { auto: false });
+const load_messages = api.chat.load_messages({ chat_id: "" }, { auto: false });
 
 const isLoading = computed(
-	() => list_tools.loading || load_chat.loading || get_pending_requests.loading || _loading.value
+	() =>
+		list_tools.loading ||
+		load_messages.loading ||
+		get_pending_requests.loading ||
+		_loading.value
 );
 const toolConfigs = computed(() => {
 	const configs: Record<string, ToolConfig> = {};
@@ -136,12 +155,12 @@ const hasPendingToolExecutions = computed(() => {
 	return false;
 });
 const showNew = computed(() => {
-	if (load_chat.loading) return false;
+	if (load_messages.loading) return false;
 	if (messages.length > 0) return false;
 	if (props.chatId) return false;
 
 	// For when there's a non-new chat that is empty, show the welcome message
-	if (!load_chat.loading && messages.length === 0 && props.chatId) return true;
+	if (!load_messages.loading && messages.length === 0 && props.chatId) return true;
 
 	return true;
 });
@@ -158,7 +177,7 @@ async function handleSend() {
 	await nextTick(); // ensure loading is shown
 
 	if (!props.chatId) {
-		const chatId = await api.chat.new_chat({ assistant: assistant.value });
+		const chatId = await api.chat.new_chat({ assistant: assistant.value, settings });
 		await router.replace({ name: "Chat", params: { chatId } });
 		await nextTick(); // ensure chatId updates post routing
 		list_chats.run(undefined, false);
@@ -285,7 +304,7 @@ function clear() {
 
 	list_tools.reset();
 	get_pending_requests.reset();
-	load_chat.reset();
+	load_messages.reset();
 }
 
 async function set() {
@@ -294,6 +313,7 @@ async function set() {
 	await list_tools.run({ chat_id: props.chatId }, false);
 	await get_pending_requests.run({ chat_id: props.chatId }, false);
 	await loadChat();
+	await loadSettings();
 }
 
 function focus() {
@@ -305,12 +325,32 @@ function focus() {
 async function loadChat() {
 	assert(props.chatId, "chatId is required"); // type check (caller should ensure)
 	const messageIds = messages.map((message) => message.id);
-	for (const message of await load_chat.run({ chat_id: props.chatId }, false)) {
+	for (const message of await load_messages.run({ chat_id: props.chatId }, false)) {
 		if (messageIds.includes(message.id)) continue;
 		messages.push(message);
 	}
 
 	nextTick().then(() => scrollToBottom("smooth"));
+}
+
+async function loadSettings() {
+	if (!props.chatId) return;
+	const _settings = await api.chat.load_settings({ chat_id: props.chatId });
+	if (!_settings) return;
+	settings.llm = _settings.llm;
+	settings.reasoning_effort = _settings.reasoning_effort;
+	settings.tool_permissions = _settings.tool_permissions;
+	settings.user_directives = _settings.user_directives;
+}
+
+async function updateSettings(update: ChatSettings) {
+	settings.llm = update.llm;
+	settings.reasoning_effort = update.reasoning_effort;
+	settings.tool_permissions = update.tool_permissions;
+	settings.user_directives = update.user_directives;
+	if (!props.chatId) return;
+
+	await save_settings.run({ chat_id: props.chatId, settings }, false);
 }
 
 onMounted(async () => socket.on("otto.api.chat", handleRealtimeMessage));
@@ -327,7 +367,7 @@ watch(
 		const controller = new AbortController();
 		list_tools.signal = controller.signal;
 		get_pending_requests.signal = controller.signal;
-		load_chat.signal = controller.signal;
+		load_messages.signal = controller.signal;
 		onCleanup(() => controller.abort());
 
 		set();

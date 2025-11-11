@@ -15,6 +15,12 @@ import type { InjectionKey, Ref } from "vue";
 import type { ChunkContent, StreamContext } from "./types";
 import { Bot, Brain, Zap } from "lucide-vue-next";
 import { models } from "@/common";
+import { api } from "@/client";
+
+export const save_settings = api.chat.save_settings(
+  { chat_id: "", settings: undefined },
+  { auto: false }
+);
 
 export const streamContextKey = Symbol(
   "streamContext"

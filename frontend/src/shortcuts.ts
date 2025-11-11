@@ -47,7 +47,6 @@ class Manager {
   }
 
   private keydown(e: KeyboardEvent) {
-    console.log("keydown", e.key);
     this.current.add(e.key.toLowerCase());
     const key = getBind(this.current);
     for (const action of this.actions.get(key) ?? []) {

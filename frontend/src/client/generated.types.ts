@@ -31,6 +31,7 @@ export interface OttoAssistant extends BaseDoc<"Otto Assistant"> {
   tools?: OttoAssistantToolCT[];
   is_app_defined?: number | boolean;
   get_context_import_path?: string;
+  supports_user_directives?: number | boolean;
 }
 
 export interface OttoToolGroup extends BaseDoc<"Otto Tool Group"> {
@@ -67,6 +68,7 @@ export interface OttoPermissionRequest extends BaseDoc<"Otto Permission Request"
   descriptions?: string;
   args_updated?: number | boolean;
   denied_reason?: string;
+  is_autoset?: number | boolean;
 }
 
 export interface OttoToolArgCT extends BaseDoc<"Otto Tool Arg CT"> {
@@ -81,6 +83,10 @@ export interface OttoChat extends BaseDoc<"Otto Chat"> {
   assistant: string;
   session: string;
   tools?: OttoChatToolCT[];
+  llm?: string;
+  reasoning_effort?: "None" | "Low" | "Medium" | "High";
+  user_directives?: string;
+  tool_permissions?: "Default" | "Allow All" | "Allow Readonly" | "Ask For All" | "Ask For Non Readonly";
 }
 
 export interface OttoTaskToolCT extends BaseDoc<"Otto Task Tool CT"> {
@@ -223,19 +229,6 @@ export interface OttoDocTypes {
 // Auto-generated using `bench generate-types`. Do not edit.
 
 // otto/otto/llm/types.py
-export interface ModelDetails {
-  name: string;
-  provider: Provider;
-  size: ModelSize;
-  is_reasoning: boolean;
-  supports_vision: boolean;
-  title: string;
-  is_enabled: boolean;
-  is_api_key_set: boolean;
-}
-
-
-// otto/otto/llm/types.py
 export interface SessionItem {
   id: ID;
   next: ID[];
@@ -256,26 +249,6 @@ export interface AssistantDetails {
 }
 
 
-// otto/otto/llm/types.py
-export type Provider = "Anthropic" | "OpenAI" | "Google";
-
-// otto/otto/api/types.py
-export interface ListChatItem {
-  creation: string;
-  modified: string;
-  name: string;
-  title: string;
-  assistant: string;
-}
-
-
-// otto/otto/api/types.py
-export interface UserInfo {
-  name: string;
-  email: string;
-}
-
-
 // otto/otto/otto/doctype/otto_chat/otto_chat.py
 export interface ToolConfig {
   title: string;
@@ -286,6 +259,26 @@ export interface ToolConfig {
   is_valid: boolean;
   reason: string | null;
   use_explanation: boolean;
+  is_readonly: boolean;
+}
+
+
+// otto/otto/llm/types.py
+export type Content = TextContent | ThinkingContent | ToolUseContent | ImageContent | FileContent;
+
+// otto/otto/llm/types.py
+export interface ImageContent {
+  type: "image";
+  url: string | null;
+  data: string | null;
+}
+
+
+// otto/otto/llm/types.py
+export interface FileContent {
+  type: "file";
+  name: string;
+  data: string;
 }
 
 
@@ -299,13 +292,59 @@ export interface Assistant {
 
 
 // otto/otto/llm/types.py
-export type ModelSize = "Very Small" | "Small" | "Medium" | "Large";
+export type ReasoningEffort = "Low" | "Medium" | "High" | "None";
 
 // otto/otto/llm/types.py
-export type Content = TextContent | ThinkingContent | ToolUseContent | ImageContent | FileContent;
+export interface ModelDetails {
+  name: string;
+  provider: Provider;
+  size: ModelSize;
+  is_reasoning: boolean;
+  supports_vision: boolean;
+  title: string;
+  is_enabled: boolean;
+  is_api_key_set: boolean;
+}
+
+
+// otto/otto/api/types.py
+export interface ListChatItem {
+  creation: string;
+  modified: string;
+  name: string;
+  title: string;
+  assistant: string;
+}
+
 
 // otto/otto/llm/types.py
-export type ReasoningEffort = "Low" | "Medium" | "High";
+export interface TextContent {
+  type: "text";
+  text: string;
+}
+
+
+// otto/otto/api/types.py
+export interface ChatSettings {
+  llm: string | null;
+  reasoning_effort: ReasoningEffort | null;
+  tool_permissions: "Default" | "Allow All" | "Allow Readonly" | "Ask For All" | "Ask For Non Readonly" | null;
+  user_directives: string | null;
+}
+
+
+// otto/otto/api/types.py
+export interface UserInfo {
+  name: string;
+  email: string;
+}
+
+
+// otto/otto/llm/types.py
+export type Provider = "Anthropic" | "OpenAI" | "Google";
+
+// otto/otto/llm/types.py
+export type ID = string;
 
 // otto/otto/llm/types.py
 export interface Meta {
@@ -332,35 +371,6 @@ export interface ThinkingContent {
 
 
 // otto/otto/llm/types.py
-export type ID = string;
-
-// otto/otto/llm/types.py
-export type EndReason = "turn_end" | "tool_use";
-
-// otto/otto/llm/types.py
-export interface FileContent {
-  type: "file";
-  name: string;
-  data: string;
-}
-
-
-// otto/otto/llm/types.py
-export interface TextContent {
-  type: "text";
-  text: string;
-}
-
-
-// otto/otto/llm/types.py
-export interface ImageContent {
-  type: "image";
-  url: string | null;
-  data: string | null;
-}
-
-
-// otto/otto/llm/types.py
 export interface ToolUseContent {
   type: "tool_use";
   id: string;
@@ -380,6 +390,15 @@ export interface ToolUseContent {
 // otto/otto/llm/types.py
 export type SessionRole = "user" | "agent";
 
+// otto/otto/llm/types.py
+export type ModelSize = "Very Small" | "Small" | "Medium" | "Large";
+
+// otto/otto/llm/types.py
+export type ReasoningEffort = "Low" | "Medium" | "High" | "None";
+
+// otto/otto/llm/types.py
+export type EndReason = "turn_end" | "tool_use";
+
 export interface API {
   session_view: {
     get_session_view(args: {name: string}): unknown;
@@ -393,9 +412,11 @@ export interface API {
   log_feedback(): unknown;
   chat: {
     ping(args: {chat_id?: string | null}): null;
-    new_chat(args: {assistant: string}): string;
+    new_chat(args: {assistant: string, settings?: ChatSettings | null}): string;
     send_query(args: {chat_id: string, query: string}): null;
-    load_chat(args: {chat_id: string}): SessionItem[];
+    load_messages(args: {chat_id: string}): SessionItem[];
+    load_settings(args: {chat_id: string}): ChatSettings;
+    save_settings(args: {chat_id: string, settings?: ChatSettings | null}): null;
     list_tools(args: {chat_id: string}): ToolConfig[];
     list_chats(): ListChatItem[];
     list_models(): ModelDetails[];
@@ -435,15 +456,6 @@ type _ = AssertTrue<CheckIsRawAPI<API>>;
 // Auto-generated using `bench generate-types`. Do not edit.
 
 // otto/otto/api/types.py
-export interface RealtimeItem {
-  id: string;
-  chat_id: string;
-  type: "item";
-  data: SessionItem;
-}
-
-
-// otto/otto/api/types.py
 export interface RealtimeToolExecutionUpdate {
   id: string;
   chat_id: string;
@@ -453,13 +465,25 @@ export interface RealtimeToolExecutionUpdate {
 
 
 // otto/otto/api/types.py
-export interface RealtimeError {
+export interface RealtimeChunk {
   id: string;
   chat_id: string;
-  type: "error";
-  data: string;
+  type: "chunk";
+  data: ContentChunk;
 }
 
+
+// otto/otto/api/types.py
+export interface RealtimeItem {
+  id: string;
+  chat_id: string;
+  type: "item";
+  data: SessionItem;
+}
+
+
+// otto/otto/llm/types.py
+export type ContentChunk = TextContentChunk | ToolUseContentChunk;
 
 // otto/otto/api/types.py
 export interface RealtimeRequest {
@@ -480,11 +504,11 @@ export interface RealtimeRequestAcknowledge {
 
 
 // otto/otto/api/types.py
-export interface RealtimeChunk {
+export interface RealtimeError {
   id: string;
   chat_id: string;
-  type: "chunk";
-  data: ContentChunk;
+  type: "error";
+  data: string;
 }
 
 
@@ -498,14 +522,12 @@ export interface RealtimeTitleUpdate {
 
 
 // otto/otto/llm/types.py
-export interface ToolUseUpdate {
-  id: string;
-  result: unknown;
-  stdout: string | null;
-  stderr: string | null;
-  start_time: number;
-  end_time: number;
-  is_error: boolean;
+export interface TextContentChunk {
+  type: "text" | "thinking" | "system";
+  message: "start" | "end" | "error" | "content";
+  content: string;
+  item_id: string;
+  session_id: string;
 }
 
 
@@ -517,9 +539,6 @@ export interface RealtimePong {
   data: Pong;
 }
 
-
-// otto/otto/llm/types.py
-export type ContentChunk = TextContentChunk | ToolUseContentChunk;
 
 // otto/otto/api/types.py
 export interface PendingRequest {
@@ -540,12 +559,14 @@ export interface ToolUseContentChunk {
 
 
 // otto/otto/llm/types.py
-export interface TextContentChunk {
-  type: "text" | "thinking" | "system";
-  message: "start" | "end" | "error" | "content";
-  content: string;
-  item_id: string;
-  session_id: string;
+export interface ToolUseUpdate {
+  id: string;
+  result: unknown;
+  stdout: string | null;
+  stderr: string | null;
+  start_time: number;
+  end_time: number;
+  is_error: boolean;
 }
 
 

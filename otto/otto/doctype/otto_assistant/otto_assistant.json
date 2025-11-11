@@ -8,6 +8,7 @@
  "field_order": [
   "title",
   "is_app_defined",
+  "supports_user_directives",
   "column_break_roim",
   "llm",
   "reasoning_effort",
@@ -99,12 +100,20 @@
    "fieldtype": "Data",
    "label": "Get Context Import Path",
    "read_only_depends_on": "eval:doc.is_app_defined"
+  },
+  {
+   "default": "0",
+   "description": "The template should contain a <code>{{ user_directives }}</code> for it to be checked.",
+   "fieldname": "supports_user_directives",
+   "fieldtype": "Check",
+   "label": "Supports User Directives",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-11-10 13:52:22.302748",
+ "modified": "2025-11-11 14:48:50.709150",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Assistant",

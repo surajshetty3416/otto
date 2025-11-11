@@ -127,3 +127,12 @@ class ListChatItem(TypedDict):
 class UserInfo(TypedDict):
 	name: str
 	email: str
+
+
+class ChatSettings(TypedDict):
+	llm: str | None
+	reasoning_effort: ReasoningEffort | None
+	tool_permissions: (
+		Literal["Default", "Allow All", "Allow Readonly", "Ask For All", "Ask For Non Readonly"] | None
+	)
+	user_directives: str | None

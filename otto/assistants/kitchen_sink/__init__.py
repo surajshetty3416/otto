@@ -150,6 +150,11 @@ instruction = f(
 	- If the user asks to keep track of some information, you may store it in the `agents/kitchen-sink` folder (ensure that it exists first).
 	- DO NOT mention your tools unless the user explicitly asks about them.
 	</answering_queries>
+
+	{% if user_directives %}<user_directives>
+	IMPORTANT: You must follow the following user directives:
+	{{ user_directives }}
+	</user_directives>{% endif %}
 	""",
 	compact=True,
 )

@@ -44,7 +44,7 @@ class OttoChat(Document):
 
 		assistant: DF.Link
 		llm: DF.Link | None
-		reasoning_effort: DF.Literal["None", "Low", "Medium", "High"]
+		reasoning_effort: DF.Literal["None", "Low", "Medium", "High"] | None
 		session: DF.Link
 		title: DF.Data | None
 		tool_permissions: DF.Literal[
@@ -128,7 +128,21 @@ class OttoChat(Document):
 		self.session = session.id
 
 	@staticmethod
-	def new(assistant: str) -> OttoChat:
+	def new(
+		assistant: str,
+		*,
+		llm: str | None = None,
+		reasoning_effort: ReasoningEffort | None = None,
+		tool_permissions: Literal[
+			"Default",
+			"Allow All",
+			"Allow Readonly",
+			"Ask For All",
+			"Ask For Non Readonly",
+		]
+		| None = None,
+		user_directives: str | None = None,
+	) -> OttoChat:
 		from otto.otto.doctype.otto_assistant.otto_assistant import OttoAssistant
 		from otto.otto.doctype.otto_tool.otto_tool import OttoTool
 
@@ -136,9 +150,11 @@ class OttoChat(Document):
 		assistant_doc = otto.get(OttoAssistant, assistant)
 		doc.assistant = assistant
 
-		reasoning_effort = assistant_doc.reasoning_effort
-		if reasoning_effort == "None":
-			reasoning_effort = None
+		# Chat Settings
+		doc.llm = llm
+		doc.tool_permissions = tool_permissions or "Default"
+		doc.user_directives = user_directives
+		doc.reasoning_effort = reasoning_effort
 
 		tool_schemas: list[lib.types.ToolSchema] = []
 		for tool_ref in assistant_doc.tools:
@@ -149,10 +165,14 @@ class OttoChat(Document):
 			schema = tool_doc.get_function_schema(slug=tool_ref.slug)
 			tool_schemas.append(schema)
 
+		context = {}
+		if user_directives:
+			context["user_directives"] = user_directives
+
 		session = lib.new(
-			model=assistant_doc.llm or DEFAULT_MODEL,
-			instruction=assistant_doc.get_instruction(),
-			reasoning_effort=reasoning_effort,
+			model=llm or assistant_doc.llm or DEFAULT_MODEL,
+			instruction=assistant_doc.get_instruction(context),
+			reasoning_effort=reasoning_effort or assistant_doc.reasoning_effort,
 			tools=tool_schemas,
 		)
 		doc.session_ = session

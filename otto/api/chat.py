@@ -12,6 +12,7 @@ from otto.api.types import (
 	Assistant,
 	AssistantDetails,
 	AssistantTool,
+	ChatSettings,
 	ListChatItem,
 	PendingRequest,
 	RealtimeChatMessage,
@@ -53,11 +54,25 @@ def ping(chat_id: str | None = None) -> None:
 
 
 @frappe.whitelist()
-def new_chat(assistant: str) -> str:
+def new_chat(assistant: str, settings: ChatSettings | None = None) -> str:
 	"""Create a new chat session with an assistant."""
 	from otto.otto.doctype.otto_chat.otto_chat import OttoChat
 
-	chat = OttoChat.new(assistant)
+	settings = settings or ChatSettings(
+		llm=None,
+		reasoning_effort=None,
+		tool_permissions=None,
+		user_directives=None,
+	)
+
+	chat = OttoChat.new(
+		assistant,
+		llm=settings["llm"],
+		reasoning_effort=settings["reasoning_effort"],
+		tool_permissions=settings["tool_permissions"],
+		user_directives=settings["user_directives"],
+	)
+
 	assert chat.name is not None, "type check"
 	return chat.name
 
@@ -79,12 +94,47 @@ def send_query(chat_id: str, query: str) -> None:
 
 
 @frappe.whitelist()
-def load_chat(chat_id: str) -> list[SessionItem]:
-	"""Load the messages of a chat session."""
+def load_messages(chat_id: str) -> list[SessionItem]:
+	"""Load the chat messages."""
 	from otto.otto.doctype.otto_chat.otto_chat import OttoChat
 
 	chat_doc = otto.get(OttoChat, chat_id)
 	return chat_doc.session_.get_items()
+
+
+@frappe.whitelist()
+def load_settings(chat_id: str) -> ChatSettings:
+	vals = frappe.db.get_value(
+		"Otto Chat",
+		chat_id,
+		fieldname=["llm", "reasoning_effort", "tool_permissions", "user_directives"],
+		as_dict=True,
+	)
+	assert isinstance(vals, dict), "type check"
+	return ChatSettings(
+		llm=vals["llm"],
+		reasoning_effort=vals["reasoning_effort"],
+		tool_permissions=vals["tool_permissions"],
+		user_directives=vals["user_directives"],
+	)
+
+
+@frappe.whitelist()
+def save_settings(chat_id: str, settings: ChatSettings | None = None) -> None:
+	from otto.otto.doctype.otto_chat.otto_chat import OttoChat
+
+	if settings is None or not any(settings[k] is not None for k in settings):
+		return
+
+	chat_doc = otto.get(OttoChat, chat_id)
+
+	chat_doc.update_settings(
+		llm=settings["llm"],
+		reasoning_effort=settings["reasoning_effort"],
+		tool_permissions=settings["tool_permissions"],
+		user_directives=settings["user_directives"],
+	)
+	chat_doc.save()
 
 
 @frappe.whitelist()

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 # Copyright (c) 2025, Alan Tom and contributors
 # For license information, please see license.txt
 # import frappe
@@ -40,6 +42,7 @@ class OttoAssistant(Document):
 		is_app_defined: DF.Check
 		llm: DF.Link
 		reasoning_effort: DF.Literal["None", "Low", "Medium", "High"]
+		supports_user_directives: DF.Check
 		title: DF.Data
 		tools: DF.Table[OttoAssistantToolCT]
 	# end: auto-generated types
@@ -85,6 +88,10 @@ class OttoAssistant(Document):
 
 		if not self.llm:
 			self.llm = lib.get_model(size="Medium") or DEFAULT_MODEL
+
+		# Look for a literal `{{ user_directives }}`
+		match = re.search(r"\{\{\s*user_directives\s*\}\}", self.instruction)
+		self.supports_user_directives = bool(match)
 
 	@frappe.whitelist()
 	def get_instruction(self, context: dict | None = None):

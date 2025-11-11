@@ -85,6 +85,7 @@
    "options": "None\nLow\nMedium\nHigh"
   },
   {
+   "description": "Additional user directives to customize the main instruction.",
    "fieldname": "user_directives",
    "fieldtype": "Code",
    "label": "User Directives"
@@ -101,7 +102,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-11-11 14:35:59.774083",
+ "modified": "2025-11-11 14:47:22.177288",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Chat",
