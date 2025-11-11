@@ -1,5 +1,9 @@
 <template>
-	<div class="markdown-content prose prose-sm max-w-none" v-html="content"></div>
+	<div
+		ref="containerRef"
+		class="markdown-content prose prose-sm max-w-none"
+		v-html="content"
+	></div>
 </template>
 
 <script setup lang="ts">
@@ -8,8 +12,10 @@ import hljs from "highlight.js";
 import "highlight.js/styles/github.css";
 import { Marked } from "marked";
 import { markedHighlight } from "marked-highlight";
-import { computed, type VNode } from "vue";
+import { computed, h, nextTick, ref, render, watch, type VNode } from "vue";
 import DOMPurify from "dompurify";
+import { Copy, Check } from "lucide-vue-next";
+import { toast } from "vue-sonner";
 
 const slots = defineSlots<{
 	default: () => VNode[];
@@ -17,6 +23,8 @@ const slots = defineSlots<{
 const props = defineProps<{
 	isStreaming?: boolean;
 }>();
+
+const containerRef = ref<HTMLElement | null>(null);
 
 // Create a new marked instance with proper configuration
 const markedInstance = new Marked(
@@ -65,6 +73,81 @@ const renderedContent = computed(() => {
 		return escapeHtml(content);
 	}
 });
+
+// Add copy buttons to code blocks after rendering
+
+async function addCopyButtonReaction() {
+	await nextTick();
+	if (!containerRef.value) return;
+	addCopyButtonsToCodeBlocks(containerRef.value);
+}
+
+watch(() => [content.value, containerRef.value], addCopyButtonReaction);
+
+function addCopyButtonsToCodeBlocks(container: HTMLElement) {
+	if (props.isStreaming) return;
+	const targets = container.querySelectorAll("pre:has(code)");
+	for (const target of Array.from(targets)) {
+		if (target.querySelector(".copy-button")) return;
+
+		const codeElement = target.querySelector("code");
+		if (!codeElement) return;
+
+		(target as HTMLElement).style.position = "relative";
+		const buttonContainer = document.createElement("div");
+		buttonContainer.className = "copy-button";
+
+		// @ts-ignore - isCopied is used in the render function
+		let isCopied = false;
+		let timeoutId: number | null = null;
+
+		const handleCopy = async () => {
+			const textToCopy = codeElement.innerText;
+			try {
+				await navigator.clipboard.writeText(textToCopy);
+				isCopied = true;
+
+				// Re-render the button with check icon
+				render(copiedButton, buttonContainer);
+
+				// Reset after 2 seconds
+				if (timeoutId) clearTimeout(timeoutId);
+				timeoutId = window.setTimeout(() => {
+					isCopied = false;
+					render(copyButton, buttonContainer);
+				}, 2000);
+			} catch (err) {
+				toast.error("Failed to copy");
+				console.error("Failed to copy:", err);
+			}
+		};
+
+		const copyButton = h(
+			"button",
+			{
+				class: "copy-btn",
+				"aria-label": "Copy code",
+				title: "Copy code",
+				onClick: handleCopy,
+			},
+			h(Copy, { size: 16 })
+		);
+
+		const copiedButton = h(
+			"button",
+			{
+				class: "copy-btn copied",
+				"aria-label": "Copied!",
+				title: "Copied!",
+				onClick: handleCopy,
+			},
+			h(Check, { size: 16 })
+		);
+
+		render(copyButton, buttonContainer);
+		target.appendChild(buttonContainer);
+	}
+}
 </script>
 
 <style scoped>
@@ -189,5 +272,47 @@ const renderedContent = computed(() => {
 .markdown-content :deep(pre:has(code)) {
 	border: 1px solid theme("colors.gray.200");
 	border-radius: theme("borderRadius.lg");
+}
+
+/* Copy button styles */
+.markdown-content :deep(.copy-button) {
+	position: absolute;
+	top: 0.5rem;
+	right: 0.5rem;
+	opacity: 0;
+	transition: opacity 0.2s ease;
+}
+
+.markdown-content :deep(pre:hover .copy-button) {
+	opacity: 1;
+}
+
+.markdown-content :deep(.copy-btn) {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.375rem;
+	background-color: theme("colors.white");
+	border: 1px solid theme("colors.gray.300");
+	border-radius: theme("borderRadius.md");
+	cursor: pointer;
+	transition: all 0.2s ease;
+	color: theme("colors.gray.600");
+}
+
+.markdown-content :deep(.copy-btn:hover) {
+	background-color: theme("colors.gray.50");
+	color: theme("colors.gray.900");
+	border-color: theme("colors.gray.400");
+}
+
+.markdown-content :deep(.copy-btn.copied) {
+	color: theme("colors.green.600");
+	border-color: theme("colors.green.300");
+	background-color: theme("colors.green.50");
+}
+
+.markdown-content :deep(.copy-btn svg) {
+	display: block;
 }
 </style>
