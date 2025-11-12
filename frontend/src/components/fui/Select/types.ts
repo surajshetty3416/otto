@@ -9,7 +9,7 @@ type SelectOption =
     };
 
 export interface SelectProps {
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   variant?: "subtle" | "outline" | "ghost";
   placeholder?: string;
   disabled?: boolean;
@@ -20,8 +20,5 @@ export interface SelectProps {
    */
   doctype?: keyof OttoDocTypes;
   fieldname?: string;
-  label?: string;
-  showLabel?: boolean; // if fetching from meta
-  description?: string;
-  showDescription?: boolean; // if fetching from meta
+  containerClass?: string;
 }

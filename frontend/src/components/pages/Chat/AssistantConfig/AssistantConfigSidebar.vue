@@ -2,7 +2,7 @@
 	<div class="w-56 border-r border-gray-200 flex flex-col bg-gray-25">
 		<!-- Sidebar Header -->
 		<div class="p-4 mb-4">
-			<h2 class="text-lg font-semibold">Configure Assistant</h2>
+			<h2 class="text-lg font-semibold py-1">Select Assistant</h2>
 		</div>
 
 		<!-- Assistant List -->

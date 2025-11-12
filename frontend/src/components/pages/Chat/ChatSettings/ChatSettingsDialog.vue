@@ -1,6 +1,6 @@
 <template>
 	<Dialog :open="open" @update:open="open = $event">
-		<DialogContent class="max-w-3xl">
+		<DialogContent>
 			<template #header>
 				<DialogTitle class="flex items-center gap-2 w-full">
 					<Settings class="w-4 h-4 text-gray-900" stroke-width="1.75" />
@@ -10,6 +10,7 @@
 						class="ml-auto mr-4"
 						text="Saving"
 					/>
+
 					<p v-else-if="isDirty" class="text-xs text-gray-500 ml-auto mr-4">
 						Unsaved Changes
 					</p>
@@ -21,43 +22,77 @@
 				<span class="font-medium">{{ assistant?.title ?? "ssistant" }}</span
 				>.
 			</DialogDescription>
-
-			<div class="grid grid-cols-2 gap-4">
-				<Select
-					:show-label="true"
-					doctype="Otto Chat"
-					fieldname="tool_permissions"
-					placeholder="Select an option to override default"
-					v-model="delta.tool_permissions"
+			<div class="flex flex-col gap-4">
+				<SettingsItem
+					:icon="Wrench"
+					label="Tool Permissions"
 					:description="toolPermissionsDescription"
 				>
-					<template #prefix>
-						<Wrench class="w-4 h-4 text-gray-500" stroke-width="1.5" />
-					</template>
-				</Select>
+					<Select
+						class="w-44"
+						name="tool_permissions"
+						doctype="Otto Chat"
+						fieldname="tool_permissions"
+						placeholder="Select option"
+						v-model="delta.tool_permissions"
+						size="xs"
+						variant="outline"
+					>
+					</Select>
+				</SettingsItem>
 
-				<Select
-					:show-label="true"
-					doctype="Otto Chat"
-					fieldname="reasoning_effort"
-					:placeholder="`Select an option to override default`"
-					v-model="delta.reasoning_effort"
+				<SettingsItem
+					:icon="Brain"
+					label="Reasoning Effort"
 					:description="reasoningEffortDescription"
 				>
-					<template #prefix>
-						<Brain class="w-4 h-4 text-gray-500" stroke-width="1.5" />
-					</template>
-				</Select>
+					<Select
+						class="w-44"
+						doctype="Otto Chat"
+						fieldname="reasoning_effort"
+						placeholder="Select option"
+						v-model="delta.reasoning_effort"
+						size="xs"
+						variant="outline"
+						:disabled="!canReason"
+					>
+					</Select>
+				</SettingsItem>
+
+				<SettingsItem :icon="Smile" label="YOLO Mode">
+					<Switch v-model="yoloMode" />
+				</SettingsItem>
+
+				<hr class="border-gray-200" />
+				<SettingsItem
+					:icon="Sparkle"
+					label="Model"
+					description="Select the model to use for this chat"
+				>
+					<Select
+						doctype="Otto Chat"
+						fieldname="reasoning_effort"
+						placeholder="Select option"
+						v-model="delta.reasoning_effort"
+						variant="outline"
+					>
+					</Select>
+				</SettingsItem>
 			</div>
 
 			<!-- 
 
 			TODO:
-			- add settings for custom user directives (needs component)
+			tomorrow:
+			- follow similar design as macos system settings
 			- add settings for custom llm (needs component)
-			- add checkbox for yolo mode (reasoning high, tool permissions allow all)
-			- add settings for tool selection
-			- show custom settings below chat input (allow shortcut toggling)
+			- add checkbox for yolo mode (needs, component, reasoning high, tool permissions allow all)
+			- add settings for custom user directives (needs component)
+			- add settings for tool selection (different pane/tab)
+			- show custom settings (directives, reasoning, perms) below chat input (allow shortcut toggling)
+			- show selected assistant and llm in the header or somewhere
+			- move info, archive, and delete to a 3 dot menu
+			- add info (thumbs up and down) button under a chat turn
 			-->
 
 			<template #buttons>
@@ -70,18 +105,21 @@
 
 <script setup lang="ts">
 import type { ChatSettings } from "@/client/generated.types";
-import { assistants } from "@/common";
+import { assistants, models } from "@/common";
 import Button from "@/components/fui/Button/Button.vue";
 import Select from "@/components/fui/Select/Select.vue";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import DialogDescription from "@/components/ui/dialog/DialogDescription.vue";
 import DialogTitle from "@/components/ui/dialog/DialogTitle.vue";
 import TextLoadingIndicator from "@/components/ui/TextLoadingIndicator.vue";
-import { Brain, Settings, Wrench } from "lucide-vue-next";
-import { computed, reactive } from "vue";
+import { Brain, Settings, Smile, Sparkle, Wrench } from "lucide-vue-next";
+import { computed, reactive, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 import { save_settings } from "../utils";
+import SettingsItem from "./SettingsItem.vue";
+import { Switch } from "@/components/fui/Switch";
 
+const yoloMode = ref(false);
 const open = defineModel<boolean>({ required: true });
 const props = defineProps<{
 	chatId?: string;
@@ -110,7 +148,7 @@ const defaults = computed(() => {
 });
 
 function reset() {
-	if (isDefault.value) {
+	if (isDefault.value || !isDirty.value) {
 		toast.info("Settings already at default");
 		return;
 	}
@@ -166,6 +204,10 @@ const toolPermissionsDescription = computed(() => {
 });
 
 const reasoningEffortDescription = computed(() => {
+	if (!canReason.value) {
+		return "Selected model does not support reasoning";
+	}
+
 	switch (delta.reasoning_effort) {
 		case "Low":
 		case "Medium":
@@ -183,4 +225,28 @@ const reasoningEffortDescription = computed(() => {
 const assistant = computed(() => {
 	return assistants.value[props.assistant];
 });
+
+const canReason = computed(() => {
+	return models.value[delta.llm ?? defaults.value.llm ?? ""]?.is_reasoning ?? true;
+});
+
+watch(yoloMode, (newVal) => {
+	delta.tool_permissions = newVal ? "Allow All" : null;
+	if (canReason.value) {
+		delta.reasoning_effort = newVal ? "High" : null;
+	}
+});
+
+watch(
+	() => [delta.tool_permissions, delta.reasoning_effort],
+	([toolPermissions, reasoningEffort]) => {
+		if (canReason.value && toolPermissions === "Allow All" && reasoningEffort === "High") {
+			yoloMode.value = true;
+		} else if (!canReason.value && toolPermissions === "Allow All") {
+			yoloMode.value = true;
+		} else {
+			yoloMode.value = false;
+		}
+	}
+);
 </script>

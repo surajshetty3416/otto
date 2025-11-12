@@ -1,5 +1,5 @@
 <template>
-	<div class="p-4 mb-4 flex items-baseline justify-between">
+	<div class="p-4 mb-4 flex items-center justify-between">
 		<h3 class="text-lg font-semibold" title="Assistant name">
 			{{ assistant.title }}
 			<span
