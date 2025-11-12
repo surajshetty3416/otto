@@ -69,14 +69,14 @@
 					label="Model"
 					description="Select the model to use for this chat"
 				>
-					<Select
+					<Link
 						doctype="Otto Chat"
-						fieldname="reasoning_effort"
+						fieldname="llm"
 						placeholder="Select option"
 						v-model="delta.reasoning_effort"
 						variant="outline"
 					>
-					</Select>
+					</Link>
 				</SettingsItem>
 			</div>
 
@@ -118,6 +118,7 @@ import { toast } from "vue-sonner";
 import { save_settings } from "../utils";
 import SettingsItem from "./SettingsItem.vue";
 import { Switch } from "@/components/fui/Switch";
+import Link from "@/components/ui/Link/Link.vue";
 
 const yoloMode = ref(false);
 const open = defineModel<boolean>({ required: true });

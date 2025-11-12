@@ -6,6 +6,14 @@ export type GetListReturn<
   Field extends keyof OttoDocTypes[DocType] & string
 > = Pick<OttoDocTypes[DocType], Field>[];
 
+export type GetListOptions<Field extends string> = {
+  start?: number;
+  limit?: number;
+  filters?: Record<string, unknown> | unknown[];
+  or_filters?: Record<string, unknown>;
+  order_by?: `${Field} ${"asc" | "desc"}`;
+};
+
 export interface CallArgs {
   method?: "GET" | "PUT" | "POST" | "DELETE";
   body?: Record<string, unknown>;

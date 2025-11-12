@@ -72,6 +72,7 @@
    "fieldname": "llm",
    "fieldtype": "Link",
    "label": "LLM",
+   "link_filters": "[[\"Otto LLM\",\"enabled\",\"=\",1]]",
    "options": "Otto LLM"
   },
   {
@@ -102,7 +103,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-11-11 14:47:22.177288",
+ "modified": "2025-11-11 14:47:22.177289",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Chat",

@@ -91,8 +91,8 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
 
     this._setBody(body);
     const obj = reactive(this) as any as Call<Args, Return>;
-    if (this._config?.cache) this._loadFromCache();
-    if (this._config?.auto !== false) obj.run();
+    if (obj._config?.cache) obj._loadFromCache();
+    if (obj._config?.auto !== false) obj.run();
 
     return obj;
   }
@@ -121,10 +121,12 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     return this._response;
   }
 
+  // Server side error (python Exception)
   get exception() {
     return this._exception;
   }
 
+  // Client side error (fetch error)
   get error() {
     return this._error;
   }

@@ -11,7 +11,7 @@
 import { Call, callV1, callV2 } from "./call";
 import type { OttoDocTypes } from "./generated.types";
 import type { DocTypeMeta } from "./meta.types";
-import type { Config, GetListReturn } from "./types";
+import type { Config, GetListOptions, GetListReturn } from "./types";
 
 function login(username: string, password: string): Call<undefined, undefined> {
   const body = { usr: username, pwd: password };
@@ -28,13 +28,7 @@ function get_list<
 >(
   doctype: Doc,
   fields: Field[] | ["*"],
-  options?: {
-    start?: number;
-    limit?: number;
-    filters?: Record<string, unknown>;
-    or_filters?: Record<string, unknown>;
-    order_by?: `${Field} ${"asc" | "desc"}`;
-  },
+  options?: GetListOptions<Field>,
   config?: Config
 ): Call<undefined, GetListReturn<Doc, Field>> {
   const params: Record<string, unknown> = { fields };

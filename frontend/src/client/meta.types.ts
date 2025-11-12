@@ -59,6 +59,7 @@ export interface FieldMeta {
   show_on_timeline: number;
   make_attachment_public: number;
   sticky: number;
+  link_filters?: string;
 }
 
 export interface DocPerm {
