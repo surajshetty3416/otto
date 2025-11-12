@@ -552,7 +552,7 @@ describe("framework object", () => {
     it("should have reactive loading state", async () => {
       const result = framework.get_list("Otto Feedback", ["name"]);
 
-      expect(result.loading).toBe(true);
+      expect(!result.data && result.loading).toBe(true);
 
       await waitForCall(result);
 

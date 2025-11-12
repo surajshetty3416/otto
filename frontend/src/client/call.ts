@@ -216,6 +216,9 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
   }
 
   private async __execute(): Promise<Return> {
+    const start = performance.now();
+    this._loading = true;
+
     await this._lfcPromise;
 
     const checkCache =
@@ -227,10 +230,11 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     );
     window.DEBUG_API &&
       logCall(this.url, this.body, this.params, this.method, returnCached);
-    if (returnCached) return this._data as Return;
+    if (returnCached) {
+      this._loading = false;
+      return this._data as Return;
+    }
 
-    const start = performance.now();
-    this._loading = true;
     const request: RequestInit = {
       method: this.method,
       body: this.body,
@@ -329,7 +333,8 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
       typeof cacheData.rfo !== "number"
     )
       return;
-    window.DEBUG_API && console.log(`%cCache Hit [${formatUrl(this.url)}]`, "color: gray");
+    window.DEBUG_API &&
+      console.log(`%cCache Hit [${formatUrl(this.url)}]`, "color: gray");
     this._data = cacheData.data as Return;
     this._loaded_rfo = cacheData.rfo;
     this._stale = true;
