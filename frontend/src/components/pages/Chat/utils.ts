@@ -1,3 +1,4 @@
+import { api } from "@/client";
 import type {
   Assistant,
   Content,
@@ -10,12 +11,11 @@ import type {
   ToolUseContent,
   ToolUseUpdate,
 } from "@/client/generated.types";
+import { models } from "@/common";
 import { assert, isEqual } from "@/utils";
+import { Bot, Lightbulb, Zap } from "lucide-vue-next";
 import type { InjectionKey, Ref } from "vue";
 import type { ChunkContent, StreamContext } from "./types";
-import { Bot, Brain, Zap } from "lucide-vue-next";
-import { models } from "@/common";
-import { api } from "@/client";
 
 export const save_settings = api.chat.save_settings(
   { chat_id: "", settings: undefined },
@@ -332,7 +332,7 @@ function getItem(id: string, messages: SessionItem[]) {
 
 export function getAssistantIcon(assistant: Assistant) {
   if (assistant.reasoning_effort) {
-    return Brain;
+    return Lightbulb;
   }
 
   const model = models.value[assistant.llm];

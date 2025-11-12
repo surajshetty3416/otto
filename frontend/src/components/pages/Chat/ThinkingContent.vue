@@ -1,7 +1,7 @@
 <template>
 	<!-- Toggle Thought -->
 	<CollapsedContentToggle v-model="isOpen">
-		<Brain class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
+		<Lightbulb class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
 	</CollapsedContentToggle>
 
 	<ContentContainer v-if="isOpen || isStreaming">
@@ -12,7 +12,7 @@
 			title="Hide Thought"
 		>
 			<h3 class="text-gray-800 text-xs font-semibold flex items-center gap-1.5">
-				<Brain class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
+				<Lightbulb class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
 				{{ isStreaming ? "Thinking..." : "Thought" }}
 			</h3>
 			<button @click="isOpen = false">
@@ -30,7 +30,7 @@
 </template>
 <script setup lang="ts">
 import type { SessionItem, ThinkingContent } from "@/client/generated.types";
-import { Brain, X } from "lucide-vue-next";
+import { Lightbulb, X } from "lucide-vue-next";
 import { computed, inject, ref } from "vue";
 import CollapsedContentToggle from "./CollapsedContentToggle.vue";
 import ContentContainer from "./ContentContainer.vue";

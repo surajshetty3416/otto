@@ -34,7 +34,10 @@ const transformed = computed(() => {
 const options = computed(() => {
 	let _options = transformed.value;
 	if (search.value) {
-		_options = _options.filter((option) => smartMatch(option.label, search.value));
+		_options = _options.filter(
+			(option) =>
+				smartMatch(option.label, search.value) || smartMatch(option.value, search.value)
+		);
 	}
 
 	if (search.value && _options.length < 10 && !linkOptions.isEnd.value) {

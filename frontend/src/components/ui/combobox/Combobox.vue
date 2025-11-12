@@ -37,21 +37,29 @@
 
 				<slot :options="options" :select="select" :cursor="cursor">
 					<!-- Items -->
-					<div class="max-h-48 overflow-y-auto p-1 min-w-32">
+					<div class="max-h-48 overflow-y-auto p-1 min-w-32 flex flex-col gap-2">
 						<template v-for="(option, index) in options" :key="option.value">
 							<div
 								:data-index="index"
 								@click="select(option)"
-								class="px-2 py-2 text-ink-gray-8 hover:bg-gray-100 cursor-pointer rounded-md flex items-center justify-between"
+								class="px-2 py-1.5 text-gray-800 hover:bg-gray-100 cursor-pointer rounded-md flex items-center justify-between"
 								:class="[fontSizeClasses, { 'bg-gray-200': cursor === index }]"
 								:onmouseover="() => (cursor = index)"
 							>
-								<p>
-									{{ option.label }}
-								</p>
+								<div>
+									<p class="font-medium">
+										{{ option.label }}
+									</p>
+									<p
+										v-if="option.label !== option.value"
+										class="text-ink-gray-5 text-sm mt-1"
+									>
+										{{ option.value }}
+									</p>
+								</div>
 								<Check
 									v-if="option.value === modelValue"
-									class="size-3.5 text-ink-gray-4 p-0 shrink-0"
+									class="size-3.5 text-gray-700 p-0 shrink-0"
 								/>
 							</div>
 						</template>

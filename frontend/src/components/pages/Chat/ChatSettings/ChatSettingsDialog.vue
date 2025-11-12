@@ -40,7 +40,7 @@
 				</SettingsItem>
 
 				<SettingsItem
-					:icon="Brain"
+					:icon="Lightbulb"
 					label="Reasoning Effort"
 					:description="reasoningEffortDescription"
 				>
@@ -90,7 +90,6 @@
 			</div>
 
 			<!-- 
-
 			TODO:
 			tomorrow:
 			- add settings for custom user directives (needs component)
@@ -118,14 +117,14 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import DialogDescription from "@/components/ui/dialog/DialogDescription.vue";
 import DialogTitle from "@/components/ui/dialog/DialogTitle.vue";
 import Link from "@/components/ui/Link/Link.vue";
+import Select from "@/components/ui/Select/Select.vue";
 import TextLoadingIndicator from "@/components/ui/TextLoadingIndicator.vue";
 import { modelName } from "@/components/utils";
-import { Brain, Settings, Smile, Sparkle, Wrench } from "lucide-vue-next";
+import { Lightbulb, Settings, Smile, Sparkle, Wrench } from "lucide-vue-next";
 import { computed, reactive, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 import { save_settings } from "../utils";
 import SettingsItem from "./SettingsItem.vue";
-import Select from "@/components/ui/Select/Select.vue";
 
 const yoloMode = ref(false);
 const open = defineModel<boolean>({ required: true });
@@ -179,10 +178,11 @@ function save() {
 
 const isDefault = computed(() => {
 	return (
-		delta.tool_permissions === null || delta.tool_permissions === "Default" &&
-		delta.reasoning_effort === null &&
-		delta.llm === null &&
-		delta.user_directives === null
+		delta.tool_permissions === null ||
+		(delta.tool_permissions === "Default" &&
+			delta.reasoning_effort === null &&
+			delta.llm === null &&
+			delta.user_directives === null)
 	);
 });
 

@@ -10,7 +10,7 @@
 			v-if="indicatorText"
 			class="w-fit px-1 py-0.5 rounded-full flex items-center justify-center gap-1 bg-white/75 backdrop-blur-lg"
 		>
-			<Brain
+			<Lightbulb
 				v-if="isThinking"
 				class="h-3 w-3 text-gray-600 flex-shrink-0"
 				stroke-width="1.5"
@@ -75,16 +75,16 @@
 <script setup lang="ts">
 import { api } from "@/client";
 import type { PendingRequest } from "@/client/generated.types";
-import IndicatorDot from "@/components/ui/IndicatorDot.vue";
-import { assert } from "@/utils";
-import { Brain, Wrench } from "lucide-vue-next";
-import { computed, inject, onMounted, onUnmounted } from "vue";
+import LoadingIndicator from "@/components/fui/LoadingIndicator.vue";
 import Ellipsis from "@/components/ui/Ellipsis.vue";
+import IndicatorDot from "@/components/ui/IndicatorDot.vue";
+import TextTooltip from "@/components/ui/tooltip/TextTooltip.vue";
+import shortcuts, { keybinds } from "@/shortcuts";
+import { assert } from "@/utils";
+import { Lightbulb, Wrench } from "lucide-vue-next";
+import { computed, inject, onMounted, onUnmounted } from "vue";
 import SmallButton from "./SmallButton.vue";
 import { streamContextKey, toolConfigKey } from "./utils";
-import LoadingIndicator from "@/components/fui/LoadingIndicator.vue";
-import shortcuts, { keybinds } from "@/shortcuts";
-import TextTooltip from "@/components/ui/tooltip/TextTooltip.vue";
 
 const props = defineProps<{
 	chatId: string;
