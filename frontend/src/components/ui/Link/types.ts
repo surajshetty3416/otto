@@ -8,17 +8,12 @@ export type LinkOption = {
 };
 
 export interface LinkProps {
-  size?: "xs" | "sm" | "md" | "lg";
-  variant?: "subtle" | "outline" | "ghost";
-  placeholder?: string;
-  disabled?: boolean;
-  id?: string;
   /**
+   * For fallthrough props, see ComboboxProps
    * Use fetched field meta to populate options, help-text, etc.
    */
   doctype: keyof OttoDocTypes; // doctype of whose Link field should be fetched
   fieldname: string; // fieldname of the Link field in `doctype`
   fields?: string[]; // additional fields of the Link option to fetch for transforms
-  containerClass?: string;
   transform?: (option: LinkOption) => LinkOption;
 }

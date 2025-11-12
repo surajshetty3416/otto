@@ -12,6 +12,9 @@ const DEFAULT_KEYBINDS = {
   "accept-all-requests": ["alt+enter"],
   "deny-all-requests": ["alt+backspace"],
   "toggle-sidebar": [isMacOS ? "meta+b" : "ctrl+b"],
+  "cursor-up": ["arrowup"],
+  "cursor-down": ["arrowdown"],
+  "select-item": ["enter"],
 };
 
 function getKeybinds(): Shortcuts {

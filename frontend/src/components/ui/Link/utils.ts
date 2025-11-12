@@ -1,6 +1,6 @@
 import { getMeta, useList } from "@/client";
 import type { OttoDocTypes } from "@/client/generated.types";
-import { reactive, ref, watchEffect } from "vue";
+import { computed, reactive, ref, watchEffect } from "vue";
 import type { LinkOption } from "./types";
 import type { Call } from "@/client/call";
 import type { GetListReturn } from "@/client/types";
@@ -23,6 +23,7 @@ export function useLinkOptions<
 
   (async function () {
     const params = await _getLinkOptionParams(doctype, fieldname, fields);
+    loading.value = false;
     const list = useList(params.doctype, params.fields, {
       filters: params.filters,
     });
@@ -32,7 +33,6 @@ export function useLinkOptions<
     const lastIndex = ref(0);
 
     const unwatch = watchEffect(() => {
-      loading.value = list.call.value?.loading ?? true;
       isEnd.value = list.isEnd.value;
       if (!list.call.value?.data) return;
 
@@ -61,7 +61,7 @@ export function useLinkOptions<
     next,
     isEnd,
     call,
-    loading,
+    loading: computed(() => loading.value || call.value?.loading),
   };
 }
 

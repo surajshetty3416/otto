@@ -19,7 +19,7 @@
 
 			<DialogDescription>
 				Configure chat settings to override defaults set for
-				<span class="font-medium">{{ assistant?.title ?? "ssistant" }}</span
+				<span class="font-medium">{{ assistant?.title ?? "Assistant" }}</span
 				>.
 			</DialogDescription>
 			<div class="flex flex-col gap-6">
@@ -29,14 +29,12 @@
 					:description="toolPermissionsDescription"
 				>
 					<Select
-						class="w-44"
-						name="tool_permissions"
 						doctype="Otto Chat"
 						fieldname="tool_permissions"
 						placeholder="Select option"
 						v-model="delta.tool_permissions"
 						size="xs"
-						variant="outline"
+						variant="ghost"
 					>
 					</Select>
 				</SettingsItem>
@@ -47,13 +45,12 @@
 					:description="reasoningEffortDescription"
 				>
 					<Select
-						class="w-44"
 						doctype="Otto Chat"
 						fieldname="reasoning_effort"
-						placeholder="Select option"
+						placeholder="Select effort"
 						v-model="delta.reasoning_effort"
 						size="xs"
-						variant="outline"
+						variant="ghost"
 						:disabled="!canReason"
 					>
 					</Select>
@@ -64,21 +61,30 @@
 				</SettingsItem>
 
 				<hr class="border-gray-200" />
-				<SettingsItem
-					:icon="Sparkle"
-					label="Model"
-					description="Select the model to use for this chat"
-				>
+				<SettingsItem :icon="Sparkle" label="Model" :description="modelDescription">
 					<Link
-						class="w-44"
 						doctype="Otto Chat"
 						fieldname="llm"
-						placeholder="Select option"
+						size="sm"
 						v-model="delta.llm"
-						variant="outline"
-						size="xs"
+						variant="ghost"
 						:transform="({ value }) => ({ label: modelName(value), value })"
+						placeholder="Select model"
 					>
+						<!-- <template v-slot="{ options, select, cursor }">
+							<div class="max-h-40 overflow-y-auto">
+								<template v-for="(option, index) in options" :key="option.value">
+									<div
+										:data-index="index"
+										@click="select(option)"
+										class="px-2 py-2 text-sm text-ink-gray-8 hover:bg-surface-gray-2 cursor-pointer"
+										:class="{ 'bg-green-300': cursor === index }"
+									>
+										{{ option.label }}
+									</div>
+								</template>
+							</div>
+						</template> -->
 					</Link>
 				</SettingsItem>
 			</div>
@@ -87,7 +93,6 @@
 
 			TODO:
 			tomorrow:
-			- add settings for custom llm (needs component)
 			- add settings for custom user directives (needs component)
 			- add settings for tool selection (different pane/tab)
 			- show custom settings (directives, reasoning, perms) below chat input (allow shortcut toggling)
@@ -108,19 +113,19 @@
 import type { ChatSettings } from "@/client/generated.types";
 import { assistants, models } from "@/common";
 import Button from "@/components/fui/Button/Button.vue";
-import Select from "@/components/fui/Select/Select.vue";
+import { Switch } from "@/components/fui/Switch";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import DialogDescription from "@/components/ui/dialog/DialogDescription.vue";
 import DialogTitle from "@/components/ui/dialog/DialogTitle.vue";
+import Link from "@/components/ui/Link/Link.vue";
 import TextLoadingIndicator from "@/components/ui/TextLoadingIndicator.vue";
+import { modelName } from "@/components/utils";
 import { Brain, Settings, Smile, Sparkle, Wrench } from "lucide-vue-next";
 import { computed, reactive, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 import { save_settings } from "../utils";
 import SettingsItem from "./SettingsItem.vue";
-import { Switch } from "@/components/fui/Switch";
-import Link from "@/components/ui/Link/Link.vue";
-import { modelName } from "@/components/utils";
+import Select from "@/components/ui/Select/Select.vue";
 
 const yoloMode = ref(false);
 const open = defineModel<boolean>({ required: true });
@@ -151,7 +156,7 @@ const defaults = computed(() => {
 });
 
 function reset() {
-	if (isDefault.value || !isDirty.value) {
+	if (isDefault.value && !isDirty.value) {
 		toast.info("Settings already at default");
 		return;
 	}
@@ -174,7 +179,7 @@ function save() {
 
 const isDefault = computed(() => {
 	return (
-		(delta.tool_permissions === null || delta.tool_permissions === "Default") &&
+		delta.tool_permissions === null || delta.tool_permissions === "Default" &&
 		delta.reasoning_effort === null &&
 		delta.llm === null &&
 		delta.user_directives === null
@@ -197,9 +202,9 @@ const toolPermissionsDescription = computed(() => {
 		case "Allow Readonly":
 			return "Read only tools will run without user permission";
 		case "Ask For All":
-			return "All tool uses will require user permission";
+			return "All tools will require user permission";
 		case "Ask For Non Readonly":
-			return "Non readonly tool uses will require user permission";
+			return "Non readonly tools will require user permission";
 		case "Default":
 		default:
 			return "Tools requiring user permission will raise requests";
@@ -215,14 +220,21 @@ const reasoningEffortDescription = computed(() => {
 		case "Low":
 		case "Medium":
 		case "High":
-			return `Model will use ${delta.reasoning_effort} reasoning effort`;
+			return `Assistant will use ${delta.reasoning_effort} reasoning effort`;
 		case "None":
-			return "Model will not use reasoning";
+			return "Assistant will not use reasoning";
 		default:
-			return `Model will use default reasoning effort (${
+			return `Assistant will use default reasoning effort (${
 				defaults.value.reasoning_effort ?? "Medium"
 			})`;
 	}
+});
+
+const modelDescription = computed(() => {
+	if (!delta.llm && !defaults.value.llm) return "Assistant will use default model";
+	if (!delta.llm && defaults.value.llm)
+		return `Assistant will use default model (${modelName(defaults.value.llm)})`;
+	return `Assistant will use ${modelName(delta.llm!)}`;
 });
 
 const assistant = computed(() => {

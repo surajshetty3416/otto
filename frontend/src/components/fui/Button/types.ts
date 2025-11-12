@@ -2,7 +2,7 @@ import type { Component } from "vue";
 import type { RouteLocation } from "vue-router";
 
 export type Theme = "gray" | "blue" | "green" | "red";
-export type Size = "sm" | "md" | "lg" | "xl" | "2xl";
+export type Size = "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
 export type Variant = "solid" | "subtle" | "outline" | "ghost";
 
 export interface ButtonProps {

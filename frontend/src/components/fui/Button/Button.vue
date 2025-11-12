@@ -120,6 +120,7 @@ const buttonClasses = computed(() => {
 	const disabledClasses = disabledClassesMap[themeVariant];
 
 	let sizeClasses = {
+		xs: "h-6 text-sm px-1.5 rounded",
 		sm: "h-7 text-base px-2 rounded",
 		md: "h-8 text-base font-medium px-2.5 rounded",
 		lg: "h-10 text-lg font-medium px-3 rounded-md",
@@ -129,6 +130,7 @@ const buttonClasses = computed(() => {
 
 	if (isIconButton.value) {
 		sizeClasses = {
+			xs: "h-6 w-6 rounded",
 			sm: "h-7 w-7 rounded",
 			md: "h-8 w-8 rounded",
 			lg: "h-10 w-10 rounded-md",
@@ -147,6 +149,7 @@ const buttonClasses = computed(() => {
 
 const slotClasses = computed(() => {
 	let classes = {
+		xs: "h-3.5",
 		sm: "h-4",
 		md: "h-4.5",
 		lg: "h-5",

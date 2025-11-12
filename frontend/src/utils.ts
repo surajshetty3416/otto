@@ -278,3 +278,12 @@ export function escapeHtml(str: string): string {
     }
   });
 }
+
+export function smartMatch(text: string, search: string): boolean {
+  const searchLower = search.toLowerCase();
+  const isAllLower = searchLower === search;
+
+  if (isAllLower) return text.toLowerCase().includes(searchLower);
+
+  return text.includes(search);
+}
