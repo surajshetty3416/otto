@@ -35,10 +35,33 @@ export type ServerException = {
 };
 
 export interface Config {
-  cache?: boolean; // default false, if true then cache is used
   ttl?: number; // seconds, if not set cache invalidate only on api response
   key?: string; // if not set, hash(url, method, body, params) is used
   auto?: boolean; // default true, if false then call is not executed
+
+  /**
+   * default false, if true then data is first fetched from the cache
+   * and then the api is called to get the latest data.
+   *
+   * i.e. stale while revalidating; invalidated on data fetch
+   */
+  cache?: boolean; // default false, if true then cache is used
+
+  /**
+   * default false, needs cache: true
+   *
+   * If true, then call is executed only once and all subsequent calls are
+   * return data from the cache without revalidating the data.
+   * 
+   * Can be invalidated with call.reset or by using useCache false when calling
+   * run.
+   * 
+   * Should ideally be used by ttl, incase a page is not unloaded but the
+   * backend data has changed.
+   *
+   * i.e. stale without revalidating; invalidated on page refresh
+   */
+  once?: boolean; // default false, if true then call is executed only once
   // signal?: AbortSignal; // if set, the call is aborted when the signal is aborted
 }
 

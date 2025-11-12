@@ -5,7 +5,15 @@ import type { CallAPIArgs, CallArgs, Config, ServerException } from "./types";
 import { hash } from "./utils";
 import { watcher } from "./watcher";
 
-const cachestore = new Store<unknown>("cache");
+/**
+ * Random value used to identify if the call has been previously executed.  For
+ * the current instantiation of the frontend, i.e. it will reset when the page
+ * is reloaded.
+ *
+ * It's used to ensure that certain calls are executed only once in a page load.
+ */
+const instance_random = hash(Math.random().toString(36));
+const cachestore = new Store<{ data: unknown; rfo: number }>("cache");
 
 export function call<Args extends any = unknown, Return extends any = unknown>(
   url: string,
@@ -64,6 +72,11 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
   private _signal?: AbortSignal;
   private _aborted: boolean;
   private _done: boolean;
+  private _lfcPromise?: Promise<unknown>;
+
+  // rfo: random for once
+  private _rfo: number;
+  private _loaded_rfo?: number;
 
   constructor(
     method: string,
@@ -77,6 +90,8 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     this.url = url;
     this.params = params ? getParams(params) : undefined;
 
+    this._rfo = instance_random;
+    this._loaded_rfo = undefined;
     this._promise = undefined;
     this._loading = false;
     this._failed = false;
@@ -88,11 +103,18 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     this._isFFCall = isFFCall;
     this._stale = false;
     this._done = false;
+    this._lfcPromise = undefined;
 
     this._setBody(body);
     const obj = reactive(this) as any as Call<Args, Return>;
-    if (obj._config?.cache) obj._loadFromCache();
-    if (obj._config?.auto !== false) obj.run();
+
+    if (obj._config?.cache) {
+      this._lfcPromise = obj._loadFromCache();
+    }
+
+    if (obj._config?.auto !== false) {
+      obj.run();
+    }
 
     return obj;
   }
@@ -194,7 +216,18 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
   }
 
   private async __execute(): Promise<Return> {
-    window.DEBUG_API && logCall(this.url, this.body, this.params, this.method);
+    await this._lfcPromise;
+
+    const checkCache =
+      this._config?.once && typeof this._loaded_rfo === "undefined";
+    if (checkCache) await this._loadFromCache();
+
+    const returnCached = !!(
+      this._config?.once && this._rfo === this._loaded_rfo
+    );
+    window.DEBUG_API &&
+      logCall(this.url, this.body, this.params, this.method, returnCached);
+    if (returnCached) return this._data as Return;
 
     const start = performance.now();
     this._loading = true;
@@ -262,6 +295,8 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     this._error = undefined;
     this._aborted = false;
     this._signal = undefined;
+    this._rfo = instance_random;
+    this._loaded_rfo = undefined;
     // if (this._config) this._config.signal = undefined;
   }
 
@@ -271,7 +306,8 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
 
     try {
       const data = isProxy(this.data) ? toRaw(this.data) : this.data;
-      await cachestore.set(key, data, ttl_ms);
+      await cachestore.set(key, { data, rfo: this._rfo }, ttl_ms);
+      this._loaded_rfo = this._rfo;
     } catch (error) {
       return logError(error);
     }
@@ -279,15 +315,23 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
 
   private async _loadFromCache(): Promise<void> {
     const key = this._getkey();
-    let data: unknown;
+    let cacheData: { data: unknown; rfo?: number } | undefined = undefined;
     try {
-      data = await cachestore.get(key);
+      cacheData = await cachestore.get(key);
     } catch (error) {
       return logError(error);
     }
 
-    if (typeof data === "undefined") return;
-    this._data = data as Return;
+    if (
+      typeof cacheData === "undefined" ||
+      typeof cacheData !== "object" ||
+      cacheData === null ||
+      typeof cacheData.rfo !== "number"
+    )
+      return;
+    window.DEBUG_API && console.log(`%cCache Hit [${formatUrl(this.url)}]`, "color: gray");
+    this._data = cacheData.data as Return;
+    this._loaded_rfo = cacheData.rfo;
     this._stale = true;
   }
 
@@ -352,10 +396,18 @@ function logCall(
   url: string,
   body: string | undefined,
   params: string | undefined,
-  method: string
+  method: string,
+  isCached: boolean
 ) {
   const _url = formatUrl(url);
-  console.groupCollapsed(`%cAPI Call [${method} ${_url}]`, "color: lightblue");
+  const indicator = isCached ? " [%ccache%c]" : "%c%c";
+
+  console.groupCollapsed(
+    `%cAPI Call [${method} ${_url}]${indicator}`,
+    "color: lightblue",
+    "color: yellow",
+    "color: lightblue"
+  );
   try {
     console.log(body ?? JSON.parse(body ?? "{}"));
     params && console.log(params);

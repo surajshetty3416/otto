@@ -1,6 +1,8 @@
 import router from "../router";
 import type { RealtimeChatMessage } from "./generated.types";
 
+
+
 export function toLogin(useRedirect: boolean = true) {
   /**
    * When running in Vite dev mode with HMR, Otto's login page is used.

@@ -22,8 +22,13 @@ export const list_models = api.chat.list_models(null, { cache: true });
 /**
  * Prefetch a few metas so that they are available and cached when needed.
  */
-framework.get_meta("Otto Chat", { cache: true });
-framework.get_meta("Otto Assistant", { cache: true });
+const configForOnce = {
+  cache: true,
+  once: true,
+  ttl: 60 * 60 * 24,
+}; // 1 day
+framework.get_meta("Otto Chat", configForOnce);
+framework.get_meta("Otto Assistant", configForOnce);
 
 const _metaCache = new Map<string, DocTypeMeta>();
 const _fieldMetaCache = new Map<string, FieldMeta>();
@@ -39,7 +44,8 @@ export async function getMeta(
     return _metaCache.get(doctype)!;
   }
 
-  const meta = await framework.get_meta(doctype, { cache: true });
+  const config = { ...configForOnce, auto: undefined };
+  const meta = await framework.get_meta(doctype, config);
   _metaCache.set(doctype, meta);
   return meta;
 }
