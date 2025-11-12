@@ -27,6 +27,7 @@ const configForOnce = {
   once: true,
   ttl: 60 * 60 * 24,
 }; // 1 day
+framework.get_meta("Otto LLM", configForOnce);
 framework.get_meta("Otto Chat", configForOnce);
 framework.get_meta("Otto Assistant", configForOnce);
 

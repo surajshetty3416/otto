@@ -22,7 +22,7 @@
 				<span class="font-medium">{{ assistant?.title ?? "ssistant" }}</span
 				>.
 			</DialogDescription>
-			<div class="flex flex-col gap-4">
+			<div class="flex flex-col gap-6">
 				<SettingsItem
 					:icon="Wrench"
 					label="Tool Permissions"
@@ -70,11 +70,14 @@
 					description="Select the model to use for this chat"
 				>
 					<Link
+						class="w-44"
 						doctype="Otto Chat"
 						fieldname="llm"
 						placeholder="Select option"
-						v-model="delta.reasoning_effort"
+						v-model="delta.llm"
 						variant="outline"
+						size="xs"
+						:transform="({ value }) => ({ label: modelName(value), value })"
 					>
 					</Link>
 				</SettingsItem>
@@ -84,9 +87,7 @@
 
 			TODO:
 			tomorrow:
-			- follow similar design as macos system settings
 			- add settings for custom llm (needs component)
-			- add checkbox for yolo mode (needs, component, reasoning high, tool permissions allow all)
 			- add settings for custom user directives (needs component)
 			- add settings for tool selection (different pane/tab)
 			- show custom settings (directives, reasoning, perms) below chat input (allow shortcut toggling)
@@ -119,6 +120,7 @@ import { save_settings } from "../utils";
 import SettingsItem from "./SettingsItem.vue";
 import { Switch } from "@/components/fui/Switch";
 import Link from "@/components/ui/Link/Link.vue";
+import { modelName } from "@/components/utils";
 
 const yoloMode = ref(false);
 const open = defineModel<boolean>({ required: true });

@@ -15,7 +15,7 @@
 			</label>
 			<slot />
 		</div>
-		<p v-if="description" class="text-sm text-gray-500" :class="[icon ? 'ml-5.5' : 'ml-0']">
+		<p v-if="description" class="text-sm text-gray-500 mt-1" :class="[icon ? 'ml-5.5' : 'ml-0']">
 			{{ description }}
 		</p>
 	</div>
