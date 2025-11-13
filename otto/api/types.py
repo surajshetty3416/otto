@@ -137,3 +137,10 @@ class ChatSettings(TypedDict):
 		Literal["Default", "Allow All", "Allow Readonly", "Ask For All", "Ask For Non Readonly"] | None
 	)
 	user_directives: str | None
+
+
+class Chat(TypedDict):
+	name: str
+	settings: ChatSettings
+	assistant: str
+	messages: list[SessionItem]

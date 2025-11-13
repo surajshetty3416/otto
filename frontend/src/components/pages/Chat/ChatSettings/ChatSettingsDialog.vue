@@ -20,8 +20,16 @@
 
 			<!-- Dialog Body -->
 			<DialogDescription class="mb-6">
-				Configure chat settings to override defaults set for
-				<span class="font-medium"> {{ assistant?.title ?? "Assistant" }} </span>.
+				Configure settings for this chat to override the defaults set for
+				<TextTooltip
+					v-if="assistant.title"
+					:content="`${assistant.title} is the selected assistant`"
+				>
+					<span v-if="assistant.title" class="font-medium">
+						{{ assistant?.title }}
+					</span>
+				</TextTooltip>
+				<span v-else> this assistant </span>.
 			</DialogDescription>
 
 			<div v-if="pane === 'config'" class="flex flex-col gap-6">
@@ -189,6 +197,7 @@ import { computed, reactive, ref, watch, watchEffect } from "vue";
 import { toast } from "vue-sonner";
 import { save_settings } from "../utils";
 import SettingsItem from "./SettingsItem.vue";
+import TextTooltip from "@/components/ui/tooltip/TextTooltip.vue";
 
 const customInstructionTips: Record<string, string> = {
 	Direct: "Be specific and to the point.",

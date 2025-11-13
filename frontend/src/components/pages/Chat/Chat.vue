@@ -128,14 +128,10 @@ const pendingRequests = reactive<Record<string, PendingRequest>>({});
 // API calls
 const list_tools = api.chat.list_tools({ chat_id: "" }, { auto: false });
 const get_pending_requests = api.chat.get_pending_requests({ chat_id: "" }, { auto: false });
-const load_messages = api.chat.load_messages({ chat_id: "" }, { auto: false });
+const load_chat = api.chat.load_chat({ chat_id: "" }, { auto: false });
 
 const isLoading = computed(
-	() =>
-		list_tools.loading ||
-		load_messages.loading ||
-		get_pending_requests.loading ||
-		_loading.value
+	() => list_tools.loading || load_chat.loading || get_pending_requests.loading || _loading.value
 );
 const toolConfigs = computed(() => {
 	const configs: Record<string, ToolConfig> = {};
@@ -155,12 +151,12 @@ const hasPendingToolExecutions = computed(() => {
 	return false;
 });
 const showNew = computed(() => {
-	if (load_messages.loading) return false;
+	if (load_chat.loading) return false;
 	if (messages.length > 0) return false;
 	if (props.chatId) return false;
 
 	// For when there's a non-new chat that is empty, show the welcome message
-	if (!load_messages.loading && messages.length === 0 && props.chatId) return true;
+	if (!load_chat.loading && messages.length === 0 && props.chatId) return true;
 
 	return true;
 });
@@ -304,7 +300,7 @@ function clear() {
 
 	list_tools.reset();
 	get_pending_requests.reset();
-	load_messages.reset();
+	load_chat.reset();
 }
 
 async function set() {
@@ -313,7 +309,6 @@ async function set() {
 	await list_tools.run({ chat_id: props.chatId }, false);
 	await get_pending_requests.run({ chat_id: props.chatId }, false);
 	await loadChat();
-	await loadSettings();
 }
 
 function focus() {
@@ -325,22 +320,18 @@ function focus() {
 async function loadChat() {
 	assert(props.chatId, "chatId is required"); // type check (caller should ensure)
 	const messageIds = messages.map((message) => message.id);
-	for (const message of await load_messages.run({ chat_id: props.chatId }, false)) {
+	const chat = await load_chat.run({ chat_id: props.chatId }, false);
+	assistant.value = chat.assistant;
+	for (const message of chat.messages) {
 		if (messageIds.includes(message.id)) continue;
 		messages.push(message);
 	}
 
+	settings.llm = chat.settings.llm;
+	settings.reasoning_effort = chat.settings.reasoning_effort;
+	settings.tool_permissions = chat.settings.tool_permissions;
+	settings.user_directives = chat.settings.user_directives;
 	nextTick().then(() => scrollToBottom("smooth"));
-}
-
-async function loadSettings() {
-	if (!props.chatId) return;
-	const _settings = await api.chat.load_settings({ chat_id: props.chatId });
-	if (!_settings) return;
-	settings.llm = _settings.llm;
-	settings.reasoning_effort = _settings.reasoning_effort;
-	settings.tool_permissions = _settings.tool_permissions;
-	settings.user_directives = _settings.user_directives;
 }
 
 async function updateSettings(update: ChatSettings) {
@@ -350,7 +341,14 @@ async function updateSettings(update: ChatSettings) {
 	settings.user_directives = update.user_directives;
 	if (!props.chatId) return;
 
-	await save_settings.run({ chat_id: props.chatId, settings }, false);
+	const _update = await save_settings.run({ chat_id: props.chatId, settings }, false);
+	if (update.llm !== _update.llm) settings.llm = _update.llm;
+	if (update.reasoning_effort !== _update.reasoning_effort)
+		settings.reasoning_effort = _update.reasoning_effort;
+	if (update.tool_permissions !== _update.tool_permissions)
+		settings.tool_permissions = _update.tool_permissions;
+	if (update.user_directives !== _update.user_directives)
+		settings.user_directives = _update.user_directives;
 }
 
 onMounted(async () => socket.on("otto.api.chat", handleRealtimeMessage));
@@ -367,7 +365,7 @@ watch(
 		const controller = new AbortController();
 		list_tools.signal = controller.signal;
 		get_pending_requests.signal = controller.signal;
-		load_messages.signal = controller.signal;
+		load_chat.signal = controller.signal;
 		onCleanup(() => controller.abort());
 
 		set();

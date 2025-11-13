@@ -12,6 +12,7 @@ from otto.api.types import (
 	Assistant,
 	AssistantDetails,
 	AssistantTool,
+	Chat,
 	ChatSettings,
 	ListChatItem,
 	PendingRequest,
@@ -27,7 +28,6 @@ from otto.api.types import (
 )
 
 if TYPE_CHECKING:
-	from otto.lib.types import SessionItem
 	from otto.llm.types import ModelDetails
 	from otto.otto.doctype.otto_chat.otto_chat import OttoChat, ToolConfig
 	from otto.otto.doctype.otto_permission_request.otto_permission_request import OttoPermissionRequest
@@ -94,12 +94,23 @@ def send_query(chat_id: str, query: str) -> None:
 
 
 @frappe.whitelist()
-def load_messages(chat_id: str) -> list[SessionItem]:
+def load_chat(chat_id: str) -> Chat:
 	"""Load the chat messages."""
 	from otto.otto.doctype.otto_chat.otto_chat import OttoChat
 
 	chat_doc = otto.get(OttoChat, chat_id)
-	return chat_doc.session_.get_items()
+	assert chat_doc.name is not None, "type check"
+	return Chat(
+		name=chat_doc.name,
+		settings=ChatSettings(
+			llm=chat_doc.llm,
+			reasoning_effort=chat_doc.reasoning_effort,
+			tool_permissions=chat_doc.tool_permissions,
+			user_directives=chat_doc.user_directives,
+		),
+		assistant=chat_doc.assistant,
+		messages=chat_doc.session_.get_items(),
+	)
 
 
 @frappe.whitelist()
@@ -120,11 +131,8 @@ def load_settings(chat_id: str) -> ChatSettings:
 
 
 @frappe.whitelist()
-def save_settings(chat_id: str, settings: ChatSettings | None = None) -> None:
+def save_settings(chat_id: str, settings: ChatSettings) -> ChatSettings:
 	from otto.otto.doctype.otto_chat.otto_chat import OttoChat
-
-	if settings is None or not any(settings[k] is not None for k in settings):
-		return
 
 	chat_doc = otto.get(OttoChat, chat_id)
 
@@ -135,6 +143,12 @@ def save_settings(chat_id: str, settings: ChatSettings | None = None) -> None:
 		user_directives=settings["user_directives"],
 	)
 	chat_doc.save()
+	return ChatSettings(
+		llm=chat_doc.llm,
+		reasoning_effort=chat_doc.reasoning_effort,
+		tool_permissions=chat_doc.tool_permissions,
+		user_directives=chat_doc.user_directives,
+	)
 
 
 @frappe.whitelist()
