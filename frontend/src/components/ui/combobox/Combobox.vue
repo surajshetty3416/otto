@@ -39,7 +39,7 @@
 
 				<slot :options="options" :select="select" :cursor="cursor">
 					<!-- Items -->
-					<div class="max-h-48 overflow-y-auto p-1 min-w-32 flex flex-col gap-2">
+					<div class="max-h-48 overflow-y-auto p-1 min-w-32 flex flex-col">
 						<template v-for="(option, index) in options" :key="option.value">
 							<div
 								:data-index="index"
@@ -70,6 +70,17 @@
 				<div v-if="options.length === 0" class="px-2 py-2 text-sm text-ink-gray-4">
 					No results found
 				</div>
+				<div
+					v-if="showClear && modelValue !== defaultValue"
+					class="p-1 text-sm text-ink-gray-4"
+				>
+					<button
+						class="text-sm text-ink-gray-4 hover:text-ink-gray-5 px-2"
+						@click="clear"
+					>
+						Clear
+					</button>
+				</div>
 			</div>
 		</PopoverContent>
 	</Popover>
@@ -92,7 +103,9 @@ const props = withDefaults(defineProps<ComboboxProps>(), {
 	size: "sm",
 	variant: "subtle",
 	showSearch: true,
+	showClear: true,
 	loading: false,
+	defaultValue: null,
 });
 
 const modelValue = defineModel<string | null>({ required: true });
@@ -103,6 +116,11 @@ const label = computed(() => {
 
 function select(option: ComboboxOption) {
 	modelValue.value = option.value;
+	isOpen.value = false;
+}
+
+function clear() {
+	modelValue.value = props.defaultValue;
 	isOpen.value = false;
 }
 

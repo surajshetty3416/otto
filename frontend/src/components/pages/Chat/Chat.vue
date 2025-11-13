@@ -37,23 +37,17 @@
 					@settings="openSettings = true"
 					v-model="query"
 				/>
-				<div
-					class="flex flex-row items-center gap-2 mt-2 w-full justify-center flex-wrap"
-				>
+				<div class="flex flex-row items-center gap-2 mt-2 w-full justify-center flex-wrap">
 					<Selector :canChange="showNew" v-model="assistant" :settings="settings" />
-					<TextLoadingIndicator
-						v-if="load_chat.loading || save_settings.loading"
-						text="Loading settings"
-					/>
-					<OverrideIndicators v-else :settings="settings" :assistant="assistant" />
+					<TextLoadingIndicator v-if="load_chat.loading" text="Loading settings" />
+					<OverrideIndicators v-else v-model="settings" :assistant="assistant" />
 				</div>
 				<ChatSettingsDialog
 					v-model="openSettings"
+					v-model:settings="settings"
 					:chatId="chatId"
 					:isNew="showNew"
-					:settings="settings"
 					:assistant="assistant"
-					@save="updateSettings"
 				/>
 			</div>
 		</div>
@@ -63,6 +57,8 @@
 <script setup lang="ts">
 /**
  * TODO:
+ * - allow cycle through chat settings with shortcuts, open chat settings with shortcuts (debounced)
+ *
  * - add tasteful animation when popping indicators, collapsing sections
  * - add better error handling
  * - make the streaming of content smoother
@@ -71,9 +67,9 @@
  * - check if any of the api calls are erroring out, and show an appropriate toast
  * - set a time out on isWaitingForStream, and show a toast if it times out
  *
- * - [ ] allow assistant config llm, tools, etc (default?)
  * - [ ] images and pdfs
  * - [ ] input commands etc `/` and `@` for doctype refs
+ * - [ ] tool selection
  */
 import { api, list_chats } from "@/client";
 import {

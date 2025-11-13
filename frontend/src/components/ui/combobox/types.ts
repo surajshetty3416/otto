@@ -13,4 +13,6 @@ export interface ComboboxProps {
   loading?: boolean;
   options: ComboboxOption[];
   showSearch?: boolean;
+  showClear?: boolean;
+  defaultValue?: string | null;
 }

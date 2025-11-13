@@ -5,6 +5,7 @@
 		:options="selectOptions"
 		:loading="false"
 		:show-search="false"
+		:default-value="meta?.default ?? null"
 	>
 		<template #trigger>
 			<slot name="trigger"></slot>

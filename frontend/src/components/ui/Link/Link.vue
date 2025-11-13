@@ -37,10 +37,16 @@ const transformed = computed(() => {
 const options = computed(() => {
 	let _options = transformed.value;
 	if (search.value) {
-		_options = _options.filter(
-			(option) =>
-				smartMatch(option.label, search.value) || smartMatch(option.value, search.value)
-		);
+		_options = _options.filter((option) => {
+			let target = `${option.label} ${option.value}`;
+			if (props.searchFields) {
+				for (const field of props.searchFields) {
+					if (!option?.item?.[field]) continue;
+					target += ` ${option?.item?.[field]}`;
+				}
+			}
+			return smartMatch(target, search.value);
+		});
 	}
 
 	if (search.value && _options.length < 10 && !linkOptions.isEnd.value) {

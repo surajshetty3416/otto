@@ -1,3 +1,4 @@
+t
 <template>
 	<Dialog :open="open" @update:open="open = $event">
 		<DialogContent class="h-[38vh]">
@@ -11,10 +12,6 @@
 						class="ml-auto mr-4"
 						text="Saving"
 					/>
-
-					<p v-else-if="isDirty" class="ml-auto mr-4 text-xs text-gray-500">
-						Unsaved Changes
-					</p>
 				</DialogTitle>
 			</template>
 
@@ -34,50 +31,7 @@
 
 			<div v-if="pane === 'config'" class="flex flex-col gap-6">
 				<SettingsItem :icon="Sparkle" label="Model" :description="modelDescription">
-					<Link
-						doctype="Otto Chat"
-						fieldname="llm"
-						:fields="['provider', 'size', 'is_reasoning']"
-						size="sm"
-						v-model="delta.llm"
-						variant="ghost"
-						:transform="llmOptionsTransform"
-						placeholder="Select model"
-					>
-						<template v-slot="{ options, select, cursor }">
-							<div class="flex max-h-56 min-w-32 flex-col gap-2 overflow-y-auto p-1">
-								<template v-for="(option, index) in options" :key="option.value">
-									<div
-										:data-index="index"
-										@click="select(option)"
-										class="flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-base text-gray-800 hover:bg-gray-100"
-										:class="[{ 'bg-gray-100': cursor === index }]"
-									>
-										<div class="flex flex-col">
-											<p class="font-medium mb-1">
-												{{ option.label }}
-											</p>
-
-											<p
-												class="flex items-center gap-2 text-xs text-gray-700 font-normal mb-0.5"
-											>
-												<span>{{ option.item?.provider }}</span>
-												<span>{{ option.item?.size }}</span>
-												<span>{{ option.item?.reasoning }}</span>
-											</p>
-											<p class="text-xs text-ink-gray-3">
-												{{ option.value }}
-											</p>
-										</div>
-										<Check
-											v-if="option.value === delta.llm"
-											class="size-3.5 shrink-0 p-0 text-gray-700"
-										/>
-									</div>
-								</template>
-							</div>
-						</template>
-					</Link>
+					<LlmSelect v-model="settings.llm" />
 				</SettingsItem>
 
 				<hr class="border-gray-200" />
@@ -86,15 +40,7 @@
 					label="Tool Permissions"
 					:description="toolPermissionsDescription"
 				>
-					<Select
-						doctype="Otto Chat"
-						fieldname="tool_permissions"
-						placeholder="Select option"
-						v-model="delta.tool_permissions"
-						size="xs"
-						variant="ghost"
-					>
-					</Select>
+					<ToolPermissionsSelect v-model="settings.tool_permissions" />
 				</SettingsItem>
 
 				<SettingsItem
@@ -102,20 +48,14 @@
 					label="Reasoning Effort"
 					:description="reasoningEffortDescription"
 				>
-					<Select
-						doctype="Otto Chat"
-						fieldname="reasoning_effort"
-						placeholder="Select effort"
-						v-model="delta.reasoning_effort"
-						size="xs"
-						variant="ghost"
+					<ReasoningEffortSelect
+						v-model="settings.reasoning_effort"
 						:disabled="!canReason"
-					>
-					</Select>
+					/>
 				</SettingsItem>
 
 				<SettingsItem :icon="Smile" label="YOLO Mode">
-					<Switch v-model="yoloMode" />
+					<Switch :modelValue="yoloMode" @change="toggleYoloMode" />
 				</SettingsItem>
 			</div>
 
@@ -124,7 +64,7 @@
 					<Textarea
 						placeholder="Enter custom instructions for this assistant"
 						class="resize-none"
-						v-model="delta.user_directives"
+						v-model="settings.user_directives"
 						:disabled="!assistant?.supports_user_directives"
 						:rows="8"
 					/>
@@ -161,8 +101,7 @@
 				>
 					{{ pane == "config" ? "Customize Prompt" : "Customize Config" }}
 				</button>
-				<Button variant="outline" size="md" @click="reset" autofocus>Reset</Button>
-				<Button variant="solid" size="md" @click="save" autofocus>Save</Button>
+				<Button variant="outline" size="md" @click="reset">Reset</Button>
 			</template>
 		</DialogContent>
 	</Dialog>
@@ -174,28 +113,20 @@ import { assistants, models } from "@/common";
 import Button from "@/components/fui/Button/Button.vue";
 import { Switch } from "@/components/fui/Switch";
 import Textarea from "@/components/fui/Textarea/Textarea.vue";
-import type { ComboboxOption } from "@/components/ui/combobox/types";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import DialogDescription from "@/components/ui/dialog/DialogDescription.vue";
 import DialogTitle from "@/components/ui/dialog/DialogTitle.vue";
-import Link from "@/components/ui/Link/Link.vue";
-import Select from "@/components/ui/Select/Select.vue";
 import TextLoadingIndicator from "@/components/ui/TextLoadingIndicator.vue";
+import TextTooltip from "@/components/ui/tooltip/TextTooltip.vue";
 import { modelName } from "@/components/utils";
-import {
-	AlertTriangle,
-	Check,
-	Lightbulb,
-	Settings,
-	Smile,
-	Sparkle,
-	Wrench,
-} from "lucide-vue-next";
-import { computed, reactive, ref, watch, watchEffect } from "vue";
+import { AlertTriangle, Lightbulb, Settings, Smile, Sparkle, Wrench } from "lucide-vue-next";
+import { computed, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 import { save_settings } from "../utils";
+import LlmSelect from "./LlmSelect.vue";
+import ReasoningEffortSelect from "./ReasoningEffortSelect.vue";
 import SettingsItem from "./SettingsItem.vue";
-import TextTooltip from "@/components/ui/tooltip/TextTooltip.vue";
+import ToolPermissionsSelect from "./ToolPermissionsSelect.vue";
 
 const customInstructionTips: Record<string, string> = {
 	Direct: "Be specific and to the point.",
@@ -205,23 +136,10 @@ const customInstructionTips: Record<string, string> = {
 };
 
 const pane = ref<"config" | "prompt">("config");
-const yoloMode = ref(false);
 const open = defineModel<boolean>({ required: true });
-const props = defineProps<{
-	chatId?: string;
-	assistant: string;
-	isNew: boolean;
-	settings: ChatSettings | undefined;
-}>();
+const props = defineProps<{ assistant: string }>();
+const settings = defineModel<ChatSettings>("settings", { required: true });
 
-const delta = reactive<ChatSettings>({
-	tool_permissions: null,
-	user_directives: null,
-	reasoning_effort: null,
-	llm: null,
-});
-
-const emit = defineEmits<{ (e: "save", settings: ChatSettings): void }>();
 const defaults = computed(() => {
 	const ast = assistants.value[props.assistant];
 
@@ -239,44 +157,24 @@ function reset() {
 		return;
 	}
 
-	delta.tool_permissions = "Default";
-	delta.reasoning_effort = null;
-	delta.llm = null;
-	delta.user_directives = "";
-	emit("save", delta);
-}
-
-function save() {
-	if (!isDirty.value) {
-		toast.info("No changes to save");
-		return;
-	}
-
-	emit("save", delta);
-	open.value = false;
+	settings.value.tool_permissions = "Default";
+	settings.value.reasoning_effort = null;
+	settings.value.llm = null;
+	settings.value.user_directives = "";
 }
 
 const isDefault = computed(() => {
 	return (
-		(delta.tool_permissions === null || delta.tool_permissions === "Default") &&
-		(delta.user_directives === null || delta.user_directives === "") &&
-		delta.reasoning_effort === null &&
-		delta.llm === null
-	);
-});
-
-const isDirty = computed(() => {
-	return (
-		(delta.tool_permissions ?? "Default") !==
-			(props.settings?.tool_permissions ?? "Default") ||
-		delta.reasoning_effort !== props.settings?.reasoning_effort ||
-		delta.llm !== props.settings?.llm ||
-		(delta.user_directives ?? "") !== (props.settings?.user_directives ?? "")
+		(settings.value.tool_permissions === null ||
+			settings.value.tool_permissions === "Default") &&
+		(settings.value.user_directives === null || settings.value.user_directives === "") &&
+		settings.value.reasoning_effort === null &&
+		settings.value.llm === null
 	);
 });
 
 const toolPermissionsDescription = computed(() => {
-	switch (delta.tool_permissions) {
+	switch (settings.value.tool_permissions) {
 		case "Allow All":
 			return "All tools will run without user permission";
 		case "Allow Readonly":
@@ -296,11 +194,11 @@ const reasoningEffortDescription = computed(() => {
 		return "Selected model does not support reasoning";
 	}
 
-	switch (delta.reasoning_effort) {
+	switch (settings.value.reasoning_effort) {
 		case "Low":
 		case "Medium":
 		case "High":
-			return `Assistant will use ${delta.reasoning_effort} reasoning effort`;
+			return `Assistant will use ${settings.value.reasoning_effort} reasoning effort`;
 		case "None":
 			return "Assistant will not use reasoning";
 		default:
@@ -311,10 +209,10 @@ const reasoningEffortDescription = computed(() => {
 });
 
 const modelDescription = computed(() => {
-	if (!delta.llm && !defaults.value.llm) return "Assistant will use the default model";
-	if (!delta.llm && defaults.value.llm)
+	if (!settings.value.llm && !defaults.value.llm) return "Assistant will use the default model";
+	if (!settings.value.llm && defaults.value.llm)
 		return `Assistant will use the default model (${modelName(defaults.value.llm)})`;
-	return `Assistant will use ${modelName(delta.llm!)}`;
+	return `Assistant will use ${modelName(settings.value.llm!)}`;
 });
 
 const assistant = computed(() => {
@@ -322,34 +220,14 @@ const assistant = computed(() => {
 });
 
 const canReason = computed(() => {
-	return models.value[delta.llm ?? defaults.value.llm ?? ""]?.is_reasoning ?? true;
+	return models.value[settings.value.llm ?? defaults.value.llm ?? ""]?.is_reasoning ?? true;
 });
 
-watch(yoloMode, (newVal) => {
-	delta.tool_permissions = newVal ? "Allow All" : null;
-	if (canReason.value) {
-		delta.reasoning_effort = newVal ? "High" : null;
-	}
-});
-
-watch(
-	() => [delta.tool_permissions, delta.reasoning_effort],
-	([toolPermissions, reasoningEffort]) => {
-		if (canReason.value && toolPermissions === "Allow All" && reasoningEffort === "High") {
-			yoloMode.value = true;
-		} else if (!canReason.value && toolPermissions === "Allow All") {
-			yoloMode.value = true;
-		} else {
-			yoloMode.value = false;
-		}
-	}
-);
-
-watchEffect(() => {
-	delta.tool_permissions = props.settings?.tool_permissions ?? "Default";
-	delta.reasoning_effort = props.settings?.reasoning_effort ?? null;
-	delta.llm = props.settings?.llm ?? null;
-	delta.user_directives = props.settings?.user_directives ?? "";
+const yoloMode = computed(() => {
+	return (
+		settings.value.tool_permissions === "Allow All" &&
+		settings.value.reasoning_effort === "High"
+	);
 });
 
 watch(open, (newval, oldval) => {
@@ -357,25 +235,18 @@ watch(open, (newval, oldval) => {
 	if (newval === true && oldval === false) return;
 	setTimeout(() => {
 		pane.value = "config";
-		delta.tool_permissions = props.settings?.tool_permissions ?? "Default";
-		delta.reasoning_effort = props.settings?.reasoning_effort ?? null;
-		delta.llm = props.settings?.llm ?? null;
-		delta.user_directives = props.settings?.user_directives ?? null;
 	}, 100);
 });
 
-function llmOptionsTransform(option: ComboboxOption) {
-	const item = { ...option.item };
-	item.reasoning = option.item?.is_reasoning ? "Reasoning" : "";
-	return {
-		label: modelName(option.value),
-		value: option.value,
-		item,
-	};
+function isTipSet(tip: string) {
+	return settings.value.user_directives?.includes(customInstructionTips[tip]);
 }
 
-function isTipSet(tip: string) {
-	return delta.user_directives?.includes(customInstructionTips[tip]);
+function toggleYoloMode(checked: boolean) {
+	settings.value.tool_permissions = checked ? "Allow All" : "Default";
+	if (canReason.value) {
+		settings.value.reasoning_effort = checked ? "High" : null;
+	}
 }
 
 function tipClass(tip: string) {
@@ -391,10 +262,13 @@ function toggleTip(tip: string) {
 	if (!assistant?.value?.supports_user_directives) return;
 
 	if (isTipSet(tip)) {
-		delta.user_directives =
-			delta.user_directives?.replace(customInstructionTips[tip], "").trim() ?? null;
+		settings.value.user_directives =
+			settings.value.user_directives?.replace(customInstructionTips[tip], "").trim() ?? null;
 	} else {
-		delta.user_directives = [delta.user_directives, customInstructionTips[tip]]
+		settings.value.user_directives = [
+			settings.value.user_directives,
+			customInstructionTips[tip],
+		]
 			.join(" ")
 			.trim();
 	}

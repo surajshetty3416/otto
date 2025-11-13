@@ -1,48 +1,86 @@
 <template>
 	<div v-if="anyCustom" class="text-gray-400 font-bold">·</div>
-	<div v-if="customLLM" class="indicator">
-		<Sparkle class="indicator-icon" stroke-width="1" />
-		{{ modelName(details?.llm) }}
-	</div>
-	<div v-if="customReasoningEffort" class="indicator">
-		<Lightbulb class="indicator-icon" stroke-width="1" />
-		Reasoning {{ details?.reasoning_effort }}
-	</div>
-	<div v-if="customToolPermissions" class="indicator">
-		<Wrench class="indicator-icon" stroke-width="1" />
-		{{ props.settings.tool_permissions }}
-	</div>
-	<div v-if="customUserDirectives" class="indicator">
-		<Pencil class="indicator-icon" stroke-width="1" />
-		Custom Instruction
-	</div>
+
+	<TextTooltip v-if="customLLM" :content="`Custom model: ${modelName(settings.llm!)}`">
+		<LlmSelect v-model="settings.llm">
+			<template #trigger>
+				<button class="indicator">
+					<Sparkle class="indicator-icon" stroke-width="1" />
+					{{ modelName(settings.llm!) }}
+				</button>
+			</template>
+		</LlmSelect>
+	</TextTooltip>
+
+	<TextTooltip
+		v-if="customReasoningEffort"
+		:content="`Custom reasoning effort: ${settings.reasoning_effort}`"
+	>
+		<ReasoningEffortSelect v-model="settings.reasoning_effort">
+			<template #trigger>
+				<button class="indicator">
+					<Lightbulb class="indicator-icon" stroke-width="1" />
+					Reasoning {{ settings.reasoning_effort }}
+				</button>
+			</template>
+		</ReasoningEffortSelect>
+	</TextTooltip>
+
+	<TextTooltip
+		v-if="customToolPermissions"
+		:content="`Custom tool permissions: ${settings.tool_permissions}`"
+	>
+		<ToolPermissionsSelect v-model="settings.tool_permissions">
+			<template #trigger>
+				<button class="indicator">
+					<Wrench class="indicator-icon" stroke-width="1" />
+					{{ settings.tool_permissions }}
+				</button>
+			</template>
+		</ToolPermissionsSelect>
+	</TextTooltip>
+
+	<TextTooltip v-if="customUserDirectives" content="Custom instructions are set for this chat">
+		<button class="indicator">
+			<Pencil class="indicator-icon" stroke-width="1" />
+			Custom Instruction
+		</button>
+	</TextTooltip>
+	<TextLoadingIndicator v-if="save_settings.loading" text="Saving" />
 </template>
 <script setup lang="ts">
 import type { ChatSettings } from "@/client/generated.types";
 import { assistants } from "@/common";
+import TextLoadingIndicator from "@/components/ui/TextLoadingIndicator.vue";
+import TextTooltip from "@/components/ui/tooltip/TextTooltip.vue";
 import { modelName } from "@/components/utils";
 import { Lightbulb, Pencil, Sparkle, Wrench } from "lucide-vue-next";
 import { computed } from "vue";
+import LlmSelect from "./ChatSettings/LlmSelect.vue";
+import ReasoningEffortSelect from "./ChatSettings/ReasoningEffortSelect.vue";
+import ToolPermissionsSelect from "./ChatSettings/ToolPermissionsSelect.vue";
+import { save_settings } from "./utils";
 
-const props = defineProps<{ settings: ChatSettings; assistant: string }>();
+const props = defineProps<{ assistant: string }>();
+const settings = defineModel<ChatSettings>({ required: true });
 const details = computed(() => assistants.value[props.assistant]);
 
 const customLLM = computed(() => {
-	if (!props.settings.llm) return false;
-	return props.settings.llm !== details.value?.llm;
+	if (!settings.value.llm) return false;
+	return settings.value.llm !== details.value?.llm;
 });
 
 const customReasoningEffort = computed(() => {
-	if (!props.settings.reasoning_effort) return false;
-	return props.settings.reasoning_effort !== details.value?.reasoning_effort;
+	if (!settings.value.reasoning_effort) return false;
+	return settings.value.reasoning_effort !== details.value?.reasoning_effort;
 });
 
 const customUserDirectives = computed(() => {
-	return !!props.settings.user_directives;
+	return !!settings.value.user_directives;
 });
 
 const customToolPermissions = computed(() => {
-	return !(props.settings.tool_permissions === "Default" || !props.settings.tool_permissions);
+	return !(settings.value.tool_permissions === "Default" || !settings.value.tool_permissions);
 });
 
 const anyCustom = computed(() => {
