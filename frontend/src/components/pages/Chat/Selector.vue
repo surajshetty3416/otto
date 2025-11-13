@@ -22,7 +22,7 @@
 						{{ props.settings.llm ? "*" : "" }}
 					</p>
 					<p
-						class="flex items-center gap-1 text-xs text-gray-700"
+						class="flex items-center gap-1 text-xs text-gray-700 mb-0.5"
 						v-if="details?.reasoning_effort !== 'None'"
 					>
 						<Lightbulb class="size-3 shrink-0 text-gray-700" stroke-width="1" />

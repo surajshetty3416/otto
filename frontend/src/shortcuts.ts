@@ -6,15 +6,17 @@ type Callback = (e: KeyboardEvent) => void;
 type Shortcuts = Record<Action, string[]>;
 
 const DEFAULT_KEYBINDS = {
-  "new-chat": [isMacOS ? "meta+shift+o" : "ctrl+shift+o"],
-  "delete-chat": [isMacOS ? "meta+backspace" : "ctrl+backspace"],
+  "new-chat": [isMacOS ? "meta+shift+keyo" : "control+shift+keyo"],
+  "delete-chat": [isMacOS ? "meta+backspace" : "control+backspace"],
   "close-dialog": ["escape"],
   "accept-all-requests": ["alt+enter"],
   "deny-all-requests": ["alt+backspace"],
-  "toggle-sidebar": [isMacOS ? "meta+b" : "ctrl+b"],
+  "toggle-sidebar": [isMacOS ? "meta+keyb" : "control+keyb"],
   "cursor-up": ["arrowup"],
   "cursor-down": ["arrowdown"],
   "select-item": ["enter"],
+  "cycle-tool-permissions": ["control+shift+keyt"],
+  "cycle-reasoning-effort": ["control+shift+keyr"],
 };
 
 function getKeybinds(): Shortcuts {
@@ -50,7 +52,7 @@ class Manager {
   }
 
   private keydown(e: KeyboardEvent) {
-    this.current.add(e.key.toLowerCase());
+    this.current.add(getKey(e.code));
     const key = getBind(this.current);
     for (const action of this.actions.get(key) ?? []) {
       for (const callback of this.callbacks.get(action) ?? []) {
@@ -60,14 +62,17 @@ class Manager {
   }
 
   private keyup(e: KeyboardEvent) {
-    this.current.delete(e.key.toLowerCase());
+    const key = getKey(e.code);
+    this.current.delete(key);
     /*
      * there is a weird bug on macos where keyup is not fired for a key if it's
      * meta is held down, and so the the current does not get cleared this words
      * on the assumption that no one is holding down the same binds for more
      * then 250ms.
      */
+
     this.last = getBind(this.current);
+    if (!isMacOS || key !== "meta") return;
     setTimeout(this.antilinger.bind(this), 250);
   }
 
@@ -99,6 +104,10 @@ class Manager {
     const callbacks = this.callbacks.get(action);
     this.callbacks.set(action, callbacks?.filter((c) => c !== callback) ?? []);
   }
+}
+
+function getKey(code: string) {
+  return code.toLowerCase().replace("left", "").replace("right", "");
 }
 
 export function getBind(current: Set<string>) {

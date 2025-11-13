@@ -81,8 +81,11 @@ import {
 	type ToolConfig,
 } from "@/client/generated.types";
 import { logRealtime } from "@/client/utils";
+import { assistants, models } from "@/common";
 import TextLoadingIndicator from "@/components/ui/TextLoadingIndicator.vue";
+import { modelName } from "@/components/utils";
 import router from "@/router";
+import shortcuts from "@/shortcuts";
 import socket from "@/socket";
 import { assert, isEqual } from "@/utils";
 import { useDebounceFn } from "@vueuse/core";
@@ -97,10 +100,13 @@ import OverrideIndicators from "./OverrideIndicators.vue";
 import Selector from "./Selector.vue";
 import type { StreamContext } from "./types";
 import {
+	cycleField as cycleFieldvalue,
 	getUserSessionItem,
 	handleContentChunk,
 	handleItem,
 	handleToolUseUpdate,
+	isReasoningEffort,
+	isToolPermission,
 	pendingRequestsKey,
 	save_settings,
 	streamContextKey,
@@ -366,7 +372,7 @@ const saveSettings = useDebounceFn(async () => {
 	console.log("saving settings");
 	const _update = await save_settings.run({ chat_id: props.chatId, settings }, false);
 	updateSettings(_update);
-}, 300);
+}, 500);
 
 watch(() => settings, saveSettings, { deep: true });
 
@@ -403,6 +409,48 @@ watch(
 	},
 	{ immediate: true }
 );
+
+async function handleCycleToolPermissions() {
+	if (router.currentRoute.value.name !== "Chat") return;
+
+	const current = settings.tool_permissions ?? "Default";
+	const newval = await cycleFieldvalue(current, "tool_permissions");
+	if (!isToolPermission(newval)) return;
+
+	toast.info("Changing tool permissions to " + (newval ?? "Default"));
+	settings.tool_permissions = newval;
+}
+
+async function handleCycleReasoningEffort() {
+	if (router.currentRoute.value.name !== "Chat") return;
+
+	const ast = assistants.value[assistant.value];
+	const llm = models.value[ast.llm];
+	if (!llm.is_reasoning) {
+		toast.info(`${modelName(llm)} does not support reasoning`);
+		return;
+	}
+
+	const default_effort = ast.reasoning_effort;
+	const current = settings.reasoning_effort ?? default_effort;
+	let newval = await cycleFieldvalue(current, "reasoning_effort");
+	if (!isReasoningEffort(newval)) return;
+
+	if (newval === default_effort) newval = null;
+	toast.info("Changing reasoning effort to " + (newval ?? `Default (${default_effort})`));
+	settings.reasoning_effort = newval;
+}
+
+onMounted(() => {
+	console.log("mounted");
+	shortcuts.on("cycle-tool-permissions", handleCycleToolPermissions);
+	shortcuts.on("cycle-reasoning-effort", handleCycleReasoningEffort);
+});
+
+onUnmounted(() => {
+	shortcuts.off("cycle-tool-permissions", handleCycleToolPermissions);
+	shortcuts.off("cycle-reasoning-effort", handleCycleReasoningEffort);
+});
 </script>
 <style scoped>
 .container-ch {

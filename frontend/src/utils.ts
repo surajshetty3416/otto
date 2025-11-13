@@ -287,3 +287,8 @@ export function smartMatch(text: string, search: string): boolean {
 
   return text.includes(search);
 }
+
+export function cycle<T extends any>(value: T, options: T[]): T {
+  const index = options.indexOf(value);
+  return options[(index + 1) % options.length];
+}

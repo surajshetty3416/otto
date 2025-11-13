@@ -1,4 +1,4 @@
-import { api } from "@/client";
+import { api, getFieldMeta } from "@/client";
 import type {
   Assistant,
   Content,
@@ -12,7 +12,7 @@ import type {
   ToolUseUpdate,
 } from "@/client/generated.types";
 import { models } from "@/common";
-import { assert, isEqual } from "@/utils";
+import { assert, cycle, isEqual } from "@/utils";
 import { Bot, Lightbulb, Zap } from "lucide-vue-next";
 import type { InjectionKey, Ref } from "vue";
 import type { ChunkContent, StreamContext } from "./types";
@@ -349,4 +349,37 @@ export function getAssistantIcon(assistant: Assistant) {
   }
 
   return Bot;
+}
+
+export async function cycleField(current: string | null, fieldname: string) {
+  const f = await getFieldMeta("Otto Chat", fieldname);
+  const options: (string | null)[] = f.options!.split("\n");
+  const next = cycle(current, options);
+  console.log(current, options, next);
+  return next;
+}
+
+export function isToolPermission(
+  permission: unknown
+): permission is
+  | "Default"
+  | "Allow All"
+  | "Allow Readonly"
+  | "Ask For All"
+  | "Ask For Non Readonly" {
+  if (typeof permission !== "string") return false;
+  return [
+    "Default",
+    "Allow All",
+    "Allow Readonly",
+    "Ask For All",
+    "Ask For Non Readonly",
+  ].includes(permission);
+}
+
+export function isReasoningEffort(
+  effort: unknown
+): effort is "None" | "Low" | "Medium" | "High" {
+  if (typeof effort !== "string") return false;
+  return ["None", "Low", "Medium", "High"].includes(effort);
 }

@@ -11,12 +11,12 @@
 	>
 		<slot />
 		<template #content>
-			<p class="px-2 py-1 text-gray-700 text-sm">{{ content }}</p>
-			<kbd v-if="keybind" class="px-2 pb-1 pt-0.5 flex gap-1">
+			<p class="px-2 py-2 text-gray-800 text-sm">{{ content }}</p>
+			<kbd v-if="keybind" class="px-2 pb-1 pt-0.5 flex justify-end gap-1">
 				<span
 					v-for="key in keybind"
 					:key="key"
-					class="px-1 rounded-sm bg-gray-200 text-gray-700 text-sm"
+					class="px-1 rounded-sm bg-gray-200 text-gray-700 text-sm mt-1"
 					>{{ key }}</span
 				>
 			</kbd>
@@ -62,18 +62,19 @@ const keybind = computed(() => {
 	const list = [];
 	for (const key of keys) {
 		if (key.length === 1) list.push(key.toUpperCase());
+		if (key.startsWith("key")) list.push(key.slice(3).toUpperCase());
 		else if (isMacOS)
 			list.push(
 				key
 					.replace("meta", "⌘")
-					.replace("ctrl", "⌃")
+					.replace("control", "⌃")
 					.replace("alt", "⌥")
 					.replace("backspace", "delete")
 			);
 		else
 			list.push(
 				key
-					.replace("ctrl", "Ctrl")
+					.replace("control", "Ctrl")
 					.replace("shift", "Shift")
 					.replace("alt", "Alt")
 					.replace("win", "Win")

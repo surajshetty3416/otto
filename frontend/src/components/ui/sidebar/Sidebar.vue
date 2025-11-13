@@ -15,12 +15,9 @@
 			<TextTooltip
 				content="Toggle sidebar"
 				:keybinds="keybinds['toggle-sidebar']"
-				:delay="300"
+				:delay="500"
 			>
-				<button
-					@click="toggleCollapse"
-					class="flex-shrink-0 bg-transparent z-0"
-				>
+				<button @click="toggleCollapse" class="flex-shrink-0 bg-transparent z-0">
 					<ArrowLeftToLine
 						class="w-4 h-4 text-gray-600 transition-all duration-150"
 						:style="{ opacity: textOpacity }"

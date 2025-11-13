@@ -12,17 +12,18 @@
 
 		<!-- Tooltip content -->
 		<template #content>
-			<div class="flex flex-col gap-1 p-2">
+			<div class="flex flex-col p-2">
 				<div class="flex items-center gap-2" v-if="chat.assistant_">
-					<Bot class="w-3.5 h-3.5 text-gray-600" stroke-width="1.5" />
-					<p class="text-xs text-gray-700">{{ chat.assistant_.title }}</p>
+					<p class="text-sm font-medium mb-1 text-gray-900">
+						{{ chat.assistant_.title }}
+					</p>
 				</div>
-				<div class="flex items-center gap-2" v-if="chat.model">
-					<Sparkle class="w-3.5 h-3.5 text-gray-600" stroke-width="1.5" />
+				<div class="flex items-center gap-2 mb-0.5" v-if="chat.model">
+					<Sparkle class="tooltip-icon" stroke-width="1" />
 					<p class="text-xs text-gray-700">{{ modelName(chat.model) }}</p>
 				</div>
 				<div class="flex items-center gap-2">
-					<Clock class="w-3.5 h-3.5 text-gray-600" stroke-width="1.5" />
+					<Clock class="tooltip-icon" stroke-width="1" />
 					<p class="text-xs text-gray-700">{{ date(chat.modified) }}</p>
 				</div>
 			</div>
@@ -34,10 +35,10 @@
 import { date } from "@/components/format";
 import { modelName } from "@/components/utils";
 import router from "@/router";
-import { Bot, Clock, Sparkle } from "lucide-vue-next";
+import { Clock, Sparkle } from "lucide-vue-next";
+import { computed } from "vue";
 import Tooltip from "../tooltip/Tooltip.vue";
 import type { ChatListItem as ChatListItemType } from "./types";
-import { computed } from "vue";
 const props = defineProps<{ chat: ChatListItemType }>();
 
 function openChat(chatName: string) {
@@ -48,3 +49,9 @@ const isActive = computed(() => {
 	return router.currentRoute.value.path.startsWith(`/chat/${props.chat.name}`);
 });
 </script>
+
+<style scoped>
+.tooltip-icon {
+	@apply size-3 text-gray-700;
+}
+</style>
