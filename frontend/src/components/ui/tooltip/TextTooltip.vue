@@ -16,7 +16,7 @@
 				<span
 					v-for="key in keybind"
 					:key="key"
-					class="px-1 rounded-sm bg-gray-200 text-gray-700 border-b border-gray-400 text-sm"
+					class="px-1 rounded-sm bg-gray-200 text-gray-700 text-sm"
 					>{{ key }}</span
 				>
 			</kbd>

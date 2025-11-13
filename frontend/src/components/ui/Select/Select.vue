@@ -6,6 +6,9 @@
 		:loading="false"
 		:show-search="false"
 	>
+		<template #trigger>
+			<slot name="trigger"></slot>
+		</template>
 		<template v-slot="{ options, select, cursor }">
 			<slot :options="options" :select="select" :cursor="cursor"></slot>
 		</template>

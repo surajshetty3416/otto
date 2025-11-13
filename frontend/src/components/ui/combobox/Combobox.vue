@@ -1,21 +1,23 @@
 <template>
 	<Popover v-model:open="isOpen">
 		<PopoverTrigger as-child>
-			<Button :variant="variant" :size="size" :disabled="disabled">
-				<div class="flex items-center gap-2">
-					<span v-if="modelValue" :class="fontSizeClasses">
-						{{ label }}
-					</span>
-					<span
-						v-else="placeholder"
-						class="text-ink-gray-4 text-sm"
-						:class="fontSizeClasses"
-					>
-						{{ placeholder ?? "Select option" }}
-					</span>
-					<ChevronsUpDown class="size-3.5 text-ink-gray-4 p-0 shrink-0" />
-				</div>
-			</Button>
+			<slot name="trigger">
+				<Button :variant="variant" :size="size" :disabled="disabled">
+					<div class="flex items-center gap-2">
+						<span v-if="modelValue" :class="fontSizeClasses">
+							{{ label }}
+						</span>
+						<span
+							v-else="placeholder"
+							class="text-ink-gray-4 text-sm"
+							:class="fontSizeClasses"
+						>
+							{{ placeholder ?? "Select option" }}
+						</span>
+						<ChevronsUpDown class="size-3.5 text-ink-gray-4 p-0 shrink-0" />
+					</div>
+				</Button>
+			</slot>
 		</PopoverTrigger>
 		<PopoverContent class="w-fit p-0 rounded-lg">
 			<div class="flex flex-col">
