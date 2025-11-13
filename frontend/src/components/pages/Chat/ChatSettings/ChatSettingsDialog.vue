@@ -53,21 +53,19 @@
 										class="flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-base text-gray-800 hover:bg-gray-100"
 										:class="[{ 'bg-gray-100': cursor === index }]"
 									>
-										<div class="flex flex-col gap-1.5">
-											<p class="font-medium">
+										<div class="flex flex-col">
+											<p class="font-medium mb-1">
 												{{ option.label }}
 											</p>
 
 											<p
-												class="flex items-center gap-1 text-xs text-gray-700"
+												class="flex items-center gap-2 text-xs text-gray-700 font-normal mb-0.5"
 											>
-												<span class="">{{ option.item?.provider }}</span>
-												<span class="">{{ option.item?.size }}</span>
-												<span class="" v-if="option.item?.reasoning">{{
-													option.item?.reasoning
-												}}</span>
+												<span>{{ option.item?.provider }}</span>
+												<span>{{ option.item?.size }}</span>
+												<span>{{ option.item?.reasoning }}</span>
 											</p>
-											<p class="text-sm text-ink-gray-5">
+											<p class="text-xs text-ink-gray-3">
 												{{ option.value }}
 											</p>
 										</div>
@@ -236,7 +234,7 @@ const defaults = computed(() => {
 });
 
 function reset() {
-	if (isDefault.value && !isDirty.value) {
+	if (isDefault.value) {
 		toast.info("Settings already at default");
 		return;
 	}
@@ -260,12 +258,10 @@ function save() {
 
 const isDefault = computed(() => {
 	return (
-		delta.tool_permissions === null ||
-		(delta.tool_permissions === "Default" &&
-			delta.reasoning_effort === null &&
-			delta.llm === null &&
-			delta.user_directives === null) ||
-		delta.user_directives === ""
+		(delta.tool_permissions === null || delta.tool_permissions === "Default") &&
+		(delta.user_directives === null || delta.user_directives === "") &&
+		delta.reasoning_effort === null &&
+		delta.llm === null
 	);
 });
 

@@ -5,7 +5,7 @@
 
 		<!-- Body -->
 		<div
-			class="w-full h-screen overflow-y-scroll flex flex-col items-center pt16"
+			class="w-full h-screen overflow-y-scroll flex flex-col items-center"
 			ref="messagesContainer"
 		>
 			<!-- Messages -->
@@ -21,7 +21,7 @@
 			<Welcome v-if="showNew" class="mb-8" style="margin-top: 35vh" />
 
 			<!-- Input -->
-			<div class="w-full container-ch chat-input" :class="{ 'fixed bottom-8': !showNew }">
+			<div class="w-full container-ch chat-input" :class="{ 'fixed bottom-6': !showNew }">
 				<ChatIndicator
 					v-if="chatId"
 					:chatId="chatId"
@@ -37,7 +37,16 @@
 					@settings="openSettings = true"
 					v-model="query"
 				/>
-				<Selector class="mt-2" v-if="showNew" v-model="assistant" />
+				<div
+					class="flex flex-row items-center gap-2 mt-2 w-full justify-center flex-wrap"
+				>
+					<Selector :canChange="showNew" v-model="assistant" :settings="settings" />
+					<TextLoadingIndicator
+						v-if="load_chat.loading || save_settings.loading"
+						text="Loading settings"
+					/>
+					<OverrideIndicators v-else :settings="settings" :assistant="assistant" />
+				</div>
 				<ChatSettingsDialog
 					v-model="openSettings"
 					:chatId="chatId"
@@ -100,6 +109,8 @@ import {
 	updateStreamContext,
 } from "./utils";
 import Welcome from "./Welcome.vue";
+import OverrideIndicators from "./OverrideIndicators.vue";
+import TextLoadingIndicator from "@/components/ui/TextLoadingIndicator.vue";
 
 const assistant = ref<string>("5t44lus4lh");
 const received = new Set<string>(); // sanity check to avoid duplicates
@@ -296,6 +307,10 @@ function clear() {
 	streamContext.messages.length = 0;
 	streamContext.isStreamingResponse = false;
 	received.clear();
+	settings.llm = null;
+	settings.reasoning_effort = null;
+	settings.tool_permissions = null;
+	settings.user_directives = null;
 	Object.keys(pendingRequests).forEach((key) => delete pendingRequests[key]);
 
 	list_tools.reset();

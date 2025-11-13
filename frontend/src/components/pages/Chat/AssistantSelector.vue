@@ -1,11 +1,11 @@
 <template>
 	<Popover v-model:open="isOpen">
 		<PopoverTrigger
-			title="Select an assistant"
-			class="flex gap-1 items-center justify-center rounded-lg px-2 py-1"
+			class="flex gap-1 items-center justify-center rounded-lg px-2 py-1 border bg-white/85 backdrop-blur-lg shrink-0"
 			:class="{ 'ring-1 ring-gray-200': isOpen }"
+			:disabled="disabled"
 		>
-			<component :is="icon" class="w-3.5 h-3.5 shrink-0 text-gray-700" stroke-width="1.5" />
+			<component :is="icon" class="-ml-0.5 size-3 shrink-0 text-gray-700" stroke-width="1" />
 			<span class="text-nowrap text-sm text-gray-800">
 				{{ assistants[selected]?.title }}
 			</span>
@@ -53,7 +53,7 @@ const isOpen = ref(false);
 const showCustomize = ref(false);
 const selected = defineModel<string>({ required: true });
 const emit = defineEmits(["more", "customize"]);
-
+defineProps<{ disabled: boolean }>();
 function select(assistant: string) {
 	selected.value = assistant;
 	isOpen.value = false;
