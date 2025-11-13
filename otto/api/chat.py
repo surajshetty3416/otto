@@ -170,11 +170,23 @@ def list_models() -> list[ModelDetails]:
 
 @frappe.whitelist()
 def list_assistants() -> list[Assistant]:
-	return frappe.get_all(
+	_assistants = frappe.get_all(
 		"Otto Assistant",
-		fields=["name", "title", "llm", "reasoning_effort"],
+		fields=["name", "title", "llm", "reasoning_effort", "supports_user_directives"],
 		order_by="modified desc",
 	)
+	assistants: list[Assistant] = []
+	for ast in _assistants:
+		assistants.append(
+			Assistant(
+				name=ast.name,
+				title=ast.title,
+				llm=ast.llm,
+				reasoning_effort=ast.reasoning_effort,
+				supports_user_directives=bool(ast.supports_user_directives),
+			)
+		)
+	return assistants
 
 
 @frappe.whitelist()

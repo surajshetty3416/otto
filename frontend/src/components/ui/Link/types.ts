@@ -15,5 +15,6 @@ export interface LinkProps {
   doctype: keyof OttoDocTypes; // doctype of whose Link field should be fetched
   fieldname: string; // fieldname of the Link field in `doctype`
   fields?: string[]; // additional fields of the Link option to fetch for transforms
+  searchFields?:string[]; // by default only 
   transform?: (option: LinkOption) => LinkOption;
 }

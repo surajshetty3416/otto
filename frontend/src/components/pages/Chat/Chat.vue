@@ -115,7 +115,7 @@ const settings = reactive<ChatSettings>({
 });
 
 // Refs and reactives
-const openSettings = ref(true);
+const openSettings = ref(false);
 const _loading = ref(false); // true if request is being sent
 const query = ref("");
 const isStreaming = ref(false); // true if chat is streaming

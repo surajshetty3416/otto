@@ -1,9 +1,10 @@
 <template>
 	<Dialog :open="open" @update:open="open = $event">
-		<DialogContent>
+		<DialogContent class="h-[38vh]">
+			<!-- Dialog Header -->
 			<template #header>
-				<DialogTitle class="flex items-center gap-2 w-full">
-					<Settings class="w-4 h-4 text-gray-900" stroke-width="1.75" />
+				<DialogTitle class="flex w-full items-center gap-2">
+					<Settings class="h-4 w-4 text-gray-900" stroke-width="1.75" />
 					Chat Settings
 					<TextLoadingIndicator
 						v-if="save_settings.loading"
@@ -11,18 +12,69 @@
 						text="Saving"
 					/>
 
-					<p v-else-if="isDirty" class="text-xs text-gray-500 ml-auto mr-4">
+					<p v-else-if="isDirty" class="ml-auto mr-4 text-xs text-gray-500">
 						Unsaved Changes
 					</p>
 				</DialogTitle>
 			</template>
 
-			<DialogDescription>
+			<!-- Dialog Body -->
+			<DialogDescription class="mb-6">
 				Configure chat settings to override defaults set for
-				<span class="font-medium">{{ assistant?.title ?? "Assistant" }}</span
-				>.
+				<span class="font-medium"> {{ assistant?.title ?? "Assistant" }} </span>.
 			</DialogDescription>
-			<div class="flex flex-col gap-6">
+
+			<div v-if="pane === 'config'" class="flex flex-col gap-6">
+				<SettingsItem :icon="Sparkle" label="Model" :description="modelDescription">
+					<Link
+						doctype="Otto Chat"
+						fieldname="llm"
+						:fields="['provider', 'size', 'is_reasoning']"
+						size="sm"
+						v-model="delta.llm"
+						variant="ghost"
+						:transform="llmOptionsTransform"
+						placeholder="Select model"
+					>
+						<template v-slot="{ options, select, cursor }">
+							<div class="flex max-h-56 min-w-32 flex-col gap-2 overflow-y-auto p-1">
+								<template v-for="(option, index) in options" :key="option.value">
+									<div
+										:data-index="index"
+										@click="select(option)"
+										class="flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-base text-gray-800 hover:bg-gray-100"
+										:class="[{ 'bg-gray-100': cursor === index }]"
+									>
+										<div class="flex flex-col gap-1.5">
+											<p class="font-medium">
+												{{ option.label }}
+											</p>
+
+											<p
+												class="flex items-center gap-1 text-xs text-gray-700"
+											>
+												<span class="">{{ option.item?.provider }}</span>
+												<span class="">{{ option.item?.size }}</span>
+												<span class="" v-if="option.item?.reasoning">{{
+													option.item?.reasoning
+												}}</span>
+											</p>
+											<p class="text-sm text-ink-gray-5">
+												{{ option.value }}
+											</p>
+										</div>
+										<Check
+											v-if="option.value === delta.llm"
+											class="size-3.5 shrink-0 p-0 text-gray-700"
+										/>
+									</div>
+								</template>
+							</div>
+						</template>
+					</Link>
+				</SettingsItem>
+
+				<hr class="border-gray-200" />
 				<SettingsItem
 					:icon="Wrench"
 					label="Tool Permissions"
@@ -59,48 +111,50 @@
 				<SettingsItem :icon="Smile" label="YOLO Mode">
 					<Switch v-model="yoloMode" />
 				</SettingsItem>
-
-				<hr class="border-gray-200" />
-				<SettingsItem :icon="Sparkle" label="Model" :description="modelDescription">
-					<Link
-						doctype="Otto Chat"
-						fieldname="llm"
-						size="sm"
-						v-model="delta.llm"
-						variant="ghost"
-						:transform="({ value }) => ({ label: modelName(value), value })"
-						placeholder="Select model"
-					>
-						<!-- <template v-slot="{ options, select, cursor }">
-							<div class="max-h-40 overflow-y-auto">
-								<template v-for="(option, index) in options" :key="option.value">
-									<div
-										:data-index="index"
-										@click="select(option)"
-										class="px-2 py-2 text-sm text-ink-gray-8 hover:bg-surface-gray-2 cursor-pointer"
-										:class="{ 'bg-green-300': cursor === index }"
-									>
-										{{ option.label }}
-									</div>
-								</template>
-							</div>
-						</template> -->
-					</Link>
-				</SettingsItem>
 			</div>
 
-			<!-- 
-			TODO:
-			tomorrow:
-			- add settings for custom user directives (needs component)
-			- add settings for tool selection (different pane/tab)
-			- show custom settings (directives, reasoning, perms) below chat input (allow shortcut toggling)
-			- show selected assistant and llm in the header or somewhere
-			- move info, archive, and delete to a 3 dot menu
-			- add info (thumbs up and down) button under a chat turn
-			-->
+			<div v-else-if="pane === 'prompt'" class="flex flex-col gap-6">
+				<div>
+					<Textarea
+						placeholder="Enter custom instructions for this assistant"
+						class="resize-none"
+						v-model="delta.user_directives"
+						:disabled="!assistant?.supports_user_directives"
+						:rows="8"
+					/>
 
+					<div class="mt-1 flex items-center gap-1">
+						<template v-for="tip in Object.keys(customInstructionTips)" :key="tip">
+							<button
+								class="rounded-full border border-gray-200 px-1.5 py-0.5 text-sm hover:bg-gray-100"
+								:class="tipClass(tip)"
+								@click="toggleTip(tip)"
+							>
+								{{ tip }}
+							</button>
+						</template>
+					</div>
+				</div>
+				<p
+					v-if="!assistant?.supports_user_directives"
+					class="flex items-center gap-2 text-sm text-gray-500"
+				>
+					<span>
+						<AlertTriangle class="size-3.5 text-yellow-500" />
+					</span>
+					{{ assistant?.title || "This assistant" }} does not support custom
+					instructions.
+				</p>
+			</div>
+
+			<!-- Dialog Footer -->
 			<template #buttons>
+				<button
+					class="mr-auto p-0 text-sm text-gray-800 hover:text-gray-900"
+					@click="pane = pane === 'config' ? 'prompt' : 'config'"
+				>
+					{{ pane == "config" ? "Customize Prompt" : "Customize Config" }}
+				</button>
 				<Button variant="outline" size="md" @click="reset" autofocus>Reset</Button>
 				<Button variant="solid" size="md" @click="save" autofocus>Save</Button>
 			</template>
@@ -113,6 +167,8 @@ import type { ChatSettings } from "@/client/generated.types";
 import { assistants, models } from "@/common";
 import Button from "@/components/fui/Button/Button.vue";
 import { Switch } from "@/components/fui/Switch";
+import Textarea from "@/components/fui/Textarea/Textarea.vue";
+import type { ComboboxOption } from "@/components/ui/combobox/types";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import DialogDescription from "@/components/ui/dialog/DialogDescription.vue";
 import DialogTitle from "@/components/ui/dialog/DialogTitle.vue";
@@ -120,12 +176,28 @@ import Link from "@/components/ui/Link/Link.vue";
 import Select from "@/components/ui/Select/Select.vue";
 import TextLoadingIndicator from "@/components/ui/TextLoadingIndicator.vue";
 import { modelName } from "@/components/utils";
-import { Lightbulb, Settings, Smile, Sparkle, Wrench } from "lucide-vue-next";
-import { computed, reactive, ref, watch } from "vue";
+import {
+	AlertTriangle,
+	Check,
+	Lightbulb,
+	Settings,
+	Smile,
+	Sparkle,
+	Wrench,
+} from "lucide-vue-next";
+import { computed, reactive, ref, watch, watchEffect } from "vue";
 import { toast } from "vue-sonner";
 import { save_settings } from "../utils";
 import SettingsItem from "./SettingsItem.vue";
 
+const customInstructionTips: Record<string, string> = {
+	Direct: "Be specific and to the point.",
+	Concise: "Keep your responses short.",
+	Friendly: "Be friendly and engaging.",
+	Unhinged: "Be completely insane and unpredictable.",
+};
+
+const pane = ref<"config" | "prompt">("config");
 const yoloMode = ref(false);
 const open = defineModel<boolean>({ required: true });
 const props = defineProps<{
@@ -160,10 +232,11 @@ function reset() {
 		return;
 	}
 
-	delta.tool_permissions = null;
+	delta.tool_permissions = "Default";
 	delta.reasoning_effort = null;
 	delta.llm = null;
-	delta.user_directives = null;
+	delta.user_directives = "";
+	emit("save", delta);
 }
 
 function save() {
@@ -182,16 +255,18 @@ const isDefault = computed(() => {
 		(delta.tool_permissions === "Default" &&
 			delta.reasoning_effort === null &&
 			delta.llm === null &&
-			delta.user_directives === null)
+			delta.user_directives === null) ||
+		delta.user_directives === ""
 	);
 });
 
 const isDirty = computed(() => {
 	return (
-		delta.tool_permissions !== props.settings?.tool_permissions ||
+		(delta.tool_permissions ?? "Default") !==
+			(props.settings?.tool_permissions ?? "Default") ||
 		delta.reasoning_effort !== props.settings?.reasoning_effort ||
 		delta.llm !== props.settings?.llm ||
-		delta.user_directives !== props.settings?.user_directives
+		(delta.user_directives ?? "") !== (props.settings?.user_directives ?? "")
 	);
 });
 
@@ -224,16 +299,16 @@ const reasoningEffortDescription = computed(() => {
 		case "None":
 			return "Assistant will not use reasoning";
 		default:
-			return `Assistant will use default reasoning effort (${
+			return `Assistant will use the default reasoning effort (${
 				defaults.value.reasoning_effort ?? "Medium"
 			})`;
 	}
 });
 
 const modelDescription = computed(() => {
-	if (!delta.llm && !defaults.value.llm) return "Assistant will use default model";
+	if (!delta.llm && !defaults.value.llm) return "Assistant will use the default model";
 	if (!delta.llm && defaults.value.llm)
-		return `Assistant will use default model (${modelName(defaults.value.llm)})`;
+		return `Assistant will use the default model (${modelName(defaults.value.llm)})`;
 	return `Assistant will use ${modelName(delta.llm!)}`;
 });
 
@@ -264,4 +339,59 @@ watch(
 		}
 	}
 );
+
+watchEffect(() => {
+	delta.tool_permissions = props.settings?.tool_permissions ?? "Default";
+	delta.reasoning_effort = props.settings?.reasoning_effort ?? null;
+	delta.llm = props.settings?.llm ?? null;
+	delta.user_directives = props.settings?.user_directives ?? "";
+});
+
+watch(open, (newval, oldval) => {
+	// Reset values when dialog is closed
+	if (newval === true && oldval === false) return;
+	setTimeout(() => {
+		pane.value = "config";
+		delta.tool_permissions = props.settings?.tool_permissions ?? "Default";
+		delta.reasoning_effort = props.settings?.reasoning_effort ?? null;
+		delta.llm = props.settings?.llm ?? null;
+		delta.user_directives = props.settings?.user_directives ?? null;
+	}, 100);
+});
+
+function llmOptionsTransform(option: ComboboxOption) {
+	const item = { ...option.item };
+	item.reasoning = option.item?.is_reasoning ? "Reasoning" : "";
+	return {
+		label: modelName(option.value),
+		value: option.value,
+		item,
+	};
+}
+
+function isTipSet(tip: string) {
+	return delta.user_directives?.includes(customInstructionTips[tip]);
+}
+
+function tipClass(tip: string) {
+	const isSet = isTipSet(tip);
+	return [
+		isSet ? "text-gray-800" : "text-gray-700",
+		isSet ? "border-gray-300" : "border-gray-200",
+		isSet ? "bg-gray-200" : "bg-gray-50",
+	];
+}
+
+function toggleTip(tip: string) {
+	if (!assistant?.value?.supports_user_directives) return;
+
+	if (isTipSet(tip)) {
+		delta.user_directives =
+			delta.user_directives?.replace(customInstructionTips[tip], "").trim() ?? null;
+	} else {
+		delta.user_directives = [delta.user_directives, customInstructionTips[tip]]
+			.join(" ")
+			.trim();
+	}
+}
 </script>

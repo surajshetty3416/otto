@@ -63,15 +63,11 @@
 								/>
 							</div>
 						</template>
-
-						<div
-							v-if="options.length === 0"
-							class="px-2 py-1.5 text-sm text-ink-gray-4"
-						>
-							No results found
-						</div>
 					</div>
 				</slot>
+				<div v-if="options.length === 0" class="px-2 py-2 text-sm text-ink-gray-4">
+					No results found
+				</div>
 			</div>
 		</PopoverContent>
 	</Popover>

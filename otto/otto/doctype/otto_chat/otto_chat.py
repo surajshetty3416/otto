@@ -61,6 +61,14 @@ class OttoChat(Document):
 	_tool_configs_map: dict[str, ToolConfig] | None = None
 
 	@property
+	def assistant_(self) -> OttoAssistant:
+		from otto.otto.doctype.otto_assistant.otto_assistant import OttoAssistant
+
+		if not self._assistant:
+			self._assistant = otto.get(OttoAssistant, self.assistant)
+		return self._assistant
+
+	@property
 	def tool_configs(self) -> list[ToolConfig]:
 		"""Returns: dict[slug, otto_tool_name]"""
 		if self._tool_configs is not None:
@@ -411,22 +419,18 @@ class OttoChat(Document):
 	):
 		from otto.otto.doctype.otto_assistant.otto_assistant import OttoAssistant
 
-		if llm:
-			self.llm = llm
-			self.session_.set_model(llm)
+		self.llm = llm
+		self.session_.set_model(llm or self.assistant_.llm)
 
-		if reasoning_effort:
-			self.reasoning_effort = reasoning_effort
-			self.session_.set_reasoning_effort(reasoning_effort)
+		self.reasoning_effort = reasoning_effort
+		self.session_.set_reasoning_effort(reasoning_effort or self.assistant_.reasoning_effort)
 
-		if user_directives:
-			self.user_directives = user_directives
-			context = {"user_directives": user_directives}
-			instruction = otto.get(OttoAssistant, self.assistant).get_instruction(context)
-			self.session_.set_instruction(instruction)
+		self.user_directives = user_directives
+		context = {"user_directives": user_directives}
+		instruction = otto.get(OttoAssistant, self.assistant).get_instruction(context)
+		self.session_.set_instruction(instruction)
 
-		if tool_permissions:
-			self.tool_permissions = tool_permissions
+		self.tool_permissions = tool_permissions or "Default"
 
 		self.save()
 

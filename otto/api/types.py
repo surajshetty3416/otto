@@ -95,6 +95,7 @@ class Assistant(TypedDict):
 	title: str
 	llm: str
 	reasoning_effort: ReasoningEffort
+	supports_user_directives: bool
 
 
 class AssistantDetails(TypedDict):
