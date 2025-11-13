@@ -3,6 +3,7 @@
 		<!-- Loading Indicator-->
 		<div class="bg-white/75 backdrop-blur-lg rounded-full p-0.5">
 			<LoadingIndicator v-if="isLoading" class="h-3 w-3 text-gray-600 flex-shrink-0" />
+			<TextLoadingIndicator v-else-if="save_settings.loading" text="Saving" />
 		</div>
 
 		<!-- Labelled Indicator-->
@@ -84,7 +85,8 @@ import { assert } from "@/utils";
 import { Lightbulb, Wrench } from "lucide-vue-next";
 import { computed, inject, onMounted, onUnmounted } from "vue";
 import SmallButton from "./SmallButton.vue";
-import { streamContextKey, toolConfigKey } from "./utils";
+import { save_settings, streamContextKey, toolConfigKey } from "./utils";
+import TextLoadingIndicator from "@/components/ui/TextLoadingIndicator.vue";
 
 const props = defineProps<{
 	chatId: string;

@@ -18,7 +18,15 @@ import type { InjectionKey, Ref } from "vue";
 import type { ChunkContent, StreamContext } from "./types";
 
 export const save_settings = api.chat.save_settings(
-  { chat_id: "", settings: undefined },
+  {
+    chat_id: "",
+    settings: {
+      llm: null,
+      reasoning_effort: null,
+      tool_permissions: "Default",
+      user_directives: null,
+    },
+  },
   { auto: false }
 );
 

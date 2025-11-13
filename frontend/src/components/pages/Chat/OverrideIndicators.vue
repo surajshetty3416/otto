@@ -46,12 +46,10 @@
 			Custom Instruction
 		</button>
 	</TextTooltip>
-	<TextLoadingIndicator v-if="save_settings.loading" text="Saving" />
 </template>
 <script setup lang="ts">
 import type { ChatSettings } from "@/client/generated.types";
 import { assistants } from "@/common";
-import TextLoadingIndicator from "@/components/ui/TextLoadingIndicator.vue";
 import TextTooltip from "@/components/ui/tooltip/TextTooltip.vue";
 import { modelName } from "@/components/utils";
 import { Lightbulb, Pencil, Sparkle, Wrench } from "lucide-vue-next";
@@ -59,7 +57,6 @@ import { computed } from "vue";
 import LlmSelect from "./ChatSettings/LlmSelect.vue";
 import ReasoningEffortSelect from "./ChatSettings/ReasoningEffortSelect.vue";
 import ToolPermissionsSelect from "./ChatSettings/ToolPermissionsSelect.vue";
-import { save_settings } from "./utils";
 
 const props = defineProps<{ assistant: string }>();
 const settings = defineModel<ChatSettings>({ required: true });

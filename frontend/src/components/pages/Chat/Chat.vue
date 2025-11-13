@@ -81,9 +81,11 @@ import {
 	type ToolConfig,
 } from "@/client/generated.types";
 import { logRealtime } from "@/client/utils";
+import TextLoadingIndicator from "@/components/ui/TextLoadingIndicator.vue";
 import router from "@/router";
 import socket from "@/socket";
-import { assert } from "@/utils";
+import { assert, isEqual } from "@/utils";
+import { useDebounceFn } from "@vueuse/core";
 import { computed, nextTick, onMounted, onUnmounted, provide, reactive, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 import ChatHeader from "./ChatHeader.vue";
@@ -91,6 +93,7 @@ import ChatIndicator from "./ChatIndicator.vue";
 import ChatInput from "./ChatInput.vue";
 import ChatMessages from "./ChatMessages.vue";
 import ChatSettingsDialog from "./ChatSettings/ChatSettingsDialog.vue";
+import OverrideIndicators from "./OverrideIndicators.vue";
 import Selector from "./Selector.vue";
 import type { StreamContext } from "./types";
 import {
@@ -105,8 +108,6 @@ import {
 	updateStreamContext,
 } from "./utils";
 import Welcome from "./Welcome.vue";
-import OverrideIndicators from "./OverrideIndicators.vue";
-import TextLoadingIndicator from "@/components/ui/TextLoadingIndicator.vue";
 
 const assistant = ref<string>("5t44lus4lh");
 const received = new Set<string>(); // sanity check to avoid duplicates
@@ -114,11 +115,17 @@ const props = defineProps<{
 	chatId?: string;
 }>();
 
+const initial: ChatSettings = {
+	llm: null,
+	reasoning_effort: null,
+	tool_permissions: "Default",
+	user_directives: "",
+};
 const settings = reactive<ChatSettings>({
 	llm: null,
 	reasoning_effort: null,
-	tool_permissions: null,
-	user_directives: null,
+	tool_permissions: "Default",
+	user_directives: "",
 });
 
 // Refs and reactives
@@ -338,29 +345,30 @@ async function loadChat() {
 		messages.push(message);
 	}
 
-	settings.llm = chat.settings.llm;
-	settings.reasoning_effort = chat.settings.reasoning_effort;
-	settings.tool_permissions = chat.settings.tool_permissions;
-	settings.user_directives = chat.settings.user_directives;
+	updateSettings(chat.settings);
 	nextTick().then(() => scrollToBottom("smooth"));
 }
 
-async function updateSettings(update: ChatSettings) {
-	settings.llm = update.llm;
-	settings.reasoning_effort = update.reasoning_effort;
-	settings.tool_permissions = update.tool_permissions;
-	settings.user_directives = update.user_directives;
-	if (!props.chatId) return;
+function updateSettings(source: ChatSettings) {
+	initial.llm = source.llm;
+	initial.reasoning_effort = source.reasoning_effort;
+	initial.tool_permissions = source.tool_permissions ?? "Default";
+	initial.user_directives = source.user_directives ?? "";
 
-	const _update = await save_settings.run({ chat_id: props.chatId, settings }, false);
-	if (update.llm !== _update.llm) settings.llm = _update.llm;
-	if (update.reasoning_effort !== _update.reasoning_effort)
-		settings.reasoning_effort = _update.reasoning_effort;
-	if (update.tool_permissions !== _update.tool_permissions)
-		settings.tool_permissions = _update.tool_permissions;
-	if (update.user_directives !== _update.user_directives)
-		settings.user_directives = _update.user_directives;
+	settings.llm = initial.llm;
+	settings.reasoning_effort = initial.reasoning_effort;
+	settings.tool_permissions = initial.tool_permissions;
+	settings.user_directives = initial.user_directives;
 }
+
+const saveSettings = useDebounceFn(async () => {
+	if (!props.chatId || isEqual(initial, settings)) return;
+	console.log("saving settings");
+	const _update = await save_settings.run({ chat_id: props.chatId, settings }, false);
+	updateSettings(_update);
+}, 300);
+
+watch(() => settings, saveSettings, { deep: true });
 
 onMounted(async () => socket.on("otto.api.chat", handleRealtimeMessage));
 onUnmounted(() => socket.off("otto.api.chat", handleRealtimeMessage));
