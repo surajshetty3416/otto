@@ -14,6 +14,8 @@ from otto.lib.utils import get_tool_use
 if TYPE_CHECKING:
 	from otto.lib.types import ToolUseContent
 
+RequestStatus = Literal["Pending", "Granted", "Denied"]
+
 
 class OttoPermissionRequest(Document):
 	# begin: auto-generated types

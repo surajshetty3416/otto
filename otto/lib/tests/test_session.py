@@ -407,7 +407,7 @@ class TestSessions(UnitTestCase):
 		# Test with no reasoning effort
 		session = Session.new(model=TEST_MODEL)
 		self.created_sessions.append(session)
-		self.assertIsNone(session.reasoning_effort)
+		self.assertEqual(session.reasoning_effort, "None")
 
 		# Test with valid reasoning effort
 		session_with_effort = Session.new(

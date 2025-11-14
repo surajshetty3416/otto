@@ -36,6 +36,7 @@ class OttoAssistant(Document):
 
 		from otto.otto.doctype.otto_assistant_tool_ct.otto_assistant_tool_ct import OttoAssistantToolCT
 
+		description: DF.SmallText | None
 		get_context: DF.Code | None
 		get_context_import_path: DF.Data | None
 		instruction: DF.Code

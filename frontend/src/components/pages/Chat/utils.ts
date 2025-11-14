@@ -5,19 +5,18 @@ import type {
   ContentChunk,
   Meta,
   PendingRequest,
-  RealtimeChatMessage,
   SessionItem,
   ToolConfig,
   ToolUseContent,
   ToolUseUpdate,
 } from "@/client/generated.types";
 import { models } from "@/common";
+import { LocalStore } from "@/components/store";
 import { assert, cycle, isEqual } from "@/utils";
 import { Bot, Lightbulb, Zap } from "lucide-vue-next";
 import type { InjectionKey, Ref } from "vue";
-import type { ChunkContent, StreamContext } from "./types";
-import { LocalStore } from "@/components/store";
-import type { ChatState } from "./types";
+import type { ChatState, ChunkContent } from "./types";
+import type { StreamContext } from "./context";
 
 export const chatState = new LocalStore<ChatState>("chat-state");
 
@@ -26,17 +25,13 @@ export const save_settings = api.chat.save_settings(
     chat_id: "",
     settings: {
       llm: null,
-      reasoning_effort: null,
+      reasoning_effort: "Default",
       tool_permissions: "Default",
-      user_directives: null,
+      user_directives: "",
     },
   },
   { auto: false }
 );
-
-export const streamContextKey = Symbol(
-  "streamContext"
-) as InjectionKey<StreamContext>;
 
 export const sessionItemKey = Symbol(
   "sessionItem"
@@ -49,6 +44,10 @@ export const toolConfigKey = Symbol("toolConfig") as InjectionKey<
 export const pendingRequestsKey = Symbol("pendingRequests") as InjectionKey<
   Record<string, PendingRequest>
 >;
+
+export const streamContextKey = Symbol(
+  "streamContext"
+) as InjectionKey<StreamContext>;
 
 export function getUserSessionItem(query: string): SessionItem {
   return {
@@ -281,57 +280,6 @@ export function getToolUseContent(
     }
   }
   return null;
-}
-
-export function updateStreamContext(
-  message: RealtimeChatMessage,
-  streamContext: StreamContext
-) {
-  /**
-   * Stream context will maintain a contiguous stream of similar message chunks
-   * it's mainly used for indicators and to update various UI elements as stream
-   * changes.
-   */
-  if (message.type === "pong") return;
-
-  if (message.type === "chunk" && message.data.type === "system") {
-    switch (message.data.message) {
-      case "start":
-        streamContext.isStreamingResponse = true;
-        break;
-      case "end":
-        streamContext.isStreamingResponse = false;
-        break;
-    }
-    return;
-  }
-
-  if (streamContext.messages.at(0)?.type !== message.type) {
-    streamContext.messages.length = 0;
-  }
-
-  if (streamContext.messages.length === 0) {
-    streamContext.messages.push(message);
-    return;
-  }
-
-  if (message.type !== "chunk" || message.data.type === "system") return;
-  const last = streamContext.messages.at(-1)!;
-  assert(last.type === "chunk", "type check");
-
-  if (
-    last.data.type !== message.data.type ||
-    last.data.item_id !== message.data.item_id
-  ) {
-    streamContext.messages.length = 0;
-  }
-
-  streamContext.messages.push(message);
-
-  /**
-   * Update thinking and tool use content as stream changes
-   * Update chat indicator to show sensible messages as stream changes
-   */
 }
 
 function getItem(id: string, messages: SessionItem[]) {

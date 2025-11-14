@@ -45,7 +45,7 @@
 	</Header>
 </template>
 <script setup lang="ts">
-import { api } from "@/client";
+import { api, list_chats } from "@/client";
 import Button from "@/components/fui/Button/Button.vue";
 import Dialog from "@/components/ui/dialog/Dialog.vue";
 import DialogContent from "@/components/ui/dialog/DialogContent.vue";
@@ -58,7 +58,6 @@ import { Plus, Trash, TriangleAlert } from "lucide-vue-next";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 
 const delete_chat = api.chat.delete_chat({ chat_id: "" }, { auto: false });
-const list_chats = api.chat.list_chats();
 const openDelete = ref(false);
 
 async function showDelete(e?: KeyboardEvent | MouseEvent) {
@@ -69,9 +68,10 @@ async function showDelete(e?: KeyboardEvent | MouseEvent) {
 }
 
 async function deleteChat() {
+	openDelete.value = false;
+	newChat();
 	await delete_chat.run({ chat_id: props.currentChatId! }, false);
 	await list_chats.run(null, false);
-	newChat();
 }
 
 const selected = ref<string>("");

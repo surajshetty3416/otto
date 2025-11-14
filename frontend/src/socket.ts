@@ -1,5 +1,7 @@
 import { io } from "socket.io-client";
 import csc from "../../../../sites/common_site_config.json";
+import { logRealtime } from "./client/utils";
+import type { RealtimeLog } from "./client/generated.types";
 
 export function initSocket() {
   const host = window.location.hostname;
@@ -16,4 +18,11 @@ export function initSocket() {
   });
 }
 
-export default initSocket();
+const socket = initSocket();
+if (import.meta.env.DEV) {
+  socket.on("otto.log_realtime", (message: RealtimeLog) => {
+    logRealtime(message);
+  });
+}
+
+export default socket;

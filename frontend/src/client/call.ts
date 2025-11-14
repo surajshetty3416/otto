@@ -1,5 +1,5 @@
 import { isProxy, reactive, toRaw } from "vue";
-import { logError } from "../utils";
+import { logError } from "./utils";
 import { Store } from "./store";
 import type { CallAPIArgs, CallArgs, Config, ServerException } from "./types";
 import { hash } from "./utils";
@@ -313,7 +313,7 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
       await cachestore.set(key, { data, rfo: this._rfo }, ttl_ms);
       this._loaded_rfo = this._rfo;
     } catch (error) {
-      return logError(error);
+      return logError("Error saving to cache", error, { url: this.url });
     }
   }
 
@@ -323,7 +323,7 @@ export class Call<Args extends any = unknown, Return extends any = unknown> {
     try {
       cacheData = await cachestore.get(key);
     } catch (error) {
-      return logError(error);
+      return logError("Error loading from cache", error, { url: this.url });
     }
 
     if (

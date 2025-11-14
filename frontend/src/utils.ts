@@ -240,14 +240,6 @@ export function assert(condition: unknown, message: string): asserts condition {
   throw new Error(message);
 }
 
-export function logError(error: unknown) {
-  if (error instanceof Error) {
-    console.error(error.message);
-  } else {
-    console.error(error);
-  }
-}
-
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }

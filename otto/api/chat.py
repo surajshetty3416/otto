@@ -16,16 +16,19 @@ from otto.api.types import (
 	ChatSettings,
 	ListChatItem,
 	PendingRequest,
-	RealtimeChatMessage,
 	RealtimeChunk,
 	RealtimeError,
 	RealtimeItem,
 	RealtimePong,
 	RealtimeRequest,
 	RealtimeRequestAcknowledge,
+	RealtimeResumingChat,
 	RealtimeTitleUpdate,
+	RealtimeToolExecutionStart,
 	RealtimeToolExecutionUpdate,
+	RealtimeTurnEnd,
 )
+from otto.api.utils import inform_on_error, publish_activity
 
 if TYPE_CHECKING:
 	from otto.llm.types import ModelDetails
@@ -47,7 +50,7 @@ def ping(chat_id: str | None = None) -> None:
 	)
 
 	frappe.enqueue(
-		_publish,
+		publish_activity,
 		at_front=True,
 		message=message,
 	)
@@ -60,9 +63,9 @@ def new_chat(assistant: str, settings: ChatSettings | None = None) -> str:
 
 	settings = settings or ChatSettings(
 		llm=None,
-		reasoning_effort=None,
-		tool_permissions=None,
-		user_directives=None,
+		reasoning_effort="Default",
+		tool_permissions="Default",
+		user_directives="",
 	)
 
 	chat = OttoChat.new(
@@ -79,7 +82,16 @@ def new_chat(assistant: str, settings: ChatSettings | None = None) -> str:
 
 @frappe.whitelist()
 def send_query(chat_id: str, query: str) -> None:
-	logger.info({"message": "enqueueing-query", "chat_id": chat_id, "query": query, "timestamp": time.time()})
+	log_id = (frappe.generate_hash(length=10),)
+	logger.info(
+		{
+			"message": "enqueueing-query",
+			"chat_id": chat_id,
+			"query": query,
+			"log_id": log_id,
+			"timestamp": time.time(),
+		}
+	)
 
 	"""Continue a chat session with a query."""
 	frappe.enqueue(
@@ -90,6 +102,7 @@ def send_query(chat_id: str, query: str) -> None:
 		chat_id=chat_id,
 		query=query,
 		chat=None,
+		log_id=log_id,
 	)
 
 
@@ -106,7 +119,7 @@ def load_chat(chat_id: str) -> Chat:
 			llm=chat_doc.llm,
 			reasoning_effort=chat_doc.reasoning_effort,
 			tool_permissions=chat_doc.tool_permissions,
-			user_directives=chat_doc.user_directives,
+			user_directives=chat_doc.user_directives or "",
 		),
 		assistant=chat_doc.assistant,
 		messages=chat_doc.session_.get_items(),
@@ -147,7 +160,7 @@ def save_settings(chat_id: str, settings: ChatSettings) -> ChatSettings:
 		llm=chat_doc.llm,
 		reasoning_effort=chat_doc.reasoning_effort,
 		tool_permissions=chat_doc.tool_permissions,
-		user_directives=chat_doc.user_directives,
+		user_directives=chat_doc.user_directives or "",
 	)
 
 
@@ -275,8 +288,22 @@ def get_assistant_details(name: str) -> AssistantDetails:
 	)
 
 
-def _chat(chat_id: str, query: str | None = None, chat: OttoChat | None = None) -> None:
-	logger.info({"message": "processing-query", "chat_id": chat_id, "query": query, "timestamp": time.time()})
+@inform_on_error
+def _chat(
+	chat_id: str,
+	query: str | None = None,
+	chat: OttoChat | None = None,
+	log_id: str | None = None,
+) -> None:
+	logger.info(
+		{
+			"message": "processing-query",
+			"chat_id": chat_id,
+			"query": query,
+			"log_id": log_id,  # Used to track queue wait time
+			"timestamp": time.time(),
+		}
+	)
 	from otto.otto.doctype.otto_chat.otto_chat import OttoChat
 
 	if chat is None:
@@ -284,7 +311,7 @@ def _chat(chat_id: str, query: str | None = None, chat: OttoChat | None = None) 
 
 	_send_query(chat_id, chat, query)
 	_check_pending_requests(chat_id, chat)
-	_execute_tools(chat_id, chat)
+	_execute_tools(chat_id, chat, check_pending_requests=False)
 
 	if (not chat.title or chat.title.startswith("New Chat")) and len(chat.session_.get_items()) >= 3:
 		frappe.enqueue(
@@ -293,6 +320,7 @@ def _chat(chat_id: str, query: str | None = None, chat: OttoChat | None = None) 
 		)
 
 
+@inform_on_error
 def _autoset_title(chat_id: str) -> None:
 	from otto.otto.doctype.otto_chat.otto_chat import OttoChat
 
@@ -306,7 +334,7 @@ def _autoset_title(chat_id: str) -> None:
 		type="title-update",
 		data=chat.title,
 	)
-	_publish(message)
+	publish_activity(message)
 
 
 def _send_query(chat_id: str, chat: OttoChat, query: str | None) -> None:
@@ -315,10 +343,11 @@ def _send_query(chat_id: str, chat: OttoChat, query: str | None) -> None:
 		message = RealtimeError(
 			id=frappe.generate_hash(length=10),
 			data=reason,
+			traceback=None,
 			chat_id=chat_id,
 			type="error",
 		)
-		_publish(message)
+		publish_activity(message)
 		return
 
 	assert response is not None, "sanity check"
@@ -329,17 +358,17 @@ def _send_query(chat_id: str, chat: OttoChat, query: str | None) -> None:
 			type="chunk",
 			chat_id=chat_id,
 		)
-		_publish(message)
+		publish_activity(message)
 
 	assert response.item is not None, "sanity check"
-	_publish(
+	frappe.db.commit()
+	publish_activity(
 		RealtimeItem(
 			id=frappe.generate_hash(length=10),
 			data=response.item,
 			chat_id=chat_id,
 			type="item",
 		),
-		after_commit=True,
 	)
 
 
@@ -371,8 +400,8 @@ def acknowledge_request(
 		type="request-acknowledge",
 		data=[opr.tool_use_id],
 	)
-	_publish(message, after_commit=True)
-	_enqueue_execution(opr.chat)
+	publish_activity(message, after_commit=True)
+	_enqueue_tool_execution(opr.chat)
 
 
 @frappe.whitelist()
@@ -395,11 +424,11 @@ def acknowledge_all_requests(
 		type="request-acknowledge",
 		data=tool_use_ids,
 	)
-	_publish(message, after_commit=True)
-	_enqueue_execution(chat_id)
+	publish_activity(message, after_commit=True)
+	_enqueue_tool_execution(chat_id)
 
 
-def _enqueue_execution(chat_id: str) -> None:
+def _enqueue_tool_execution(chat_id: str) -> None:
 	frappe.enqueue(
 		_execute_tools,
 		timeout=300,
@@ -407,6 +436,7 @@ def _enqueue_execution(chat_id: str) -> None:
 		queue="short",
 		chat_id=chat_id,
 		chat=None,
+		check_pending_requests=True,
 	)
 
 
@@ -422,6 +452,10 @@ def delete_chat(chat_id: str) -> None:
 
 def _check_pending_requests(chat_id: str, chat: OttoChat) -> list[OttoPermissionRequest]:
 	pending_requests = chat.get_pending_requests()
+	otto.log_realtime(f"Found {len(pending_requests)} pending requests", traceback=True)
+	if len(pending_requests):
+		frappe.db.commit()
+
 	for opr in pending_requests:
 		message = RealtimeRequest(
 			id=frappe.generate_hash(length=10),
@@ -429,7 +463,7 @@ def _check_pending_requests(chat_id: str, chat: OttoChat) -> list[OttoPermission
 			chat_id=chat_id,
 			type="request",
 		)
-		_publish(message, after_commit=True)
+		publish_activity(message)
 	return pending_requests
 
 
@@ -445,25 +479,57 @@ def _get_req_from_opr(opr: OttoPermissionRequest) -> PendingRequest:
 	)
 
 
+@inform_on_error
 def _execute_tools(
 	chat_id: str,
 	chat: OttoChat | None,
+	check_pending_requests: bool = False,
 ) -> None:
 	from otto.otto.doctype.otto_chat.otto_chat import OttoChat
+
+	otto.log_realtime(f"_execute_tools [{chat_id}]", traceback=True)
 
 	if chat is None:
 		chat = otto.get(OttoChat, chat_id)
 
+	if check_pending_requests:
+		_check_pending_requests(chat_id, chat)
+
 	for update in chat.execute_tools():
+		# This is admittedly a bit weird. The first yield is a list of pending
+		# permitted tools, used to indicate the start of the tool execution
+		# loop.
+		if isinstance(update, list) and len(update) > 0:
+			message = RealtimeToolExecutionStart(
+				id=frappe.generate_hash(length=10),
+				chat_id=chat_id,
+				type="tool-execution-start",
+				data=len(update),
+			)
+			publish_activity(message)
+			continue
+
+		if isinstance(update, list):
+			continue
+
 		message = RealtimeToolExecutionUpdate(
 			id=frappe.generate_hash(length=10),
 			chat_id=chat_id,
 			type="tool-execution-update",
 			data=update,
 		)
-		_publish(message)
+		publish_activity(message)
 
-	if not chat.can_resume():
+	can_resume, reason = chat.can_resume()
+	otto.log_realtime(f"{'Resuming' if can_resume else 'Turn ended'} [{chat_id}]: {reason}", traceback=True)
+	if not can_resume:
+		message = RealtimeTurnEnd(
+			id=frappe.generate_hash(length=10),
+			chat_id=chat_id,
+			type="turn-end",
+			data=reason,
+		)
+		publish_activity(message)
 		return
 
 	_chat(
@@ -471,19 +537,10 @@ def _execute_tools(
 		chat=chat,
 		query=None,
 	)
-
-
-def _publish(message: RealtimeChatMessage, after_commit: bool = False) -> None:
-	frappe.publish_realtime(
-		"otto.api.chat",
-		user=frappe.session.user,
-		message=dict(message),
-		after_commit=after_commit,
+	message = RealtimeResumingChat(
+		id=frappe.generate_hash(length=10),
+		chat_id=chat_id,
+		type="resuming-chat",
+		data=reason,
 	)
-	logger.debug(
-		{
-			"message": "published message",
-			"user": frappe.session.user,
-			"data": dict(message),
-		}
-	)
+	publish_activity(message)

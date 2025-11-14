@@ -23,7 +23,7 @@
 					</p>
 					<p
 						class="flex items-center gap-1 text-xs text-gray-700 mb-0.5"
-						v-if="details?.reasoning_effort !== 'None'"
+						v-if="details.reasoning_effort && details?.reasoning_effort !== 'None'"
 					>
 						<Lightbulb class="tooltip-icon" stroke-width="1" />
 						{{ details?.reasoning_effort }}

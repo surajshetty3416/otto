@@ -30,7 +30,8 @@ class RealtimePong(TypedDict):
 
 class RealtimeError(TypedDict):
 	id: str
-	chat_id: str
+	chat_id: str | None
+	traceback: str | None
 	type: Literal["error"]
 	data: str
 
@@ -56,6 +57,13 @@ class RealtimeRequest(TypedDict):
 	data: PendingRequest
 
 
+class RealtimeToolExecutionStart(TypedDict):
+	id: str
+	chat_id: str
+	type: Literal["tool-execution-start"]
+	data: int
+
+
 class RealtimeToolExecutionUpdate(TypedDict):
 	id: str
 	chat_id: str
@@ -70,6 +78,20 @@ class RealtimeRequestAcknowledge(TypedDict):
 	data: list[str]  # list of tool use ids that were acknowledged
 
 
+class RealtimeTurnEnd(TypedDict):
+	id: str
+	chat_id: str
+	type: Literal["turn-end"]
+	data: str | None  # reason for why turn end
+
+
+class RealtimeResumingChat(TypedDict):
+	id: str
+	chat_id: str
+	type: Literal["resuming-chat"]
+	data: str | None  # reason for why resuming chat
+
+
 class RealtimeTitleUpdate(TypedDict):
 	id: str
 	chat_id: str
@@ -77,9 +99,19 @@ class RealtimeTitleUpdate(TypedDict):
 	data: str
 
 
+class RealtimeLog(TypedDict):
+	id: str
+	timestamp: str
+	type: Literal["log"]
+	data: dict | str
+	more: dict | None
+	traceback: str | None
+
+
 # @export - used for listening to chat messages
 RealtimeChatMessage = (
 	RealtimeError
+	| RealtimeLog
 	| RealtimePong
 	| RealtimeChunk
 	| RealtimeItem
@@ -87,6 +119,9 @@ RealtimeChatMessage = (
 	| RealtimeToolExecutionUpdate
 	| RealtimeRequestAcknowledge
 	| RealtimeTitleUpdate
+	| RealtimeToolExecutionStart
+	| RealtimeResumingChat
+	| RealtimeTurnEnd
 )
 
 
@@ -132,11 +167,9 @@ class UserInfo(TypedDict):
 
 class ChatSettings(TypedDict):
 	llm: str | None
-	reasoning_effort: ReasoningEffort | None
-	tool_permissions: (
-		Literal["Default", "Allow All", "Allow Readonly", "Ask For All", "Ask For Non Readonly"] | None
-	)
-	user_directives: str | None
+	reasoning_effort: Literal["Default"] | ReasoningEffort
+	tool_permissions: Literal["Default", "Allow All", "Allow Readonly", "Ask For All", "Ask For Non Readonly"]
+	user_directives: str
 
 
 class Chat(TypedDict):

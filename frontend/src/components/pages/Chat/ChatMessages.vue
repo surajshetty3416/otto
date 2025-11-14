@@ -3,8 +3,11 @@
 		<UserMessage
 			v-if="message.meta.role === 'user'"
 			:message="message"
-			class="ml-auto"
-			:class="{ 'mb-8': messages[i + 1]?.meta.role === 'agent' }"
+			class="user-message ml-auto"
+			:class="{
+				'mb-12': messages[i + 1]?.meta.role === 'agent',
+				'mt-12': messages[i - 1]?.meta.role === 'agent',
+			}"
 			style="max-width: 85%"
 		/>
 
@@ -35,6 +38,7 @@
 			</template>
 		</template>
 	</template>
+	<div class="expander-div shrink-0"></div>
 </template>
 
 <script setup lang="ts">

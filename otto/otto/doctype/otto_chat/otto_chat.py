@@ -10,13 +10,16 @@ from frappe.model.document import Document
 import otto
 import otto.lib as lib
 from otto.llm.utils import DEFAULT_MODEL
-from otto.otto.doctype.otto_permission_request.otto_permission_request import OttoPermissionRequest
+from otto.otto.doctype.otto_permission_request.otto_permission_request import (
+	OttoPermissionRequest,
+)
 
 if TYPE_CHECKING:
 	from collections.abc import Callable
 
 	from otto.lib.types import PendingToolUse, Query, ReasoningEffort, ToolUseUpdate
 	from otto.otto.doctype.otto_assistant.otto_assistant import OttoAssistant
+	from otto.otto.doctype.otto_permission_request.otto_permission_request import RequestStatus
 
 
 class ToolConfig(TypedDict):
@@ -44,7 +47,7 @@ class OttoChat(Document):
 
 		assistant: DF.Link
 		llm: DF.Link | None
-		reasoning_effort: DF.Literal["None", "Low", "Medium", "High"] | None
+		reasoning_effort: DF.Literal["Default", "None", "Low", "Medium", "High"]
 		session: DF.Link
 		title: DF.Data | None
 		tool_permissions: DF.Literal[
@@ -59,6 +62,7 @@ class OttoChat(Document):
 	_pending_tool_use: list[PendingToolUse] | None = None
 	_tool_configs: list[ToolConfig] | None = None
 	_tool_configs_map: dict[str, ToolConfig] | None = None
+	_pending_tools: list[PendingToolUse] | None = None
 
 	@property
 	def assistant_(self) -> OttoAssistant:
@@ -124,6 +128,11 @@ class OttoChat(Document):
 		self._tool_configs_map = tc_map
 		return tc_map
 
+	def _get_tool_config(self, slug: str) -> ToolConfig:
+		config = self.tool_config_map.get(slug)
+		assert config is not None, f"Tool config should be set for {slug}"
+		return config
+
 	@property
 	def session_(self) -> lib.Session:
 		if not self._session:
@@ -140,7 +149,7 @@ class OttoChat(Document):
 		assistant: str,
 		*,
 		llm: str | None = None,
-		reasoning_effort: ReasoningEffort | None = None,
+		reasoning_effort: ReasoningEffort | Literal["Default"] | None = None,
 		tool_permissions: Literal[
 			"Default",
 			"Allow All",
@@ -160,9 +169,9 @@ class OttoChat(Document):
 
 		# Chat Settings
 		doc.llm = llm
+		doc.reasoning_effort = reasoning_effort or "Default"
 		doc.tool_permissions = tool_permissions or "Default"
-		doc.user_directives = user_directives
-		doc.reasoning_effort = reasoning_effort
+		doc.user_directives = user_directives or ""
 
 		tool_schemas: list[lib.types.ToolSchema] = []
 		for tool_ref in assistant_doc.tools:
@@ -177,10 +186,12 @@ class OttoChat(Document):
 		if user_directives:
 			context["user_directives"] = user_directives
 
+		reasoning_effort = assistant_doc.reasoning_effort if doc.reasoning_effort == "Default" else None
+		model = llm or assistant_doc.llm or DEFAULT_MODEL
 		session = lib.new(
-			model=llm or assistant_doc.llm or DEFAULT_MODEL,
+			model=model,
 			instruction=assistant_doc.get_instruction(context),
-			reasoning_effort=reasoning_effort or assistant_doc.reasoning_effort,
+			reasoning_effort=reasoning_effort,
 			tools=tool_schemas,
 		)
 		doc.session_ = session
@@ -205,14 +216,11 @@ class OttoChat(Document):
 			return None, "Resolve all pending requests before resuming chat"
 
 		self._update_session_tools()
+		self._ensure_settings_in_sync()
+		self._pending_tools = None
 		return self.session_.interact(query, stream=True), None
 
-	def has_pending_requests(self) -> bool:
-		self._raise_permissions_requests()
-		rm = self._get_requests_map()
-		return any(status == "Pending" for status in rm.values())
-
-	def can_resume(self):
+	def can_resume(self) -> tuple[bool, str | None]:
 		"""
 		A chat can be resumed only if all pending requests have been resolved,
 		all pending tools have been executed and the reason an LLM stopped
@@ -220,16 +228,23 @@ class OttoChat(Document):
 		"""
 
 		if self.has_pending_requests():
-			return False
+			return False, "Has pending requests"
 
 		if self.get_pending_tools():
-			return False
+			return False, "Has pending tools"
 
 		last_item = self.session_.get_last_item()
 		if not last_item:
-			return False
+			return False, "Has no last item"
 
-		return last_item["meta"]["role"] == "agent" and last_item["meta"]["end_reason"] == "tool_use"
+		if last_item["meta"]["role"] == "user":
+			return True, "Last item is a user message"
+
+		if last_item["meta"]["end_reason"] == "turn_end":
+			return False, "Assistant has ended the turn"
+
+		assert last_item["meta"]["end_reason"] == "tool_use", "Last item should be a tool use"
+		return True, "Last item was a tool use"
 
 	@overload
 	def get_pending_requests(self, name_only: Literal[False] = False) -> list[OttoPermissionRequest]: ...
@@ -238,12 +253,10 @@ class OttoChat(Document):
 	def get_pending_requests(self, name_only: Literal[True]) -> list[str]: ...
 
 	def get_pending_requests(self, name_only: bool = False) -> list[OttoPermissionRequest] | list[str]:
-		new_requests = self._raise_permissions_requests()
-		new_requests_names = [req.name for req in new_requests]
-		old_requests_names = frappe.get_all(
+		self._raise_permissions_requests()
+		request_names = frappe.get_all(
 			"Otto Permission Request",
 			filters={
-				"name": ["not in", new_requests_names],
 				"session": self.session,
 				"status": "Pending",
 			},
@@ -251,18 +264,20 @@ class OttoChat(Document):
 		)
 
 		if name_only:
-			return [req.name for req in new_requests if req.name] + old_requests_names
+			return request_names
 
-		old_requests = [otto.get(OttoPermissionRequest, req) for req in old_requests_names]
-		return new_requests + old_requests
+		return [otto.get(OttoPermissionRequest, req) for req in request_names]
+
+	def has_pending_requests(self) -> bool:
+		self._raise_permissions_requests()
+		rm = self._get_requests_map()
+		return any(status == "Pending" for status in rm.values())
 
 	def _raise_permissions_requests(self) -> list[OttoPermissionRequest]:
 		requests: list[OttoPermissionRequest] = []
 		pending_tool_use = self.get_pending_tools()
 		for ptu in pending_tool_use:
-			config = self.tool_config_map.get(ptu.name)
-			if not config:
-				raise ValueError(f"Tool config not found for {ptu.name}")
+			config = self._get_tool_config(ptu.name)
 
 			should_raise = (
 				config["requires_permission"]
@@ -294,61 +309,72 @@ class OttoChat(Document):
 		from otto.otto.doctype.otto_tool.otto_tool import execute_tool
 
 		fn_map = fn_map or {}
-		req_map = self._get_requests_map()
+		pending_tools = self.get_permitted_pending_tools()
+		yield pending_tools
+
+		# Validate pending tools so as to avoid errors in the execution loop.
+		for ptu in pending_tools:
+			config = self._get_tool_config(ptu.name)
+			if not config["is_external"] or fn_map.get(config["slug"]):
+				continue
+			raise ValueError(f"Function not found for external tool {config['slug']}")
+
 		updates: list[ToolUseUpdate] = []
-		for ptu in self.get_pending_tools():
-			config = self.tool_config_map.get(ptu.name)
-			if not config:
-				continue
-
-			fn = fn_map.get(config["slug"])
-			if config["is_external"] and not fn:
-				# External tool call managed by caller
-				continue
-
-			req_status = req_map.get(ptu.id)
-			if not (req_status is None or req_status == "Granted"):
-				continue
-
-			update = execute_tool(
-				tool=config["tool"],
-				args=ptu.args,
-				tool_use_id=ptu.id,
-				env_str=None,
-				permission_granted=True,
-				task=None,
-				session=self.session,
-				chat=self.name,
-				doc=None,
-				fn=fn,
-			)
-			updates.append(update)
-			yield update
-		self.update_tool_use(updates)
+		try:
+			for ptu in pending_tools:
+				config = self._get_tool_config(ptu.name)
+				fn = fn_map.get(config["slug"])
+				update = execute_tool(
+					tool=config["tool"],
+					args=ptu.args,
+					tool_use_id=ptu.id,
+					env_str=None,
+					permission_granted=True,
+					task=None,
+					session=self.session,
+					chat=self.name,
+					doc=None,
+					fn=fn,
+				)
+				updates.append(update)
+				yield update
+		# Ensure all executed tools are updated; prevent double executions
+		finally:
+			self.update_tool_use(updates)
 		return
 
-	def get_pending_tools(self, include_external: bool = True) -> list[PendingToolUse]:
-		pending_tool_uses = self.session_.get_pending_tool_use()
-		if include_external:
-			return pending_tool_uses
-
-		pending: list[PendingToolUse] = []
-		for ptu in pending_tool_uses:
-			config = self.tool_config_map.get(ptu.name)
-			if not config or not config["is_external"]:
+	def get_permitted_pending_tools(self) -> list[PendingToolUse]:
+		permitted = []
+		req_map = self._get_requests_map()
+		for ptu in self.get_pending_tools():
+			# req_status is None if no request was raised for this tool.
+			#
+			# This can happen if the tool:
+			# 1. Does not require permission
+			# 2. The prerequisite `get_pending_requests` has not been called yet
+			#
+			# In the case of 1. execute_tools should be called again after the
+			# request has been acknowledged.
+			if (req_status := req_map.get(ptu.id)) and req_status != "Granted":
 				continue
 
-			pending.append(ptu)
-		return pending
+			permitted.append(ptu)
+		return permitted
+
+	def get_pending_tools(self) -> list[PendingToolUse]:
+		if self._pending_tools is None:
+			self._pending_tools = self.session_.get_pending_tool_use()
+		return self._pending_tools
 
 	def update_tool_use(self, update: ToolUseUpdate | list[ToolUseUpdate]) -> None:
+		self._pending_tools = None
 		self.session_.update_tool_use(update)
 
-	def _get_requests_map(self) -> dict[str, str]:
+	def _get_requests_map(self) -> dict[str, RequestStatus]:
 		requests = frappe.get_all(
 			"Otto Permission Request",
 			filters={"session": self.session},
-			fields=["tool_use_id", "status", "denied_reason"],
+			fields=["tool_use_id", "status"],
 		)
 		return {req.tool_use_id: req.status for req in requests}
 
@@ -406,7 +432,7 @@ class OttoChat(Document):
 	def update_settings(
 		self,
 		llm: str | None = None,
-		reasoning_effort: ReasoningEffort | None = None,
+		reasoning_effort: ReasoningEffort | Literal["Default"] | None = None,
 		tool_permissions: Literal[
 			"Default",
 			"Allow All",
@@ -417,22 +443,42 @@ class OttoChat(Document):
 		| None = None,
 		user_directives: str | None = None,
 	):
-		from otto.otto.doctype.otto_assistant.otto_assistant import OttoAssistant
-
 		self.llm = llm
-		self.session_.set_model(llm or self.assistant_.llm)
-
-		self.reasoning_effort = reasoning_effort
-		self.session_.set_reasoning_effort(reasoning_effort or self.assistant_.reasoning_effort)
-
+		self.reasoning_effort = "Default" if reasoning_effort is None else reasoning_effort
 		self.user_directives = user_directives
-		context = {"user_directives": user_directives}
-		instruction = otto.get(OttoAssistant, self.assistant).get_instruction(context)
-		self.session_.set_instruction(instruction)
-
 		self.tool_permissions = tool_permissions or "Default"
 
+		# Set here to prevent instruction update on every turn
+		if not user_directives:
+			instruction = self.assistant_.get_instruction()
+			self.session_.set_instruction(instruction)
+
 		self.save()
+
+	def _ensure_settings_in_sync(self):
+		# Ensure sync with chat settings
+		if self.llm is not None and self.llm != self.session_.model:
+			self.session_.set_model(self.llm)
+		if self.reasoning_effort != "Default" and self.reasoning_effort != self.session_.reasoning_effort:
+			self.session_.set_reasoning_effort(self.reasoning_effort)
+		if self.user_directives is not None and self.user_directives not in self.session_.instruction:
+			instruction = self.assistant_.get_instruction({"user_directives": self.user_directives})
+			self.session_.set_instruction(instruction)
+
+		# Reset clauses, ensure sync with assistant definition
+		if (
+			self.reasoning_effort == "Default" or not self.reasoning_effort
+		) and self.session_.reasoning_effort != self.assistant_.reasoning_effort:
+			self.session_.set_reasoning_effort(self.assistant_.reasoning_effort)
+		if not self.llm and self.session_.model != self.assistant_.llm:
+			self.session_.set_model(self.assistant_.llm)
+
+		# Will cause instruction update on every turn
+		# if (
+		# 	not self.user_directives
+		# 	and (instruction := self.assistant_.get_instruction()) != self.session_.instruction
+		# ):
+		# 	self.session_.set_instruction(instruction)
 
 
 def generate_session_title(session: lib.Session) -> str | None:

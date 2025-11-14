@@ -12,6 +12,7 @@
   "column_break_roim",
   "llm",
   "reasoning_effort",
+  "description",
   "definition_section",
   "instruction",
   "tools",
@@ -108,12 +109,18 @@
    "fieldtype": "Check",
    "label": "Supports User Directives",
    "read_only": 1
+  },
+  {
+   "description": "A short user facing description about this assistant.",
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-11-11 14:48:50.709150",
+ "modified": "2025-11-14 15:43:53.212842",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Assistant",

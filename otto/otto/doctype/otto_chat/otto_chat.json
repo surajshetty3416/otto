@@ -83,7 +83,7 @@
    "fieldname": "reasoning_effort",
    "fieldtype": "Select",
    "label": "Reasoning Effort",
-   "options": "None\nLow\nMedium\nHigh"
+   "options": "Default\nNone\nLow\nMedium\nHigh"
   },
   {
    "description": "Additional user directives to customize the main instruction.",
@@ -103,7 +103,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-11-11 14:47:22.177289",
+ "modified": "2025-11-14 17:37:51.401976",
  "modified_by": "Administrator",
  "module": "Otto",
  "name": "Otto Chat",

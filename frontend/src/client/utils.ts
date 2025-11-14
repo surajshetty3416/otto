@@ -1,8 +1,6 @@
 import router from "../router";
 import type { RealtimeChatMessage } from "./generated.types";
 
-
-
 export function toLogin(useRedirect: boolean = true) {
   /**
    * When running in Vite dev mode with HMR, Otto's login page is used.
@@ -48,19 +46,45 @@ export function logRealtime(message: RealtimeChatMessage) {
     m += ` [${message.data.type} ${message.data.message}]`;
   }
 
+  if (message.type === "log" && typeof message.data === "string") {
+    m += ` ${message.data}`;
+  }
+
   let style = "color: lightyellow";
   if (message.type === "error") style = "color: red";
   if (message.type === "request") style = "color: orange";
-  if (message.type === "request-acknowledge") style = "color: lightpink";
-  if (message.type === "tool-execution-update") style = "color: lightpink";
-  if (message.type === "item") style = "color: lightpink";
+  if (message.type === "request-acknowledge") style = "color: plum";
+  if (message.type === "tool-execution-update") style = "color: turquoise";
+  if (message.type === "item") style = "color: aquamarine";
   if (message.type === "pong") style = "color: gray";
-  if (message.type === "chunk" && message.data.type !== "system") style = "color: gray";
-
+  if (message.type === "log") style = "color: olive";
+  if (message.type === "chunk" && message.data.type !== "system")
+    style = "color: gray";
 
   console.groupCollapsed(m, style);
   console.log(message.data);
-  console.log("chat_id:", message.chat_id);
+  if ("chat_id" in message) console.log("chat_id:", message.chat_id);
+  if ("timestamp" in message)
+    console.log("timestamp:", new Date(message.timestamp));
+  if ("traceback" in message && message.traceback)
+    console.log(message.traceback);
+  if ("more" in message && message.more) console.log(message.more);
   console.log("id:", message.id);
+  console.groupEnd();
+}
+
+// Use to log unexpected states or errors that should not happen
+export function logError(
+  title: string,
+  error?: unknown,
+  context?: Record<string, unknown>
+) {
+  console.groupCollapsed(`%cError [${title}]`, "color: red");
+  if (context) {
+    console.log("context:");
+    console.log(JSON.stringify(context, null, 2));
+  }
+
+  if (typeof error !== "undefined" && error !== null) console.error(error);
   console.groupEnd();
 }

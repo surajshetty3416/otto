@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import contextlib
 import json
+import traceback
+from datetime import datetime
 from typing import Any, Literal, TypeVar, cast
 
 import frappe
 import frappe.utils.logger
 from frappe.model.document import Document
+from frappe.utils import get_bench_path
 
 __version__ = "0.0.1"
 __all__ = ["get", "log_error", "logger", "new"]
@@ -129,3 +132,43 @@ def get_doctype_name(doc: type[D]) -> str:
 
 def is_enabled() -> bool:
 	return bool(frappe.get_cached_value("Otto Settings", "Otto Settings", "is_enabled"))
+
+
+def log_realtime(
+	content: dict | str,
+	event: str = "otto.log_realtime",
+	more: dict | None = None,
+	traceback: bool = False,
+):
+	"""Messages logged using this should show up in olive color in the browser console."""
+	if not frappe.conf.get("developer_mode"):
+		return
+	from otto.api.types import RealtimeLog
+
+	message = RealtimeLog(
+		id=frappe.generate_hash(length=10),
+		type="log",
+		data=content,
+		timestamp=datetime.now().isoformat(),
+		more=more,
+		traceback=_get_traceback() if traceback else None,
+	)
+
+	frappe.publish_realtime(
+		event,
+		user=frappe.session.user,
+		message=dict(message),
+		after_commit=False,
+	)
+
+
+def _get_traceback():
+	# Hacky traceback, i'm using to check call stacks of a function
+	stack = traceback.format_stack()
+	bench_path = get_bench_path() + "/"
+	start_path = bench_path + "apps/otto/"
+
+	for _i, line in enumerate(stack):
+		if start_path in line:
+			break
+	return "\n".join(stack[_i:-2])

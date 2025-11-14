@@ -79,19 +79,9 @@ const customModel = computed(() => {
 	if (!settings.value.llm) return false;
 	return settings.value.llm !== details.value?.llm;
 });
-
-const customReasoningEffort = computed(() => {
-	if (!settings.value.reasoning_effort) return false;
-	return settings.value.reasoning_effort !== details.value?.reasoning_effort;
-});
-
-const customUserDirectives = computed(() => {
-	return !!settings.value.user_directives;
-});
-
-const customToolPermissions = computed(() => {
-	return !(settings.value.tool_permissions === "Default" || !settings.value.tool_permissions);
-});
+const customUserDirectives = computed(() => settings.value.user_directives !== "");
+const customToolPermissions = computed(() => settings.value.tool_permissions !== "Default");
+const customReasoningEffort = computed(() => settings.value.reasoning_effort !== "Default");
 
 const anyCustom = computed(() => {
 	return (

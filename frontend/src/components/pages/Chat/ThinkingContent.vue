@@ -31,26 +31,19 @@
 <script setup lang="ts">
 import type { SessionItem, ThinkingContent } from "@/client/generated.types";
 import { Lightbulb, X } from "lucide-vue-next";
-import { computed, inject, ref } from "vue";
+import { computed, ref } from "vue";
 import CollapsedContentToggle from "./CollapsedContentToggle.vue";
 import ContentContainer from "./ContentContainer.vue";
 import Markdown from "./Markdown.vue";
 import { streamContextKey } from "./utils";
+import { inject } from "vue";
 
-const streamContext = inject(streamContextKey);
-
+const streamContext = inject(streamContextKey)!;
 const props = defineProps<{
 	item: SessionItem;
 	content: ThinkingContent;
 }>();
 
 const isOpen = ref(false);
-const isStreaming = computed(() => {
-	if (!streamContext?.isStreamingResponse) return false;
-	const message = streamContext?.messages.at(-1);
-	if (message?.type !== "chunk") return false;
-
-	const chunk = message?.data;
-	return chunk?.type === "thinking" && chunk?.item_id === props.item.id;
-});
+const isStreaming = computed(() => streamContext.isStreaming("thinking", props.item.id));
 </script>

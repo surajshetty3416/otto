@@ -145,9 +145,9 @@ const defaults = computed(() => {
 
 	return {
 		llm: ast?.llm || null,
-		reasoning_effort: ast?.reasoning_effort || null,
+		reasoning_effort: "Default",
 		tool_permissions: "Default",
-		user_directives: null,
+		user_directives: "",
 	} as ChatSettings;
 });
 
@@ -158,17 +158,16 @@ function reset() {
 	}
 
 	settings.value.tool_permissions = "Default";
-	settings.value.reasoning_effort = null;
+	settings.value.reasoning_effort = "Default";
 	settings.value.llm = null;
 	settings.value.user_directives = "";
 }
 
 const isDefault = computed(() => {
 	return (
-		(settings.value.tool_permissions === null ||
-			settings.value.tool_permissions === "Default") &&
-		(settings.value.user_directives === null || settings.value.user_directives === "") &&
-		settings.value.reasoning_effort === null &&
+		settings.value.tool_permissions === "Default" &&
+		settings.value.reasoning_effort === "Default" &&
+		settings.value.user_directives === "" &&
 		settings.value.llm === null
 	);
 });
@@ -201,6 +200,7 @@ const reasoningEffortDescription = computed(() => {
 			return `Assistant will use ${settings.value.reasoning_effort} reasoning effort`;
 		case "None":
 			return "Assistant will not use reasoning";
+		case "Default":
 		default:
 			return `Assistant will use the default reasoning effort (${
 				defaults.value.reasoning_effort ?? "Medium"
@@ -245,7 +245,7 @@ function isTipSet(tip: string) {
 function toggleYoloMode(checked: boolean) {
 	settings.value.tool_permissions = checked ? "Allow All" : "Default";
 	if (canReason.value) {
-		settings.value.reasoning_effort = checked ? "High" : null;
+		settings.value.reasoning_effort = checked ? "High" : "Default";
 	}
 }
 

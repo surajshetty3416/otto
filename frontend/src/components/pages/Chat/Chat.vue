@@ -26,8 +26,6 @@
 					v-if="chatId"
 					:chatId="chatId"
 					:isLoading="isLoading"
-					:isStreaming="isStreaming"
-					:isWaitingForStream="isWaitingForStream"
 					:pendingRequests="pendingRequests"
 				/>
 				<ChatInput
@@ -79,7 +77,6 @@ import {
 	type PendingRequest,
 	type RealtimeChatMessage,
 	type SessionItem,
-	type TextContentChunk,
 	type ToolConfig,
 } from "@/client/generated.types";
 import { logRealtime } from "@/client/utils";
@@ -98,9 +95,9 @@ import ChatIndicator from "./ChatIndicator.vue";
 import ChatInput from "./ChatInput.vue";
 import ChatMessages from "./ChatMessages.vue";
 import ChatSettingsDialog from "./ChatSettings/ChatSettingsDialog.vue";
+import { StreamContext } from "./context";
 import OverrideIndicators from "./OverrideIndicators.vue";
 import Selector from "./Selector.vue";
-import type { StreamContext } from "./types";
 import {
 	chatState,
 	cycleField as cycleFieldvalue,
@@ -114,7 +111,6 @@ import {
 	save_settings,
 	streamContextKey,
 	toolConfigKey,
-	updateStreamContext,
 } from "./utils";
 import Welcome from "./Welcome.vue";
 
@@ -123,16 +119,18 @@ const received = new Set<string>(); // sanity check to avoid duplicates
 const props = defineProps<{
 	chatId?: string;
 }>();
+const streamContext = new StreamContext();
+provide(streamContextKey, streamContext);
 
 const initial: ChatSettings = {
 	llm: null,
-	reasoning_effort: null,
+	reasoning_effort: "Default",
 	tool_permissions: "Default",
 	user_directives: "",
 };
 const settings = reactive<ChatSettings>({
 	llm: null,
-	reasoning_effort: null,
+	reasoning_effort: "Default",
 	tool_permissions: "Default",
 	user_directives: "",
 });
@@ -141,12 +139,12 @@ const settings = reactive<ChatSettings>({
 const openSettings = ref(false);
 const _loading = ref(false); // true if request is being sent
 const query = ref<string>(chatState.get(`chat::${props.chatId || "new"}`) ?? "");
-const isStreaming = ref(false); // true if chat is streaming
-const isWaitingForStream = ref(false); // true if waiting for stream to start
 const messagesContainer = ref<HTMLDivElement | null>(null);
 const messages = reactive<SessionItem[]>([]);
-const streamContext = reactive<StreamContext>({ messages: [], isStreamingResponse: false });
 const pendingRequests = reactive<Record<string, PendingRequest>>({});
+const flags = {
+	isHandlingNewChatQuery: false,
+};
 
 // API calls
 const list_tools = api.chat.list_tools({ chat_id: "" }, { auto: false });
@@ -185,7 +183,6 @@ const showNew = computed(() => {
 });
 
 provide(toolConfigKey, toolConfigs);
-provide(streamContextKey, streamContext);
 provide(pendingRequestsKey, pendingRequests);
 
 async function handleSend() {
@@ -197,30 +194,34 @@ async function handleSend() {
 
 	if (!props.chatId) {
 		const chatId = await api.chat.new_chat({ assistant: assistant.value, settings });
+		flags.isHandlingNewChatQuery = true;
 		await router.replace({ name: "Chat", params: { chatId } });
+		streamContext.set(chatId);
 		await nextTick(); // ensure chatId updates post routing
 		list_chats.run(undefined, false);
+		chatState.delete(`chat::new`);
 	}
 
 	assert(props.chatId, "sanity check");
+	list_tools.run({ chat_id: props.chatId! }, false);
 	appendUserMessage(query.value);
 	await api.chat.send_query({ chat_id: props.chatId, query: _query });
+	flags.isHandlingNewChatQuery = false;
 	query.value = "";
 	_loading.value = false;
-	isWaitingForStream.value = true;
+	streamContext.waiting();
 	await nextTick(); // dom state change
-	await list_tools.run({ chat_id: props.chatId! }, false);
 }
 
 function canSend(query: string) {
-	if (isStreaming.value) {
+	if (streamContext.isStreamingResponse) {
 		toast.info("Model is responding", {
 			description: "Please wait for the current response to complete",
 		});
 		return false;
 	}
 
-	if (isWaitingForStream.value) {
+	if (streamContext.isWaiting) {
 		toast.info("Waiting for response", {
 			description: "Please wait for the current response to complete",
 		});
@@ -257,17 +258,23 @@ function appendUserMessage(query: string) {
 
 function handleRealtimeMessage(message: RealtimeChatMessage) {
 	if (window.is_dev_mode) logRealtime(message);
+	streamContext.update(message);
 
-	isWaitingForStream.value = false;
-	updateStreamContext(message, streamContext);
+	if (message.type === "error") {
+		// make more actionable
+		toast.error("Something went wrong", { description: message.data });
+	}
 
+	if (message.type === "log" || message.type === "pong") return;
 	if (message.chat_id !== props.chatId) return;
 	if (received.has(message.id)) return;
 
 	received.add(message.id);
 	switch (message.type) {
 		case "chunk":
-			if (message.data.type === "system") handleSystemChunk(message.data);
+			if (message.data.type === "system")
+				// Only used to update stream context
+				return;
 			else handleContentChunk(message.data, messages);
 			scrollToBottom("instant");
 			return;
@@ -286,20 +293,6 @@ function handleRealtimeMessage(message: RealtimeChatMessage) {
 		case "title-update":
 			list_chats.run(undefined, false);
 			return;
-		case "error":
-			toast.error("Error in chat", { description: message.data });
-			return;
-	}
-}
-
-function handleSystemChunk(chunk: TextContentChunk) {
-	switch (chunk.message) {
-		case "start":
-			isStreaming.value = true;
-			break;
-		case "end":
-			isStreaming.value = false;
-			break;
 	}
 }
 
@@ -310,19 +303,16 @@ function scrollToBottom(behavior: "smooth" | "instant") {
 	});
 }
 
-function clear() {
+function reset() {
 	// Since the component is reused, local state should be reset
 	_loading.value = false;
-	isStreaming.value = false;
-	isWaitingForStream.value = false;
 	messages.length = 0;
-	streamContext.messages.length = 0;
-	streamContext.isStreamingResponse = false;
 	received.clear();
+	streamContext.reset();
 	settings.llm = null;
-	settings.reasoning_effort = null;
-	settings.tool_permissions = null;
-	settings.user_directives = null;
+	settings.reasoning_effort = "Default";
+	settings.tool_permissions = "Default";
+	settings.user_directives = "";
 	Object.keys(pendingRequests).forEach((key) => delete pendingRequests[key]);
 
 	list_tools.reset();
@@ -333,6 +323,7 @@ function clear() {
 async function set() {
 	setTimeout(focus, 100);
 	if (!props.chatId) return;
+	streamContext.set(props.chatId);
 	await list_tools.run({ chat_id: props.chatId }, false);
 	await get_pending_requests.run({ chat_id: props.chatId }, false);
 	await loadChat();
@@ -360,7 +351,7 @@ async function loadChat() {
 
 function updateSettings(source: ChatSettings) {
 	initial.llm = source.llm;
-	initial.reasoning_effort = source.reasoning_effort;
+	initial.reasoning_effort = source.reasoning_effort ?? "Default";
 	initial.tool_permissions = source.tool_permissions ?? "Default";
 	initial.user_directives = source.user_directives ?? "";
 
@@ -390,9 +381,9 @@ onUnmounted(() => socket.off("otto.api.chat", handleRealtimeMessage));
 watch(
 	() => props.chatId,
 	(newVal, oldVal, onCleanup) => {
-		if (newVal === oldVal) return;
+		if (newVal === oldVal || flags.isHandlingNewChatQuery) return;
 
-		clear();
+		reset();
 
 		// cancel requests called in `set` if id change
 		const controller = new AbortController();
@@ -421,11 +412,10 @@ watch(
 async function handleCycleToolPermissions() {
 	if (router.currentRoute.value.name !== "Chat") return;
 
-	const current = settings.tool_permissions ?? "Default";
-	const newval = await cycleFieldvalue(current, "tool_permissions");
+	const newval = await cycleFieldvalue(settings.tool_permissions, "tool_permissions");
 	if (!isToolPermission(newval)) return;
 
-	toast.info("Changing tool permissions to " + (newval ?? "Default"));
+	toast.info("Changing tool permissions to " + newval);
 	settings.tool_permissions = newval;
 }
 
@@ -439,18 +429,14 @@ async function handleCycleReasoningEffort() {
 		return;
 	}
 
-	const default_effort = ast.reasoning_effort;
-	const current = settings.reasoning_effort ?? default_effort;
-	let newval = await cycleFieldvalue(current, "reasoning_effort");
-	if (!isReasoningEffort(newval)) return;
+	let newval = await cycleFieldvalue(settings.reasoning_effort, "reasoning_effort");
+	if (!isReasoningEffort(newval) && newval !== "Default") return;
 
-	if (newval === default_effort) newval = null;
-	toast.info("Changing reasoning effort to " + (newval ?? `Default (${default_effort})`));
+	toast.info("Changing reasoning effort to " + newval);
 	settings.reasoning_effort = newval;
 }
 
 onMounted(() => {
-	console.log("mounted");
 	shortcuts.on("cycle-tool-permissions", handleCycleToolPermissions);
 	shortcuts.on("cycle-reasoning-effort", handleCycleReasoningEffort);
 });

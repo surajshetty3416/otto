@@ -13,7 +13,11 @@
 			/>
 		</button>
 
-		<TextLoadingIndicator v-if="list_chats.loading" class="p-2" text="Loading chats" />
+		<TextLoadingIndicator
+			v-if="list_chats.loading || !list_chats.data?.length"
+			class="p-2"
+			text="Loading chats"
+		/>
 
 		<!-- List -->
 		<Transition
@@ -53,7 +57,7 @@ import ChatListItem from "./ChatListItem.vue";
 import type { ChatListItem as ChatListItemType } from "./types";
 import { sidebarState } from "./utils";
 
-// TODO: pagination and max height
+// TODO: pagination
 
 const isOpen = ref(sidebarState.get("isChatListOpen") ?? true);
 watch(isOpen, (value) => sidebarState.set("isChatListOpen", value));

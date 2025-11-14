@@ -261,6 +261,8 @@ function addCopyButtonsToCodeBlocks(container: HTMLElement) {
 	border-radius: 0;
 	background-color: var(--md-color-code-bg);
 	border: 1px solid theme("colors.gray.200");
+	overflow-x: auto;
+	scrollbar-gutter: stable;
 }
 
 .markdown-content :deep(pre:has(code)),
