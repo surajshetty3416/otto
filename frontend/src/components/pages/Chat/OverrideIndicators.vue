@@ -8,8 +8,8 @@
 	>
 		<LlmSelect v-model="settings.llm">
 			<template #trigger>
-				<button class="indicator">
-					<Sparkle class="indicator-icon" stroke-width="1" />
+				<button class="indicator-button">
+					<Sparkle stroke-width="1" />
 					{{ modelName(settings.llm!) }}
 				</button>
 			</template>
@@ -24,8 +24,8 @@
 	>
 		<ReasoningEffortSelect v-model="settings.reasoning_effort">
 			<template #trigger>
-				<button class="indicator">
-					<Lightbulb class="indicator-icon" stroke-width="1" />
+				<button class="indicator-button">
+					<Lightbulb stroke-width="1" />
 					Reasoning {{ settings.reasoning_effort }}
 				</button>
 			</template>
@@ -40,8 +40,8 @@
 	>
 		<ToolPermissionsSelect v-model="settings.tool_permissions">
 			<template #trigger>
-				<button class="indicator">
-					<Wrench class="indicator-icon" stroke-width="1" />
+				<button class="indicator-button">
+					<Wrench stroke-width="1" />
 					{{ settings.tool_permissions }}
 				</button>
 			</template>
@@ -53,8 +53,8 @@
 		content="Custom instructions are set for this chat"
 		:delay="500"
 	>
-		<button class="indicator">
-			<Pencil class="indicator-icon" stroke-width="1" />
+		<button class="indicator-button">
+			<Pencil stroke-width="1" />
 			Custom Instruction
 		</button>
 	</TextTooltip>
@@ -102,12 +102,4 @@ const anyCustom = computed(() => {
 	);
 });
 </script>
-<style scoped>
-.indicator {
-	@apply text-sm border px-1.5 py-1 rounded flex items-center gap-1 bg-white/85 backdrop-blur-lg shrink-0;
-}
-
-.indicator-icon {
-	@apply size-3 shrink-0 text-gray-700 -ml-0.5;
-}
-</style>
+<style scoped></style>

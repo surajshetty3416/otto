@@ -57,15 +57,14 @@
 <script setup lang="ts">
 /**
  * TODO:
- * - allow cycle through chat settings with shortcuts, open chat settings with shortcuts (debounced)
  *
- * - add tasteful animation when popping indicators, collapsing sections
  * - add better error handling
+ * - add tasteful animation when popping indicators, collapsing sections
  * - make the streaming of content smoother
  *
  * Error handling:
  * - check if any of the api calls are erroring out, and show an appropriate toast
- * - set a time out on isWaitingForStream, and show a toast if it times out
+ * - set a time out on isWaitingForStream, and show a toast (with on click dialog) if it times out
  *
  * - [ ] images and pdfs
  * - [ ] input commands etc `/` and `@` for doctype refs

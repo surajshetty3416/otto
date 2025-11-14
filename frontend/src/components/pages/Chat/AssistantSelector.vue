@@ -1,14 +1,13 @@
 <template>
 	<Popover v-model:open="isOpen">
 		<PopoverTrigger
-			class="flex gap-1 items-center justify-center rounded-lg px-2 py-1 border bg-white/85 backdrop-blur-lg shrink-0"
+			class="indicator-button"
 			:class="{ 'ring-1 ring-gray-200': isOpen }"
 			:disabled="disabled"
 		>
 			<component :is="icon" class="-ml-0.5 size-3 shrink-0 text-gray-700" stroke-width="1" />
-			<span class="text-nowrap text-sm text-gray-800">
-				{{ assistants[selected]?.title }}
-			</span>
+			{{ assistants[selected]?.title }}
+			<!-- <span class="text-nowrap text-sm text-gray-800"> </span> -->
 		</PopoverTrigger>
 
 		<PopoverContent class="p-0 rounded-lg border border-gray-200 shadow-sm w-60 min-w-fit">

@@ -11,7 +11,7 @@
 				v-for="assistant in list_assistants.data ?? []"
 				:key="assistant.name"
 				@click="view = assistant.name"
-				class="flex mx-2 p-2 gap-2 rounded-lg hover:bg-gray-50 outline-none"
+				class="flex mx-2 p-2 gap-2 rounded-lg hover:bg-gray-200 outline-none"
 				:class="{
 					'bg-gray-100': view === assistant.name,
 				}"

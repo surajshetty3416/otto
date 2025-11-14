@@ -24,7 +24,10 @@
 			leave-from-class="opacity-100 max-h-[1000px]"
 			leave-to-class="opacity-0 max-h-0"
 		>
-			<div v-if="list_chats.data && isOpen" class="h-full overflow-hidden pt-2 flex flex-col gap-4">
+			<div
+				v-if="list_chats.data && isOpen"
+				class="h-full overflow-hidden pt-2 flex flex-col gap-4"
+			>
 				<template v-for="chat in chats" :key="chat.name">
 					<ChatListItem :chat="chat" />
 				</template>
