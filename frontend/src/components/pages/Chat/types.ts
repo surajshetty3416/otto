@@ -10,3 +10,7 @@ export interface StreamContext {
   messages: RealtimeChatMessage[];
   isStreamingResponse: boolean;
 }
+
+export interface ChatState {
+  [key: `chat::${string}`]: string;
+}

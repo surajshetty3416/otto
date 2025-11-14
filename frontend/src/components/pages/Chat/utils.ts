@@ -16,6 +16,10 @@ import { assert, cycle, isEqual } from "@/utils";
 import { Bot, Lightbulb, Zap } from "lucide-vue-next";
 import type { InjectionKey, Ref } from "vue";
 import type { ChunkContent, StreamContext } from "./types";
+import { LocalStore } from "@/components/store";
+import type { ChatState } from "./types";
+
+export const chatState = new LocalStore<ChatState>("chat-state");
 
 export const save_settings = api.chat.save_settings(
   {

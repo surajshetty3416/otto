@@ -32,7 +32,7 @@
 		<div
 			title="Cannot resume chat until all pending requests have been allowed or denied."
 			v-if="pendingRequestsCount > 0"
-			class="flex items-center justify-between border py-1 px-1 bg-gray-50/80 backdrop-blur-md w-full -mb-1.5 rounded-md"
+			class="flex items-center justify-between border py-1 px-1 glass-lg w-full -mb-1.5 rounded-md"
 			style="border-bottom-left-radius: 0; border-bottom-right-radius: 0"
 		>
 			<div class="flex items-center gap-2">

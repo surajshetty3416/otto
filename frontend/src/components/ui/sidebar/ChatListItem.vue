@@ -12,11 +12,16 @@
 
 		<!-- Tooltip content -->
 		<template #content>
-			<div class="flex flex-col p-2">
-				<div class="flex items-center gap-2" v-if="chat.assistant_">
-					<p class="text-sm font-medium mb-1 text-gray-900">
-						{{ chat.assistant_.title }}
-					</p>
+			<div class="flex flex-col p-2 max-w-44">
+				<!-- Title -->
+				<p class="text-sm font-medium mb-2 text-gray-800">
+					{{ chat.title }}
+				</p>
+
+				<!-- Assistant and settings -->
+				<div class="flex items-center gap-2 mb-0.5" v-if="chat.assistant_">
+					<Bot class="tooltip-icon" stroke-width="1" />
+					<p class="text-xs text-gray-700">{{ chat.assistant_.title }}</p>
 				</div>
 				<div class="flex items-center gap-2 mb-0.5" v-if="chat.model">
 					<Sparkle class="tooltip-icon" stroke-width="1" />
@@ -24,7 +29,7 @@
 				</div>
 				<div class="flex items-center gap-2">
 					<Clock class="tooltip-icon" stroke-width="1" />
-					<p class="text-xs text-gray-700">{{ date(chat.modified) }}</p>
+					<p class="text-xs text-gray-700">{{ date(chat.modified, "s") }}</p>
 				</div>
 			</div>
 		</template>
@@ -35,7 +40,7 @@
 import { date } from "@/components/format";
 import { modelName } from "@/components/utils";
 import router from "@/router";
-import { Clock, Sparkle } from "lucide-vue-next";
+import { Bot, Clock, Sparkle } from "lucide-vue-next";
 import { computed } from "vue";
 import Tooltip from "../tooltip/Tooltip.vue";
 import type { ChatListItem as ChatListItemType } from "./types";

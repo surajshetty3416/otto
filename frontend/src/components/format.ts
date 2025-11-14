@@ -30,7 +30,10 @@ export function duration(seconds: number): string {
   return `${Math.round(seconds * 1000_000_000) / 1000}μs`;
 }
 
-export function date(value: string | Date | undefined): string {
+export function date(
+  value: string | Date | undefined,
+  resolution: "m" | "s" | "ms" = "m"
+): string {
   value ??= new Date(1710633600000);
 
   // Convert string to Date if needed
@@ -57,12 +60,16 @@ export function date(value: string | Date | undefined): string {
   const hours = dateObj.getHours().toString().padStart(2, "0");
   const minutes = dateObj.getMinutes().toString().padStart(2, "0");
   const seconds = dateObj.getSeconds().toString().padStart(2, "0");
-  const timeStr = `${hours}:${minutes}:${seconds}`;
+  const milliseconds = dateObj.getMilliseconds().toString().padStart(3, "0");
+  // const timeStr = `${hours}:${minutes}:${seconds}`;
+  let timeStr = `${hours}:${minutes}`;
+  if (resolution === "s") timeStr = `${hours}:${minutes}:${seconds}`;
+  if (resolution === "ms")
+    timeStr = `${hours}:${minutes}:${seconds}.${milliseconds}`;
 
   // If it's today, just return the time
   if (isToday) {
-    const milliseconds = dateObj.getMilliseconds().toString().padStart(3, "0");
-    return `Today, ${timeStr}.${milliseconds}`;
+    return `Today, ${timeStr}`;
   }
 
   // Format date parts

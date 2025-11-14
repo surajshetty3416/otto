@@ -99,6 +99,7 @@ import OverrideIndicators from "./OverrideIndicators.vue";
 import Selector from "./Selector.vue";
 import type { StreamContext } from "./types";
 import {
+	chatState,
 	cycleField as cycleFieldvalue,
 	getUserSessionItem,
 	handleContentChunk,
@@ -136,7 +137,7 @@ const settings = reactive<ChatSettings>({
 // Refs and reactives
 const openSettings = ref(false);
 const _loading = ref(false); // true if request is being sent
-const query = ref("");
+const query = ref<string>(chatState.get(`chat::${props.chatId || "new"}`) ?? "");
 const isStreaming = ref(false); // true if chat is streaming
 const isWaitingForStream = ref(false); // true if waiting for stream to start
 const messagesContainer = ref<HTMLDivElement | null>(null);
@@ -374,6 +375,11 @@ const saveSettings = useDebounceFn(async () => {
 }, 500);
 
 watch(() => settings, saveSettings, { deep: true });
+
+watch(
+	() => query.value,
+	() => chatState.set(`chat::${props.chatId || "new"}`, query.value ?? "")
+);
 
 onMounted(async () => socket.on("otto.api.chat", handleRealtimeMessage));
 onUnmounted(() => socket.off("otto.api.chat", handleRealtimeMessage));
