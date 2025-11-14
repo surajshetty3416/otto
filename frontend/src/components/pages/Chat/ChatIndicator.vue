@@ -2,7 +2,7 @@
 	<div class="px-6 py-1 flex flex-col gap-1 items-center">
 		<!-- Loading Indicator-->
 		<div class="bg-white/75 backdrop-blur-lg rounded-full p-0.5">
-			<LoadingIndicator v-if="isLoading" class="h-3 w-3 text-gray-600 flex-shrink-0" />
+			<LoadingIndicator v-if="isLoading" class="size-3 text-gray-600 flex-shrink-0" />
 			<TextLoadingIndicator v-else-if="save_settings.loading" text="Saving" />
 		</div>
 
@@ -11,17 +11,9 @@
 			v-if="indicatorText"
 			class="w-fit px-1 py-0.5 rounded-full flex items-center justify-center gap-1 bg-white/75 backdrop-blur-lg"
 		>
-			<Lightbulb
-				v-if="isThinking"
-				class="h-3 w-3 text-gray-600 flex-shrink-0"
-				stroke-width="1.5"
-			/>
-			<Wrench
-				v-else-if="isUsingTool"
-				class="h-3 w-3 text-gray-600 flex-shrink-0"
-				stroke-width="1.5"
-			/>
-			<LoadingIndicator v-else class="h-3 w-3 text-gray-600 flex-shrink-0" />
+			<Lightbulb v-if="isThinking" class="tooltip-icon" stroke-width="1" />
+			<Wrench v-else-if="isUsingTool" class="tooltip-icon" stroke-width="1" />
+			<LoadingIndicator v-else class="size-3 text-gray-600 flex-shrink-0" />
 
 			<p class="text-sm text-gray-600">
 				<Ellipsis>{{ indicatorText }}</Ellipsis>

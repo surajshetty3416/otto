@@ -17,7 +17,7 @@
 				<div v-if="!canChange" class="p-2">
 					<p class="text-sm font-medium mb-1 text-gray-900">{{ details?.title }}</p>
 					<p class="flex items-center gap-1 text-xs text-gray-700">
-						<Sparkle class="size-3 shrink-0 text-gray-700" stroke-width="1" />
+						<Sparkle class="tooltip-icon" stroke-width="1" />
 						{{ modelName(details?.llm) }}
 						{{ props.settings.llm ? "*" : "" }}
 					</p>
@@ -25,7 +25,7 @@
 						class="flex items-center gap-1 text-xs text-gray-700 mb-0.5"
 						v-if="details?.reasoning_effort !== 'None'"
 					>
-						<Lightbulb class="size-3 shrink-0 text-gray-700" stroke-width="1" />
+						<Lightbulb class="tooltip-icon" stroke-width="1" />
 						{{ details?.reasoning_effort }}
 						{{ props.settings.reasoning_effort ? "*" : "" }}
 					</p>

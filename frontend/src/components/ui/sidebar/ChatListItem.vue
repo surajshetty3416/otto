@@ -56,7 +56,4 @@ const isActive = computed(() => {
 </script>
 
 <style scoped>
-.tooltip-icon {
-	@apply size-3 text-gray-700;
-}
 </style>

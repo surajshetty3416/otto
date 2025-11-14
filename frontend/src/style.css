@@ -71,10 +71,14 @@
 	@apply bg-white/80 backdrop-blur-lg;
 }
 
+.tooltip-icon {
+	@apply size-3 text-gray-700 shrink-0;
+}
+
 .indicator-button {
-	@apply text-sm border border-gray-200 px-2 py-1 rounded-full flex items-center gap-1 bg-white/85 backdrop-blur-lg shrink-0 text-gray-700;
+	@apply glass-lg text-sm border border-gray-200 px-2 py-1 rounded-full flex items-center gap-1  shrink-0 text-gray-700;
 
 	svg {
-		@apply size-3 shrink-0 text-gray-700 -ml-0.5;
+		@apply tooltip-icon -ml-0.5;
 	}
 }
