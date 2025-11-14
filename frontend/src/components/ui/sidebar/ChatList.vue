@@ -26,7 +26,7 @@
 		>
 			<div
 				v-if="list_chats.data && isOpen"
-				class="h-full overflow-hidden pt-2 flex flex-col gap-4"
+				class="h-full overflow-y-auto pt-2 flex flex-col gap-4"
 			>
 				<template v-for="chat in chats" :key="chat.name">
 					<ChatListItem :chat="chat" />

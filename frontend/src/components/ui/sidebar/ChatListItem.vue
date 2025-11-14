@@ -1,6 +1,6 @@
 <template>
 	<Tooltip
-		class="flex flex-col rounded-md hover:bg-gray-50 cursor-pointer overflow-hidden p-2 -my-2 text-base text-gray-800 w-full text-start text-nowrap"
+		class="flex flex-col rounded-md hover:bg-gray-50 cursor-pointer overflow-hidden p-2 -my-2 text-base text-gray-800 w-full text-start text-nowrap shrink-0"
 		:class="{ italic: !chat.title, 'bg-gray-100': isActive }"
 		@click="openChat(chat.name)"
 		side="right"

@@ -21,7 +21,7 @@
 			<Welcome v-if="showNew" class="mb-8" style="margin-top: 35vh" />
 
 			<!-- Input -->
-			<div class="w-full container-ch chat-input" :class="{ 'fixed bottom-6': !showNew }">
+			<div class="w-full container-ch chat-input" :class="{ 'fixed bottom-0': !showNew }">
 				<ChatIndicator
 					v-if="chatId"
 					:chatId="chatId"
@@ -36,8 +36,11 @@
 					@send="handleSend"
 					@settings="openSettings = true"
 					v-model="query"
+					class="z-20 relative -mx-1"
 				/>
-				<div class="flex flex-row items-center gap-2 mt-2 w-full justify-center flex-wrap">
+				<div
+					class="flex flex-row items-center gap-2 pb-4 pt-10 -mt-8 justify-center flex-wrap glass-lg bg-gray-300 -mx-4 z-10 rounded-t-2xl"
+				>
 					<Selector :canChange="showNew" v-model="assistant" :settings="settings" />
 					<TextLoadingIndicator v-if="load_chat.loading" text="Loading settings" />
 					<OverrideIndicators v-else v-model="settings" :assistant="assistant" />
