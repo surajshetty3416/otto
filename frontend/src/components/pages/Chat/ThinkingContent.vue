@@ -1,10 +1,10 @@
 <template>
 	<!-- Toggle Thought -->
-	<CollapsedContentToggle v-model="isOpen">
+	<CollapsedContentToggle v-model="isOpen" v-bind="attrs">
 		<Lightbulb class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
 	</CollapsedContentToggle>
 
-	<ContentContainer v-if="isOpen || isStreaming">
+	<ContentContainer v-if="isOpen || isStreaming" v-bind="attrs">
 		<!-- Thought Header -->
 		<div
 			class="flex items-center justify-between border-b border-gray-300 p-1.5 cursor-pointer"
@@ -31,13 +31,13 @@
 <script setup lang="ts">
 import type { SessionItem, ThinkingContent } from "@/client/generated.types";
 import { Lightbulb, X } from "lucide-vue-next";
-import { computed, ref } from "vue";
+import { computed, ref, useAttrs } from "vue";
 import CollapsedContentToggle from "./CollapsedContentToggle.vue";
 import ContentContainer from "./ContentContainer.vue";
 import Markdown from "./Markdown.vue";
 import { streamContextKey } from "./utils";
 import { inject } from "vue";
-
+const attrs = useAttrs();
 const streamContext = inject(streamContextKey)!;
 const props = defineProps<{
 	item: SessionItem;

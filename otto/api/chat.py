@@ -338,6 +338,13 @@ def _autoset_title(chat_id: str) -> None:
 
 
 def _send_query(chat_id: str, chat: OttoChat, query: str | None) -> None:
+	from otto.api.dummy import is_dummy_query, send_dummy_query
+
+	if is_dummy_query(query, chat):
+		assert query is not None, "type check"
+		send_dummy_query(query, chat)
+		return
+
 	response, reason = chat.chat(query)
 	if reason:
 		message = RealtimeError(

@@ -1,7 +1,7 @@
 t
 <template>
 	<Dialog :open="open" @update:open="open = $event">
-		<DialogContent class="h-[38vh]">
+		<DialogContent class="h-[520px]">
 			<!-- Dialog Header -->
 			<template #header>
 				<DialogTitle class="flex w-full items-center gap-2">
@@ -29,7 +29,7 @@ t
 				<span v-else> this assistant </span>.
 			</DialogDescription>
 
-			<div v-if="pane === 'config'" class="flex flex-col gap-6">
+			<div v-if="pane === 'config'" class="flex flex-col gap-6 overflow-y-auto">
 				<SettingsItem :icon="Sparkle" label="Model" :description="modelDescription">
 					<LlmSelect v-model="settings.llm" />
 				</SettingsItem>

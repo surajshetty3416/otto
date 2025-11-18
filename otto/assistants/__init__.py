@@ -31,9 +31,9 @@ def sync_assistants(modules: list[ModuleType | str]) -> None:
 
 
 def sync_otto_assistants() -> None:
-	from otto.assistants import kitchen_sink
+	from otto.assistants import kitchen_sink, ui_tester
 
-	sync_assistants([kitchen_sink])
+	sync_assistants([kitchen_sink, ui_tester])
 
 
 def sync_assistant(module: ModuleType | str) -> None | str:

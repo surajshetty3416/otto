@@ -55,8 +55,14 @@ class Manager {
     this.current.add(getKey(e.code));
     const key = getBind(this.current);
     for (const action of this.actions.get(key) ?? []) {
-      for (const callback of this.callbacks.get(action) ?? []) {
-        callback(e);
+      /**
+       * Last registered callback should be executed first.
+       * 
+       * later allow callback to prevent execution of downstream callbacks
+       */
+      const callbacks = this.callbacks.get(action) ?? [];
+      for (let i = callbacks.length - 1; i >= 0; i--) {
+        callbacks[i](e);
       }
     }
   }

@@ -74,12 +74,13 @@ const renderedContent = computed(() => {
 	}
 });
 
-// Add copy buttons to code blocks after rendering
+// Add copy buttons to code blocks and wrap tables after rendering
 
 async function addCopyButtonReaction() {
 	await nextTick();
 	if (!containerRef.value) return;
 	addCopyButtonsToCodeBlocks(containerRef.value);
+	wrapTablesInScrollableContainer(containerRef.value);
 }
 
 watch(() => [content.value, containerRef.value], addCopyButtonReaction);
@@ -146,6 +147,26 @@ function addCopyButtonsToCodeBlocks(container: HTMLElement) {
 
 		render(copyButton, buttonContainer);
 		target.appendChild(buttonContainer);
+	}
+}
+
+function wrapTablesInScrollableContainer(container: HTMLElement) {
+	if (props.isStreaming) return;
+	const tables = container.querySelectorAll("table:not(.table-wrapped)");
+	for (const table of Array.from(tables)) {
+		// Check if already wrapped
+		if (table.parentElement?.classList.contains("table-container")) continue;
+
+		// Create wrapper div
+		const wrapper = document.createElement("div");
+		wrapper.className = "table-container";
+
+		// Insert wrapper before table and move table inside
+		table.parentNode?.insertBefore(wrapper, table);
+		wrapper.appendChild(table);
+
+		// Mark as wrapped
+		table.classList.add("table-wrapped");
 	}
 }
 </script>
@@ -316,5 +337,36 @@ function addCopyButtonsToCodeBlocks(container: HTMLElement) {
 
 .markdown-content :deep(.copy-btn svg) {
 	display: block;
+}
+
+/* Table container styles */
+.markdown-content :deep(.table-container) {
+	overflow-x: auto;
+	margin: 1rem 0;
+	border: 1px solid theme("colors.gray.200");
+	border-radius: theme("borderRadius.lg");
+	scrollbar-gutter: stable;
+}
+
+.markdown-content :deep(table) {
+	margin: 0;
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.markdown-content :deep(table th),
+.markdown-content :deep(table td) {
+	padding: 0.5rem 0.75rem;
+	border: 1px solid theme("colors.gray.200");
+	text-align: left;
+}
+
+.markdown-content :deep(table th) {
+	background-color: theme("colors.gray.50");
+	font-weight: var(--md-font-weight-semibold);
+}
+
+.markdown-content :deep(table tr:hover) {
+	background-color: theme("colors.gray.50");
 }
 </style>

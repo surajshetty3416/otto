@@ -1,6 +1,6 @@
 <template>
 	<!-- Toggle Tool Use Details -->
-	<CollapsedContentToggle v-model="isOpen">
+	<CollapsedContentToggle v-model="isOpen" v-bind="attrs">
 		<Wrench class="h-3.5 w-3.5 text-gray-600 flex-shrink-0" stroke-width="1.5" />
 		<p class="text-sm font-medium text-gray-700">
 			{{ title }}
@@ -26,7 +26,7 @@
 	</CollapsedContentToggle>
 
 	<!-- Tool Use Details -->
-	<ContentContainer v-if="isOpen">
+	<ContentContainer v-if="isOpen" v-bind="attrs">
 		<!-- Tool Use Header -->
 		<div
 			class="flex items-center justify-between border-b border-gray-300 p-1.5 cursor-pointer"
@@ -131,11 +131,12 @@ import type { SessionItem, ToolUseContent } from "@/client/generated.types";
 import { titlecase } from "@/components/format";
 import IndicatorDot from "@/components/ui/IndicatorDot.vue";
 import { Check, Wrench, X } from "lucide-vue-next";
-import { computed, inject, ref, watch } from "vue";
+import { computed, inject, ref, useAttrs, watch } from "vue";
 import CollapsedContentToggle from "./CollapsedContentToggle.vue";
 import ContentContainer from "./ContentContainer.vue";
 import SmallButton from "./SmallButton.vue";
 import { pendingRequestsKey, toolConfigKey } from "./utils";
+const attrs = useAttrs();
 
 /**
  * show a semi-collapsed div (hide args) when permission request is required

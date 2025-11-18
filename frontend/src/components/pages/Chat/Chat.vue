@@ -1,27 +1,28 @@
 <template>
 	<div class="w-screen h-screen flex items-center justify-center flex-col">
 		<!-- Header -->
-		<ChatHeader :currentChatId="chatId" />
+		<ChatHeader :currentChatId="chatId" class="chat-header" />
 
 		<!-- Body -->
-		<div
-			class="w-full h-screen overflow-y-scroll flex flex-col items-center"
-			ref="messagesContainer"
-		>
+		<div class="scroll-container w-full h-screen overflow-y-scroll flex flex-col items-center">
 			<!-- Messages -->
 			<div
 				v-if="messages.length > 0"
-				class="border-gray-200 h-full container-ch chat-messages"
+				class="border-gray-200 h-full container-ch messages-container"
 			>
 				<ChatMessages :messages="messages" />
-				<div style="height: 20vh; flex-shrink: 0"></div>
+				<div class="chat-spacer-div"></div>
 			</div>
 
 			<!-- New chat welcome message -->
 			<Welcome v-if="showNew" class="mb-8" style="margin-top: 35vh" />
 
 			<!-- Input -->
-			<div class="w-full container-ch chat-input" :class="{ 'fixed bottom-0': !showNew }">
+			<div
+				id="input-container"
+				class="w-full container-ch input-container"
+				:class="{ 'fixed bottom-0': !showNew }"
+			>
 				<ChatIndicator
 					v-if="chatId"
 					:chatId="chatId"
@@ -70,6 +71,8 @@
  * - [ ] images and pdfs
  * - [ ] input commands etc `/` and `@` for doctype refs
  * - [ ] tool selection
+ *
+ * listen in on shortcuts when the page loads, call the functions when they're available
  */
 import { api, list_chats } from "@/client";
 import {
@@ -113,6 +116,12 @@ import {
 	toolConfigKey,
 } from "./utils";
 import Welcome from "./Welcome.vue";
+import {
+	focusInput,
+	scrollToTheBottom,
+	scrollUserMessageToTheTop,
+	setInitialSpacerHeight,
+} from "./dom";
 
 const assistant = ref<string>("5t44lus4lh");
 const received = new Set<string>(); // sanity check to avoid duplicates
@@ -139,7 +148,6 @@ const settings = reactive<ChatSettings>({
 const openSettings = ref(false);
 const _loading = ref(false); // true if request is being sent
 const query = ref<string>(chatState.get(`chat::${props.chatId || "new"}`) ?? "");
-const messagesContainer = ref<HTMLDivElement | null>(null);
 const messages = reactive<SessionItem[]>([]);
 const pendingRequests = reactive<Record<string, PendingRequest>>({});
 const flags = {
@@ -254,8 +262,10 @@ function canSend(query: string) {
 
 function appendUserMessage(query: string) {
 	messages.push(getUserSessionItem(query));
+	nextTick().then(() => scrollUserMessageToTheTop());
 }
 
+const scrollToTheBottomDebounced = useDebounceFn(() => scrollToTheBottom(false), 20);
 function handleRealtimeMessage(message: RealtimeChatMessage) {
 	if (window.is_dev_mode) logRealtime(message);
 	streamContext.update(message);
@@ -276,7 +286,7 @@ function handleRealtimeMessage(message: RealtimeChatMessage) {
 				// Only used to update stream context
 				return;
 			else handleContentChunk(message.data, messages);
-			scrollToBottom("instant");
+			scrollToTheBottomDebounced();
 			return;
 		case "item":
 			handleItem(message.data, messages);
@@ -294,13 +304,6 @@ function handleRealtimeMessage(message: RealtimeChatMessage) {
 			list_chats.run(undefined, false);
 			return;
 	}
-}
-
-function scrollToBottom(behavior: "smooth" | "instant") {
-	messagesContainer.value?.scrollTo({
-		top: messagesContainer.value?.scrollHeight,
-		behavior,
-	});
 }
 
 function reset() {
@@ -321,18 +324,17 @@ function reset() {
 }
 
 async function set() {
-	setTimeout(focus, 100);
+	setTimeout(focusInput, 100);
 	if (!props.chatId) return;
 	streamContext.set(props.chatId);
 	await list_tools.run({ chat_id: props.chatId }, false);
 	await get_pending_requests.run({ chat_id: props.chatId }, false);
 	await loadChat();
-}
-
-function focus() {
-	const input = document.getElementById(`chat-input`);
-	if (!input || !(input instanceof HTMLInputElement) || input.disabled || input.readOnly) return;
-	input.focus();
+	nextTick().then(() => {
+		console.log(showNew.value);
+		setInitialSpacerHeight();
+		scrollToTheBottom(true);
+	});
 }
 
 async function loadChat() {
@@ -346,7 +348,6 @@ async function loadChat() {
 	}
 
 	updateSettings(chat.settings);
-	nextTick().then(() => scrollToBottom("smooth"));
 }
 
 function updateSettings(source: ChatSettings) {
@@ -363,7 +364,6 @@ function updateSettings(source: ChatSettings) {
 
 const saveSettings = useDebounceFn(async () => {
 	if (!props.chatId || isEqual(initial, settings)) return;
-	console.log("saving settings");
 	const _update = await save_settings.run({ chat_id: props.chatId, settings }, false);
 	updateSettings(_update);
 }, 500);
@@ -478,12 +478,12 @@ onUnmounted(() => {
 	}
 }
 
-.chat-messages {
+.messages-container {
 	width: var(--center-width);
 	padding: 0 var(--lr-spacing);
 }
 
-.chat-input {
+.input-container {
 	width: var(--center-width);
 	padding: 0 var(--lr-spacing);
 }

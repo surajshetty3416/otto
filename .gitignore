@@ -60,6 +60,5 @@ temp_*
 otto/www/otto/index.html
 otto/public/frontend
 otto/public/css
-**/api/**/dummy.py
 **/__screenshots__
 **/.env.*

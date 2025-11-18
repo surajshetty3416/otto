@@ -24,21 +24,27 @@
 		-->
 		<template v-if="message.meta.role === 'agent'">
 			<template v-for="(content, j) in message.content" :key="j">
-				<TextContent v-if="content.type === 'text'" :item="message" :content="content" />
+				<TextContent
+					v-if="content.type === 'text'"
+					class="assistant-message"
+					:item="message"
+					:content="content"
+				/>
 				<ThinkingContent
 					v-if="content.type === 'thinking'"
+					class="assistant-message"
 					:item="message"
 					:content="content"
 				/>
 				<ToolUseContent
 					v-if="content.type === 'tool_use'"
+					class="assistant-message"
 					:item="message"
 					:content="content"
 				/>
 			</template>
 		</template>
 	</template>
-	<div class="expander-div shrink-0"></div>
 </template>
 
 <script setup lang="ts">
